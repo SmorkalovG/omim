@@ -10,6 +10,10 @@
 #include "std/bind.hpp"
 #include "std/algorithm.hpp"
 
+#ifdef PostMessage
+#undef PostMessage
+#endif
+
 namespace df
 {
 

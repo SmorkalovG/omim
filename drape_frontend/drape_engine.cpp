@@ -12,6 +12,10 @@
 
 #include "std/bind.hpp"
 
+#ifdef PostMessage
+#undef PostMessage
+#endif
+
 namespace
 {
   char const kFontScale[] = "FontScale";

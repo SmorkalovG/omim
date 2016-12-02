@@ -3,6 +3,10 @@
 #include "drape/pointers.hpp"
 #include "std/map.hpp"
 
+#ifdef PostMessage
+#undef PostMessage
+#endif
+
 namespace df
 {
 

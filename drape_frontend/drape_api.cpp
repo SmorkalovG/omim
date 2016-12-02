@@ -2,6 +2,10 @@
 #include "drape_frontend/drape_engine.hpp"
 #include "drape_frontend/message_subclasses.hpp"
 
+#ifdef PostMessage
+#undef PostMessage
+#endif
+
 namespace df
 {
 

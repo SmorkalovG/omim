@@ -34,6 +34,12 @@
 #include "std/bind.hpp"
 #include "std/cmath.hpp"
 
+#include <iostream>
+
+#ifdef PostMessage
+#undef PostMessage
+#endif
+
 namespace df
 {
 
@@ -1730,8 +1736,8 @@ void FrontendRenderer::Routine::Do()
         availableTime = VSyncInterval - timer.ElapsedSeconds();
       }
       while (availableTime > 0);
-    }
 
+    }
     context->present();
     frameTime = timer.ElapsedSeconds();
     timer.Reset();

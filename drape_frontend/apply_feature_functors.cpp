@@ -215,7 +215,7 @@ uint16_t CalculateHotelOverlayPriority(BaseApplyFeature::HotelData const & data)
   if (s.length() == data.m_rating.length())
     s += '0';
 
-  uint result = 0;
+  unsigned int result = 0;
   if (strings::to_uint(s, result))
     return static_cast<uint16_t>(result);
   return 0;

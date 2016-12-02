@@ -21,6 +21,10 @@
 
 #include "std/bind.hpp"
 
+#ifdef PostMessage
+#undef PostMessage
+#endif
+
 namespace df
 {
 
@@ -436,6 +440,7 @@ BackendRenderer::Routine::Routine(BackendRenderer & renderer) : m_renderer(rende
 void BackendRenderer::Routine::Do()
 {
   LOG(LINFO, ("Start routine."));
+
   m_renderer.OnContextCreate();
 
   while (!IsCancelled())

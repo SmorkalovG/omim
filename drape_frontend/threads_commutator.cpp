@@ -4,6 +4,10 @@
 
 #include "base/assert.hpp"
 
+#ifdef PostMessage
+#undef PostMessage
+#endif
+
 namespace df
 {
 
