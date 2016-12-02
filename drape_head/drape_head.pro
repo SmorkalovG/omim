@@ -1,7 +1,7 @@
 # Head project for drape develop and debuging
 ROOT_DIR = ..
 DEPENDENCIES = map drape_frontend drape indexer storage platform geometry coding base \
-               freetype expat protobuf jansson fribidi tomcrypt
+               freetype expat protobuf jansson fribidi tomcrypt stats_client
 
 include($$ROOT_DIR/common.pri)
 
@@ -13,7 +13,7 @@ CONFIG += warn_on
 QT *= core gui widgets opengl
 
 win32* {
-  LIBS += -lopengl32 -lws2_32 -liphlpapi
+  LIBS += -lopengl32 -lws2_32 -liphlpapi -lshlwapi
 #  RC_FILE = res/windows.rc
   win32-msvc*: LIBS += -lwlanapi
 }
