@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 #include <tuple>
+#include <iterator>
 
 namespace
 {
@@ -163,7 +164,7 @@ void SplitExtendedHours(osmoh::TTimespans const & spans,
   additionalSpan = splittedSpans[1];
 
   ++it;
-  std::copy(it, end(spans), back_inserter(originalNormalizedSpans));
+  std::copy(it, end(spans), std::back_inserter(originalNormalizedSpans));
 }
 
 bool HasExtendedHours(osmoh::RuleSequence const & rule)
@@ -180,7 +181,11 @@ bool HasExtendedHours(osmoh::RuleSequence const & rule)
 std::tm MakeTimetuple(time_t const timestamp)
 {
   std::tm tm{};
+#ifdef WIN32
+  tm = *localtime(&timestamp);
+#else
   localtime_r(&timestamp, &tm);
+#endif
   return tm;
 }
 } // namespace
