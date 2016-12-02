@@ -1,4 +1,5 @@
 #include "platform/platform.hpp"
+#include <windows.h>
 
 #include "base/scope_guard.hpp"
 #include "base/logging.hpp"
@@ -13,6 +14,8 @@
 #include <shlwapi.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include "socket.hpp"
 
 static bool GetUserWritableDir(string & outDir)
 {
@@ -103,6 +106,10 @@ Platform::EError Platform::RmDir(string const & dirName)
   return ERR_OK;
 }
 
+#ifdef FILE_TYPE_UNKNOWN
+#undef FILE_TYPE_UNKNOWN
+#endif
+
 // static
 Platform::EError Platform::GetFileType(string const & path, EFileType & type)
 {
@@ -175,4 +182,90 @@ bool Platform::GetFileSizeByFullPath(string const & filePath, uint64_t & size)
     }
   }
   return false;
+}
+
+void Platform::GetSystemFontNames(FilesList & res) const
+{
+  char const * fontsWhitelist[] = {
+    "Roboto-Medium.ttf",
+    "Roboto-Regular.ttf",
+    "DroidSansFallback.ttf",
+    "DroidSansFallbackFull.ttf",
+    "DroidSans.ttf",
+    "DroidSansArabic.ttf",
+    "DroidSansSemc.ttf",
+    "DroidSansSemcCJK.ttf",
+    "DroidNaskh-Regular.ttf",
+    "Lohit-Bengali.ttf",
+    "Lohit-Devanagari.ttf",
+    "Lohit-Tamil.ttf",
+    "PakType Naqsh.ttf",
+    "wqy-microhei.ttc",
+    "Jomolhari.ttf",
+    "Jomolhari-alpha3c-0605331.ttf",
+    "Padauk.ttf",
+    "KhmerOS.ttf",
+    "Umpush.ttf",
+    "DroidSansThai.ttf",
+    "DroidSansArmenian.ttf",
+    "DroidSansEthiopic-Regular.ttf",
+    "DroidSansGeorgian.ttf",
+    "DroidSansHebrew-Regular.ttf",
+    "DroidSansHebrew.ttf",
+    "DroidSansJapanese.ttf",
+    "LTe50872.ttf",
+    "LTe50259.ttf",
+    "DevanagariOTS.ttf",
+    "FreeSans.ttf",
+    "DejaVuSans.ttf",
+    "arial.ttf",
+    "AbyssinicaSIL-R.ttf",
+  };
+
+  char const * systemFontsPath[] = {
+    "/system/fonts/",
+  };
+
+  const uint64_t fontSizeBlacklist[] = {
+    183560,   // Samsung Duos DroidSans
+    7140172,  // Serif font without Emoji
+    14416824  // Serif font with Emoji
+  };
+
+  uint64_t fileSize = 0;
+
+  for (size_t i = 0; i < ARRAY_SIZE(fontsWhitelist); ++i)
+  {
+    for (size_t j = 0; j < ARRAY_SIZE(systemFontsPath); ++j)
+    {
+      string const path = string(systemFontsPath[j]) + fontsWhitelist[i];
+      if (IsFileExistsByFullPath(path))
+      {
+        if (GetFileSizeByName(path, fileSize))
+        {
+          uint64_t const * end = fontSizeBlacklist + ARRAY_SIZE(fontSizeBlacklist);
+          if (find(fontSizeBlacklist, end, fileSize) == end)
+          {
+            res.push_back(path);
+            LOG(LINFO, ("Found usable system font", path, "with file size", fileSize));
+          }
+        }
+      }
+    }
+  }
+}
+
+uint64_t Platform::GetWritableStorageSpace() const
+{
+  ULARGE_INTEGER space;
+  GetDiskFreeSpaceExA(m_writableDir.c_str(), &space, NULL, NULL);
+  return space.QuadPart;
+}
+
+namespace platform
+{
+unique_ptr<Socket> CreateSocket()
+{
+  return unique_ptr<Socket>();
+}
 }

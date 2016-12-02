@@ -41,6 +41,10 @@ public:
     ERR_UNKNOWN
   };
 
+#ifdef FILE_TYPE_UNKNOWN
+#undef FILE_TYPE_UNKNOWN
+#endif
+
   enum EFileType
   {
     FILE_TYPE_UNKNOWN = 0x1,

@@ -22,6 +22,10 @@ win32*|linux* {
   QT *= network
 }
 
+win32* {
+  LIBS += -lshlwapi
+}
+
 SOURCES += \
     ../../testing/testingmain.cpp \
     apk_test.cpp \
