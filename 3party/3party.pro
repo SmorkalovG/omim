@@ -22,9 +22,11 @@ CONFIG(desktop):!CONFIG(no-tests):!CONFIG(gtool):!CONFIG(osrm) {
   opening_hours_integration_tests.depends = opening_hours
   SUBDIRS *= opening_hours_integration_tests
 
-  opening_hours_supported_features_tests.subdir = opening_hours/opening_hours_supported_features_tests
-  opening_hours_supported_features_tests.depends = opening_hours
-  SUBDIRS *= opening_hours_supported_features_tests
+  !win32* {
+    opening_hours_supported_features_tests.subdir = opening_hours/opening_hours_supported_features_tests
+    opening_hours_supported_features_tests.depends = opening_hours
+    SUBDIRS *= opening_hours_supported_features_tests
+  }
 }
 
 CONFIG(desktop) {
