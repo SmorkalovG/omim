@@ -2,7 +2,39 @@
 
 #include "std/ctime.hpp"
 
+#include <sstream>
+#include <iomanip>
+
 #include "base/timegm.hpp"
+#include <time.h>
+
+#if (defined(WIN32) || defined(_WIN32) || defined (WINDOWS) || defined (_WINDOWS))
+extern "C" char* strptime(const char* s,
+                          const char* f,
+                          struct tm* tm) {
+  std::istringstream input(s);
+  input.imbue(std::locale(setlocale(LC_ALL, nullptr)));
+  input >> std::get_time(tm, f);
+  if (input.fail()) {
+    return nullptr;
+  }
+  return (char*)(s + input.tellg());
+}
+
+static time_t timegm(struct tm * a_tm)
+{
+    time_t ltime = mktime(a_tm);
+    struct tm tm_val;
+    gmtime_s(&tm_val, &ltime);
+    int offset = (tm_val.tm_hour - a_tm->tm_hour);
+    if (offset > 12)
+    {
+        offset = 24 - offset;
+    }
+    time_t utc = mktime(a_tm) - offset * 3600;
+    return utc;
+}
+#endif
 
 UNIT_TEST(TimegmTest)
 {
