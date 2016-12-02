@@ -11,6 +11,10 @@ CONFIG += staticlib
 
 ROOT_DIR = ../..
 
+win32* {
+QMAKE_CXXFLAGS += -O1 -ftrack-macro-expansion=0 -Wl,--large--address-aware -Wa,-mbig-obj
+}
+
 include($$ROOT_DIR/common.pri)
 
 HEADERS += opening_hours.hpp \

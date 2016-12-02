@@ -47,7 +47,7 @@
 
 #include <boost/spirit/include/qi.hpp>
 
-#ifdef(WIN32) // windows does not have strptime, it is the simplest implementation
+#if (defined(WIN32) || defined(_WIN32) || defined (WINDOWS) || defined (_WINDOWS)) // windows does not have strptime, it is the simplest implementation
 extern "C" char* strptime(const char* s,
                           const char* f,
                           struct tm* tm) {
