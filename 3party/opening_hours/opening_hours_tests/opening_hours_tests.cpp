@@ -30,6 +30,9 @@
 #include <iostream>
 #include <locale>
 #include <sstream>
+#include <time.h>
+#include <iomanip>
+
 
 #define BOOST_TEST_MODULE OpeningHours
 
@@ -43,6 +46,20 @@
 #endif
 
 #include <boost/spirit/include/qi.hpp>
+
+#ifdef(WIN32) // windows does not have strptime, it is the simplest implementation
+extern "C" char* strptime(const char* s,
+                          const char* f,
+                          struct tm* tm) {
+  std::istringstream input(s);
+  input.imbue(std::locale(setlocale(LC_ALL, nullptr)));
+  input >> std::get_time(tm, f);
+  if (input.fail()) {
+    return nullptr;
+  }
+  return (char*)(s + input.tellg());
+}
+#endif
 
 namespace
 {
