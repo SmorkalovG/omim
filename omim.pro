@@ -80,8 +80,9 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     benchmark_tool.depends = 3party base coding geometry platform indexer search map
     mapshot.depends = $$SUBDIRS
     qt.depends = $$SUBDIRS
+    SUBDIRS *= qt
 
-    SUBDIRS *= benchmark_tool mapshot qt
+#    SUBDIRS *= benchmark_tool mapshot qt
     }
 
   CONFIG(desktop) {
@@ -102,20 +103,22 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
       SUBDIRS *= search_engine_pylib
     }
 
-    search_quality.subdir = search/search_quality
-    search_quality.depends = $$SUBDIRS
-    SUBDIRS *= search_quality
+    !win32* {
+      search_quality.subdir = search/search_quality
+      search_quality.depends = $$SUBDIRS
+      SUBDIRS *= search_quality
 
-    search_quality_tool.subdir = search/search_quality/search_quality_tool
-    search_quality_tool.depends = $$SUBDIRS
+      search_quality_tool.subdir = search/search_quality/search_quality_tool
+      search_quality_tool.depends = $$SUBDIRS
 
-    features_collector_tool.subdir = search/search_quality/features_collector_tool
-    features_collector_tool.depends = $$SUBDIRS
+      features_collector_tool.subdir = search/search_quality/features_collector_tool
+      features_collector_tool.depends = $$SUBDIRS
 
-    feature_list.subdir = feature_list
-    feature_list.depends = $$SUBDIRS
+      feature_list.subdir = feature_list
+      feature_list.depends = $$SUBDIRS
 
-    SUBDIRS *= search_quality_tool features_collector_tool feature_list
+      SUBDIRS *= search_quality_tool features_collector_tool feature_list
+    }
   }
 
   CONFIG(desktop):!CONFIG(no-tests) {
@@ -123,8 +126,8 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     platform_tests_support.subdir = platform/platform_tests_support
     SUBDIRS *= platform_tests_support
 
-    indexer_tests_support.subdir = indexer/indexer_tests_support
-    SUBDIRS *= indexer_tests_support
+#    indexer_tests_support.subdir = indexer/indexer_tests_support
+#    SUBDIRS *= indexer_tests_support
 
     # Tests binaries.
     base_tests.subdir = base/base_tests
@@ -139,24 +142,24 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     geometry_tests.depends = 3party base geometry
     SUBDIRS *= geometry_tests
 
-    indexer_tests.subdir = indexer/indexer_tests
-    indexer_tests.depends = 3party base coding geometry platform editor storage routing indexer \
-                            platform_tests_support search_tests_support generator_tests_support \
-                            indexer_tests_support
+#    indexer_tests.subdir = indexer/indexer_tests
+#    indexer_tests.depends = 3party base coding geometry platform editor storage routing indexer \
+#                            platform_tests_support search_tests_support generator_tests_support \
+#                            indexer_tests_support
 
-    SUBDIRS *= indexer_tests
+#    SUBDIRS *= indexer_tests
 
     platform_tests.subdir = platform/platform_tests
     platform_tests.depends = 3party base coding platform platform_tests_support
     SUBDIRS *= platform_tests
 
-    downloader_tests.subdir = platform/downloader_tests
-    downloader_tests.depends = 3party base coding platform platform_tests_support
-    SUBDIRS *= downloader_tests
+#    downloader_tests.subdir = platform/downloader_tests
+#    downloader_tests.depends = 3party base coding platform platform_tests_support
+#    SUBDIRS *= downloader_tests
 
-    search_tests.subdir = search/search_tests
-    search_tests.depends = 3party base coding geometry platform indexer search
-    SUBDIRS *= search_tests
+#    search_tests.subdir = search/search_tests
+#    search_tests.depends = 3party base coding geometry platform indexer search
+#    SUBDIRS *= search_tests
 
     MapDepLibs = 3party base coding geometry editor platform storage indexer search map \
                  routing drape drape_frontend
@@ -166,92 +169,92 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     # is recovered storage/migrate_tests.cpp should be moved to storage_integraion_tests
     # storage_tests.depends should be set to |3party base coding geometry platform storage indexer stats|
     # as it was before.
-    storage_tests.subdir = storage/storage_tests
-    storage_tests.depends = $$MapDepLibs generator_tests_support generator
-    SUBDIRS *= storage_tests
+#    storage_tests.subdir = storage/storage_tests
+#    storage_tests.depends = $$MapDepLibs generator_tests_support generator
+#    SUBDIRS *= storage_tests
 
-    storage_integration_tests.subdir = storage/storage_integration_tests
-    storage_integration_tests.depends = $$MapDepLibs
-    SUBDIRS *= storage_integration_tests
+#    storage_integration_tests.subdir = storage/storage_integration_tests
+#    storage_integration_tests.depends = $$MapDepLibs
+#    SUBDIRS *= storage_integration_tests
 
-    map_tests.subdir = map/map_tests
-    map_tests.depends = $$MapDepLibs
-    SUBDIRS *= map_tests
+#    map_tests.subdir = map/map_tests
+#    map_tests.depends = $$MapDepLibs
+#    SUBDIRS *= map_tests
 
-    mwm_tests.subdir = map/mwm_tests
-    mwm_tests.depends = $$MapDepLibs
-    SUBDIRS *= mwm_tests
+#    mwm_tests.subdir = map/mwm_tests
+#    mwm_tests.depends = $$MapDepLibs
+#    SUBDIRS *= mwm_tests
 
-    style_tests.subdir = map/style_tests
-    style_tests.depends = $$MapDepLibs
-    SUBDIRS *= style_tests
+#    style_tests.subdir = map/style_tests
+#    style_tests.depends = $$MapDepLibs
+#    SUBDIRS *= style_tests
 
-    routing_tests.subdir = routing/routing_tests
-    routing_tests.depends = $$MapDepLibs
-    SUBDIRS *= routing_tests
+#    routing_tests.subdir = routing/routing_tests
+#    routing_tests.depends = $$MapDepLibs
+#    SUBDIRS *= routing_tests
 
-    routing_integration_tests.subdir = routing/routing_integration_tests
-    routing_integration_tests.depends = $$MapDepLibs routing
-    SUBDIRS *= routing_integration_tests
+#    routing_integration_tests.subdir = routing/routing_integration_tests
+#    routing_integration_tests.depends = $$MapDepLibs routing
+#    SUBDIRS *= routing_integration_tests
 
-    routing_consistency_tests.subdir = routing/routing_consistency_tests
-    routing_consistency_tests.depends = $$MapDepLibs routing
-    SUBDIRS *= routing_consistency_tests
+#    routing_consistency_tests.subdir = routing/routing_consistency_tests
+#    routing_consistency_tests.depends = $$MapDepLibs routing
+#    SUBDIRS *= routing_consistency_tests
 
-    srtm_coverage_checker.subdir = generator/srtm_coverage_checker
-    srtm_coverage_checker.depends = $$MapDepLibs routing
-    SUBDIRS *= srtm_coverage_checker
+#    srtm_coverage_checker.subdir = generator/srtm_coverage_checker
+#    srtm_coverage_checker.depends = $$MapDepLibs routing
+#    SUBDIRS *= srtm_coverage_checker
 
-    feature_segments_checker.subdir = generator/feature_segments_checker
-    feature_segments_checker.depends = $$MapDepLibs routing
-    SUBDIRS *= feature_segments_checker
+#    feature_segments_checker.subdir = generator/feature_segments_checker
+#    feature_segments_checker.depends = $$MapDepLibs routing
+#    SUBDIRS *= feature_segments_checker
 
-    routing_benchmarks.subdir = routing/routing_benchmarks
-    routing_benchmarks.depends = $$MapDepLibs routing
-    SUBDIRS *= routing_benchmarks
+#    routing_benchmarks.subdir = routing/routing_benchmarks
+#    routing_benchmarks.depends = $$MapDepLibs routing
+#    SUBDIRS *= routing_benchmarks
 
-    search_tests_support.subdir = search/search_tests_support
-    search_tests_support.depends = $$MapDepLibs
-    SUBDIRS *= search_tests_support
+#    search_tests_support.subdir = search/search_tests_support
+#    search_tests_support.depends = $$MapDepLibs
+#    SUBDIRS *= search_tests_support
 
-    search_integration_tests.subdir = search/search_integration_tests
-    search_integration_tests.depends = $$MapDepLibs search_tests_support \
-                                       generator_tests_support indexer_tests_support generator
-    SUBDIRS *= search_integration_tests
+#    search_integration_tests.subdir = search/search_integration_tests
+#    search_integration_tests.depends = $$MapDepLibs search_tests_support \
+#                                       generator_tests_support indexer_tests_support generator
+#    SUBDIRS *= search_integration_tests
 
-    search_quality_tests.subdir = search/search_quality/search_quality_tests
-    search_quality_tests.depends = $$MapDepLibs search_quality search_tests_support
-    SUBDIRS *= search_quality_tests
+#    search_quality_tests.subdir = search/search_quality/search_quality_tests
+#    search_quality_tests.depends = $$MapDepLibs search_quality search_tests_support
+#    SUBDIRS *= search_quality_tests
 
-    generator_tests.subdir = generator/generator_tests
-    generator_tests.depends = $$MapDepLibs routing generator
-    SUBDIRS *= generator_tests
+#    generator_tests.subdir = generator/generator_tests
+#    generator_tests.depends = $$MapDepLibs routing generator
+#    SUBDIRS *= generator_tests
 
-    editor_tests.subdir = editor/editor_tests
-    editor_tests.depends = 3party base coding geometry platform editor
-    SUBDIRS *= editor_tests
+#    editor_tests.subdir = editor/editor_tests
+#    editor_tests.depends = 3party base coding geometry platform editor
+#    SUBDIRS *= editor_tests
 
-    osm_auth_tests.subdir = editor/osm_auth_tests
-    osm_auth_tests.depends = 3party base coding geometry platform editor
-    SUBDIRS *= osm_auth_tests
+#    osm_auth_tests.subdir = editor/osm_auth_tests
+#    osm_auth_tests.depends = 3party base coding geometry platform editor
+#    SUBDIRS *= osm_auth_tests
 
     SUBDIRS *= qt_tstfrm
 
-    drape_tests.subdir = drape/drape_tests
-    drape_tests.depends = 3party base coding platform qt_tstfrm
-    SUBDIRS *= drape_tests
+#    drape_tests.subdir = drape/drape_tests
+#    drape_tests.depends = 3party base coding platform qt_tstfrm
+#    SUBDIRS *= drape_tests
 
-    drape_frontend_tests.subdir = drape_frontend/drape_frontend_tests
-    drape_frontend_tests.depends = 3party base coding platform drape drape_frontend
-    SUBDIRS *= drape_frontend_tests
+#    drape_frontend_tests.subdir = drape_frontend/drape_frontend_tests
+#    drape_frontend_tests.depends = 3party base coding platform drape drape_frontend
+#    SUBDIRS *= drape_frontend_tests
 
-    partners_api_tests.subdir = partners_api/partners_api_tests
-    partners_api_tests.depends = base platform partners_api
-    SUBDIRS *= partners_api_tests
+#    partners_api_tests.subdir = partners_api/partners_api_tests
+#    partners_api_tests.depends = base platform partners_api
+#    SUBDIRS *= partners_api_tests
 
-    tracking_tests.subdir = tracking/tracking_tests
-    tracking_tests.depends = 3party base routing tracking platform_tests_support platform coding geometry 
-    SUBDIRS *= tracking_tests
+#    tracking_tests.subdir = tracking/tracking_tests
+#    tracking_tests.depends = 3party base routing tracking platform_tests_support platform coding geometry
+#    SUBDIRS *= tracking_tests
 
   } # !no-tests
 } # !gtool

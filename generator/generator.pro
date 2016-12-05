@@ -12,7 +12,7 @@ INCLUDEPATH *= $$ROOT_DIR/3party/gflags/src \
                $$ROOT_DIR/3party/osrm/osrm-backend/include \
                $$ROOT_DIR/3party/jansson/src
 
-QT *= core
+QT += core
 
 SOURCES += \
     altitude_generator.cpp \

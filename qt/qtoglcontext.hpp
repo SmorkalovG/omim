@@ -27,6 +27,7 @@ public:
 private:
   QOffscreenSurface * m_surface = nullptr;
   QOpenGLContext * m_ctx = nullptr;
+  QOpenGLContext * m_fake_ctx = nullptr;
 
   QOpenGLFramebufferObject * m_frontFrame = nullptr;
   QOpenGLFramebufferObject * m_backFrame = nullptr;
@@ -49,5 +50,6 @@ public:
 
 private:
   QOpenGLContext * m_ctx = nullptr;
+  QOpenGLContext * m_fake_ctx = nullptr;
   QOffscreenSurface * m_surface = nullptr;
 };

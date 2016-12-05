@@ -6,6 +6,8 @@ CONFIG += staticlib warn_on
 
 ROOT_DIR = ..
 
+QMAKE_CXXFLAGS += -ftrack-macro-expansion=0
+
 include($$ROOT_DIR/common.pri)
 
 HEADERS += \

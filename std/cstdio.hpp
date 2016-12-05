@@ -15,8 +15,8 @@
 #      define vsnprintf(b,c,f,a) _vsnprintf(b,c,f,a)
 #    endif
 #  else  /* Other Windows compiller, old definition */
-#    define snprintf _snprintf
-#    define vsnprintf _vsnprintf
+//#    define snprintf _snprintf
+//#    define vsnprintf _vsnprintf
 #  endif
 #endif
 

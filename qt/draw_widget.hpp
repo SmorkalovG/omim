@@ -132,5 +132,6 @@ namespace qt
     storage::TCountryId m_countryId;
 
     bool m_selectionMode = false;
+    bool m_inited = false;
   };
 }

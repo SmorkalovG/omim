@@ -5,6 +5,7 @@
 #include "qt/slider_ctrl.hpp"
 #include "qt/qtoglcontext.hpp"
 
+
 #include "drape_frontend/visual_params.hpp"
 
 #include "search/result.hpp"
@@ -23,6 +24,7 @@
 #include <QtGui/QOpenGLContextGroup>
 #include <QtGui/QOpenGLFunctions>
 #include <QtGui/QVector2D>
+#include <QtPlatformHeaders/QWGLNativeContext>
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDesktopWidget>
@@ -33,6 +35,9 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
+
+#include <iostream>
+#include <QDebug>
 
 namespace qt
 {
@@ -98,6 +103,13 @@ DrawWidget::DrawWidget(QWidget * parent)
   VERIFY(connect(countryStatusTimer, SIGNAL(timeout()), this, SLOT(OnUpdateCountryStatusByTimer())), ());
   countryStatusTimer->setSingleShot(false);
   countryStatusTimer->start(1000);
+
+  connect(this, &QOpenGLWidget::frameSwapped, [this](){
+      if (!m_inited) {
+        m_contextFactory->onInitFinished();
+      }
+      m_inited = true;
+  });
 }
 
 DrawWidget::~DrawWidget()
@@ -245,7 +257,7 @@ void DrawWidget::CreateEngine()
 
   p.m_widgetsInitInfo[gui::WIDGET_SCALE_LABEL] = gui::Position(dp::LeftBottom);
 
-  m_framework->CreateDrapeEngine(make_ref(m_contextFactory), std::move(p));
+  m_framework->CreateDrapeEngine(make_ref(new dp::ThreadSafeFactory(m_contextFactory.get())), std::move(p));
   m_framework->SetViewportListener(bind(&DrawWidget::OnViewportChanged, this, _1));
 }
 
@@ -260,46 +272,76 @@ void DrawWidget::initializeGL()
 
   m_framework->LoadBookmarks();
   m_framework->EnterForeground();
+
+  std::cout << "OpenGLContext::supportsThreadedOpenGL():" << QOpenGLContext::supportsThreadedOpenGL() << std::endl;
 }
 
 void DrawWidget::paintGL()
 {
+    std::cout << "paintGL:" << std::endl;
   static QOpenGLShaderProgram * program = nullptr;
-  if (program == nullptr)
-  {
-    const char * vertexSrc = "\
-      attribute vec2 a_position; \
-      attribute vec2 a_texCoord; \
-      uniform mat4 u_projection; \
-      varying vec2 v_texCoord; \
-      \
-      void main(void) \
-      { \
-        gl_Position = u_projection * vec4(a_position, 0.0, 1.0);\
-        v_texCoord = a_texCoord; \
-      }";
-
-    const char * fragmentSrc = "\
-      uniform sampler2D u_sampler; \
-      varying vec2 v_texCoord; \
-      \
-      void main(void) \
-      { \
-        gl_FragColor = vec4(texture2D(u_sampler, v_texCoord).rgb, 1.0); \
-      }";
-
-    program = new QOpenGLShaderProgram(this);
-    program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexSrc);
-    program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentSrc);
-    program->link();
-  }
-
   if (m_contextFactory->LockFrame())
   {
+      std::cout << "paintGL: locked" << std::endl;
+      if (program == nullptr)
+      {
+        const char * vertexSrc = "\
+          attribute vec2 a_position; \
+          attribute vec2 a_texCoord; \
+          uniform mat4 u_projection; \
+          varying vec2 v_texCoord; \
+          \
+          void main(void) \
+          { \
+            gl_Position = u_projection * vec4(a_position, 0.0, 1.0);\
+            v_texCoord = a_texCoord; \
+          }";
+
+        const char * fragmentSrc = "\
+          #ifdef GL_ES \n\
+            #ifdef GL_FRAGMENT_PRECISION_HIGH \n\
+              #define MAXPREC mediump \n\
+            #else \n\
+              #define MAXPREC highp \n\
+            #endif \n\
+            precision MAXPREC float; \n\
+          #endif \n\
+          uniform sampler2D u_sampler; \
+          varying vec2 v_texCoord; \
+          \
+          void main(void) \
+          { \
+            gl_FragColor = vec4(texture2D(u_sampler, v_texCoord).rgb, 1.0); \
+          }";
+
+        program = new QOpenGLShaderProgram(this);
+        program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexSrc);
+        program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentSrc);
+        program->link();
+        std::cout << "Shader done" << std::endl;
+      }
+
+
+      QVariant nativeHandle = QOpenGLContext::currentContext()->nativeHandle();
+      qDebug() << nativeHandle;
+      if (!nativeHandle.isNull() && nativeHandle.canConvert<QWGLNativeContext>()) {
+          QWGLNativeContext nativeContext = nativeHandle.value<QWGLNativeContext>();
+          HGLRC hglrc = nativeContext.context();
+          std::cout << "native: " << hglrc << std::endl;
+      } else {
+        std::cout << "native variant invalid" << std::endl;
+      }
+      //CHECK(wglGetCurrentContext(), ("drawing with active context)"));
     QOpenGLFunctions * funcs = context()->functions();
     funcs->glActiveTexture(GL_TEXTURE0);
     GLuint image = m_contextFactory->GetTextureHandle();
     funcs->glBindTexture(GL_TEXTURE_2D, image);
+//    unsigned* bmp = new unsigned[1920*1080];
+//    glGetTexImage(image, 0, GL_BGRA_INTEGER, GL_UNSIGNED_INT, &bmp);
+//    QImage* qimg = new QImage((unsigned char*)bmp, 1920, 1080, QImage::Format_RGBA8888);
+//    std::cout << "saving... " << qimg->save(QString("out.bmp"), "bmp") << std::endl;
+//    delete[] bmp;
+
 
     int projectionLocation = program->uniformLocation("u_projection");
     int samplerLocation = program->uniformLocation("u_sampler");
@@ -339,13 +381,14 @@ void DrawWidget::paintGL()
     program->setAttributeArray("a_position", positions, 0);
     program->setAttributeArray("a_texCoord", texCoords, 0);
 
-    funcs->glClearColor(0.0, 0.0, 0.0, 1.0);
+    funcs->glClearColor(0.0, 1.0, 0.0, 1.0);
     funcs->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     funcs->glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+    funcs->glFinish();
     m_contextFactory->UnlockFrame();
+//    std::cout << "unlock frame" << std::endl;
   }
-
 }
 
 void DrawWidget::resizeGL(int width, int height)

@@ -12,6 +12,10 @@
 
 #include "3party/pugixml/src/pugixml.hpp"
 
+#ifdef GetUserName
+#undef GetUserName
+#endif
+
 namespace
 {
 string const kUserStatsUrl = "https://editor-api.maps.me/user?format=xml";

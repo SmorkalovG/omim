@@ -23,6 +23,10 @@ macx-* {
   LIBS *= "-framework IOKit" "-framework SystemConfiguration"
 }
 
+win32* {
+  LIBS += -lshlwapi
+}
+
 HEADERS += \
 
 SOURCES += \

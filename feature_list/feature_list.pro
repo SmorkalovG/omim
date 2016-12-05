@@ -2,7 +2,7 @@
 
 ROOT_DIR = ..
 DEPENDENCIES = map search_tests_support search search_quality storage indexer platform editor geometry \
-               coding base tomcrypt jansson protobuf stats_client succinct opening_hours pugixml
+               coding base tomcrypt jansson protobuf stats_client succinct opening_hours pugixml oauthcpp platform
 
 include($$ROOT_DIR/common.pri)
 

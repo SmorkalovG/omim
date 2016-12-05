@@ -16,6 +16,7 @@
 #include "std/target_os.hpp"
 
 #include <QtGui/QCloseEvent>
+#include <QtCore/QTimer>
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
   #include <QtGui/QAction>
@@ -68,6 +69,10 @@ MainWindow::MainWindow() : m_locationService(CreateDesktopLocationService(*this)
   setGeometry(desktop->screenGeometry(desktop->primaryScreen()));
 
   m_pDrawWidget = new DrawWidget(this);
+  m_pDrawWidget->hide();
+  QTimer::singleShot(2000, this, [this](){
+      m_pDrawWidget->show();
+  });
   QSurfaceFormat format = m_pDrawWidget->format();
 
   format.setMajorVersion(2);
@@ -84,7 +89,7 @@ MainWindow::MainWindow() : m_locationService(CreateDesktopLocationService(*this)
   format.setDepthBufferSize(16);
 
   format.setProfile(QSurfaceFormat::CompatibilityProfile);
-  //format.setOption(QSurfaceFormat::DebugContext);
+  format.setOption(QSurfaceFormat::DebugContext);
   m_pDrawWidget->setFormat(format);
   m_pDrawWidget->setMouseTracking(true);
   setCentralWidget(m_pDrawWidget);

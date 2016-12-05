@@ -5,6 +5,8 @@
 
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLFramebufferObject>
+#include <QtCore/QWaitCondition>
+#include <QtCore/QMutex>
 
 class QtOGLContextFactory : public dp::OGLContextFactory
 {
@@ -16,9 +18,11 @@ public:
   GLuint GetTextureHandle() const;
   QRectF const & GetTexRect() const;
   void UnlockFrame();
+  void onInitFinished();
 
   virtual dp::OGLContext * getDrawContext();
   virtual dp::OGLContext * getResourcesUploadContext();
+  virtual void waitForInitialization() override;
 
 protected:
   virtual bool isDrawContextCreated() const { return m_drawContext != nullptr; }
@@ -32,4 +36,6 @@ private:
   QOffscreenSurface * m_drawSurface;
   QtUploadOGLContext * m_uploadContext;
   QOffscreenSurface * m_uploadSurface;
+
+  QMutex* initLock;
 };

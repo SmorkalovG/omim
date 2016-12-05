@@ -8,6 +8,7 @@
 #include "std/set.hpp"
 #include "std/utility.hpp"
 #include "std/vector.hpp"
+#include <math.h>
 
 namespace search
 {
@@ -65,7 +66,7 @@ public:
           }
 
           double const x = it->first;
-          if (fabs(x - event.m_x) <= m_eps)
+          if (::fabs(x - event.m_x) <= m_eps)
           {
             add = false;
             break;

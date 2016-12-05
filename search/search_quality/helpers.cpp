@@ -2,7 +2,9 @@
 
 #include "std/target_os.hpp"
 
+#if defined(OMIM_OS_MAC) || defined(OMIM_OS_LINUX)
 #include <sys/resource.h>
+#endif
 
 namespace search
 {

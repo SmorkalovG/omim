@@ -30,18 +30,26 @@ public:
   /// Metadata for search results. Considered valid if m_resultType == RESULT_FEATURE.
   struct Metadata
   {
+    Metadata()
+        : m_isSponsoredHotel(false),
+          m_isHotel(false),
+          m_isOpenNow(osm::Unknown),
+          m_isInitialized(false)
+    {}
+
+
     string m_cuisine;                              // Valid only if not empty. Used for restaurants.
 
     // Following fields are used for hotels only.
     string m_hotelApproximatePricing;
     string m_hotelRating;
-    int m_stars = 0;
-    bool m_isSponsoredHotel = false;
+    int m_stars;
+    bool m_isSponsoredHotel;
     bool m_isHotel = false;
 
-    osm::YesNoUnknown m_isOpenNow = osm::Unknown;  // Valid for any result.
+    osm::YesNoUnknown m_isOpenNow;  // Valid for any result.
 
-    bool m_isInitialized = false;
+    bool m_isInitialized;
   };
 
   /// For RESULT_FEATURE.

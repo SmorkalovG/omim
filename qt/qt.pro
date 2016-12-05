@@ -2,7 +2,7 @@
 ROOT_DIR = ..
 DEPENDENCIES = map drape_frontend routing search storage tracking indexer drape partners_api platform editor geometry \
                coding base freetype expat fribidi tomcrypt jansson protobuf osrm stats_client \
-               minizip succinct pugixml oauthcpp
+               minizip succinct pugixml oauthcpp opening_hours
 
 DEPENDENCIES += opening_hours \
 
@@ -14,7 +14,7 @@ CONFIG += warn_on
 QT *= core widgets gui opengl
 
 win32* {
-  LIBS *= -lopengl32 -lws2_32 -liphlpapi
+  LIBS *= -lopengl32 -lws2_32 -liphlpapi -lshlwapi
   RC_FILE = res/windows.rc
   win32-msvc*: LIBS *= -lwlanapi
 }
@@ -92,7 +92,7 @@ MWM_RES.files = ../data/World.mwm ../data/WorldCoasts.mwm
 ALL_RESOURCES = OTHER_RES CLASSIFICATOR_RES MDPI_SKIN_RES XHDPI_SKIN_RES FONT_RES MWM_RES
 #ALL_RESOURCES += DEFAULT_SKIN_RES
 
-linux* {
+linux*|win32* {
   INSTALLS += $$ALL_RESOURCES
 }
 

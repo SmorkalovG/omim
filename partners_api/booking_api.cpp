@@ -11,7 +11,7 @@
 
 #include "private.h"
 
-char const BookingApi::kDefaultCurrency[1];
+constexpr const char BookingApi::kDefaultCurrency[1];
 
 BookingApi::BookingApi() : m_affiliateId(BOOKING_AFFILIATE_ID), m_testingMode(false)
 {

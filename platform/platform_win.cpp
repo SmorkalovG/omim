@@ -165,7 +165,7 @@ Platform::TStorageStatus Platform::GetWritableStorageStatus(uint64_t neededSize)
 
 bool Platform::IsDirectoryEmpty(string const & directory)
 {
-  return PathIsDirectoryEmptyA(directory.c_str());
+    return PathIsDirectoryEmptyA(directory.c_str());
 }
 
 bool Platform::GetFileSizeByFullPath(string const & filePath, uint64_t & size)

@@ -24,4 +24,8 @@ macx-* {
   LIBS *= "-framework IOKit" "-framework SystemConfiguration"
 }
 
+win32* {
+  LIBS += -lshlwapi
+}
+
 SOURCES += features_collector_tool.cpp \

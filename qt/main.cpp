@@ -67,12 +67,14 @@ int main(int argc, char * argv[])
   // TODO: Refactor our doubles parsing code to use locale-independent delimiters.
   // For example, https://github.com/google/double-conversion can be used.
   // See http://dbaron.org/log/20121222-locale for more details.
-  (void)::setenv("LC_NUMERIC", "C", 1);
+  _putenv_s("LC_NUMERIC", "C");
 
   InitializeFinalize mainGuard;
   UNUSED_VALUE(mainGuard);
 
   QApplication a(argc, argv);
+  a.setAttribute(Qt::AA_UseDesktopOpenGL);
+  a.setAttribute(Qt::AA_ShareOpenGLContexts);
 
 #ifdef DEBUG
   alohalytics::Stats::Instance().SetDebugMode(true);
