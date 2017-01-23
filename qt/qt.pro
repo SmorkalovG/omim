@@ -117,6 +117,7 @@ SOURCES += \
     search_panel.cpp \
     slider_ctrl.cpp \
     update_dialog.cpp \
+    SimplestMapWidget.cc
 
 HEADERS += \
     about.hpp \
@@ -134,5 +135,6 @@ HEADERS += \
     search_panel.hpp \
     slider_ctrl.hpp \
     update_dialog.hpp \
+    SimplestMapWidget.h
 
 RESOURCES += res/resources.qrc

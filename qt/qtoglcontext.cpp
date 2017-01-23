@@ -58,7 +58,7 @@ void QtRenderOGLContext::makeCurrent()
     std::cout << "QtRenderOGLContext::makeCurrent()" << std::this_thread::get_id() << std::endl;
     lockFrame();
   VERIFY(m_ctx->makeCurrent(m_surface), ());
-  CHECK(wglGetCurrentContext(), ("makeCurrent results with active context)"));
+//  CHECK(wglGetCurrentContext(), ("makeCurrent results with active context)"));
   unlockFrame();
 }
 
@@ -142,7 +142,7 @@ QtUploadOGLContext::~QtUploadOGLContext()
 void QtUploadOGLContext::makeCurrent()
 {
   m_ctx->makeCurrent(m_surface);
-  CHECK(wglGetCurrentContext(), ("makeCurrent results with active context)"));
+//  CHECK(wglGetCurrentContext(), ("makeCurrent results with active context)"));
 }
 
 void QtUploadOGLContext::doneCurrent()

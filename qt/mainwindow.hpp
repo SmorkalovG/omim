@@ -22,7 +22,7 @@ namespace search { class Result; }
 
 namespace qt
 {
-  class DrawWidget;
+  class SimplestMapWidget;
 
   class MainWindow : public QMainWindow, location::LocationObserver
   {
@@ -31,7 +31,7 @@ namespace qt
     QAction * m_selectionMode;
     QAction * m_clearSelection;
     QAction * m_pSearchAction;
-    DrawWidget * m_pDrawWidget;
+    SimplestMapWidget * m_pDrawWidget;
 
     QDockWidget * m_Docks[1];
 

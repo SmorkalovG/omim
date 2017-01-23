@@ -1,5 +1,6 @@
 #include "qt/about.hpp"
 #include "qt/draw_widget.hpp"
+#include "SimplestMapWidget.h"
 #include "qt/mainwindow.hpp"
 #include "qt/osm_auth_dialog.hpp"
 #include "qt/preferences_dialog.hpp"
@@ -68,7 +69,7 @@ MainWindow::MainWindow() : m_locationService(CreateDesktopLocationService(*this)
   QDesktopWidget const * desktop(QApplication::desktop());
   setGeometry(desktop->screenGeometry(desktop->primaryScreen()));
 
-  m_pDrawWidget = new DrawWidget(this);
+  m_pDrawWidget = new SimplestMapWidget(this);
   m_pDrawWidget->hide();
   QTimer::singleShot(2000, this, [this](){
       m_pDrawWidget->show();
@@ -94,7 +95,7 @@ MainWindow::MainWindow() : m_locationService(CreateDesktopLocationService(*this)
   m_pDrawWidget->setMouseTracking(true);
   setCentralWidget(m_pDrawWidget);
 
-  QObject::connect(m_pDrawWidget, SIGNAL(BeforeEngineCreation()), this, SLOT(OnBeforeEngineCreation()));
+//  QObject::connect(m_pDrawWidget, SIGNAL(BeforeEngineCreation()), this, SLOT(OnBeforeEngineCreation()));
 
   CreateCountryStatusControls();
   CreateNavigationBar();
@@ -168,7 +169,7 @@ MainWindow::MainWindow() : m_locationService(CreateDesktopLocationService(*this)
   }
 #endif // NO_DOWNLOADER
 
-  m_pDrawWidget->UpdateAfterSettingsChanged();
+//  m_pDrawWidget->UpdateAfterSettingsChanged();
 }
 
 #if defined(Q_WS_WIN)
@@ -276,7 +277,7 @@ void MainWindow::CreateNavigationBar()
     {
       QAction * pAct = new QAction(this);
       pAct->setShortcut(QKeySequence(arr[i].key));
-      connect(pAct, SIGNAL(triggered()), m_pDrawWidget, arr[i].slot);
+//      connect(pAct, SIGNAL(triggered()), m_pDrawWidget, arr[i].slot);
       addAction(pAct);
     }
   }
@@ -328,7 +329,7 @@ void MainWindow::CreateNavigationBar()
       //{ tr("Show all"), ":/navig64/world.png", SLOT(ShowAll()) },
       { tr("Scale +"), ":/navig64/plus.png", SLOT(ScalePlus()) }
     };
-    add_buttons(pToolBar, arr, ARRAY_SIZE(arr), m_pDrawWidget);
+//    add_buttons(pToolBar, arr, ARRAY_SIZE(arr), m_pDrawWidget);
   }
 
   // add scale slider
@@ -337,14 +338,14 @@ void MainWindow::CreateNavigationBar()
   pScale->setTickPosition(QSlider::TicksRight);
 
   pToolBar->addWidget(pScale);
-  m_pDrawWidget->SetScaleControl(pScale);
+//  m_pDrawWidget->SetScaleControl(pScale);
 
   {
     // add view actions 2
     button_t arr[] = {
       { tr("Scale -"), ":/navig64/minus.png", SLOT(ScaleMinus()) }
     };
-    add_buttons(pToolBar, arr, ARRAY_SIZE(arr), m_pDrawWidget);
+//    add_buttons(pToolBar, arr, ARRAY_SIZE(arr), m_pDrawWidget);
   }
 
 #ifndef NO_DOWNLOADER
@@ -381,64 +382,64 @@ void MainWindow::CreateCountryStatusControls()
 
   m_pDrawWidget->setLayout(mainLayout);
 
-  m_pDrawWidget->SetCurrentCountryChangedListener([this](storage::TCountryId const & countryId,
-                                                         string const & countryName, storage::Status status,
-                                                         uint64_t sizeInBytes, uint8_t progress)
-  {
-    m_lastCountry = countryId;
-    if (m_lastCountry.empty() || status == storage::Status::EOnDisk || status == storage::Status::EOnDiskOutOfDate)
-    {
-      m_downloadButton->setVisible(false);
-      m_retryButton->setVisible(false);
-      m_downloadingStatusLabel->setVisible(false);
-    }
-    else
-    {
-      if (status == storage::Status::ENotDownloaded)
-      {
-        m_downloadButton->setVisible(true);
-        m_retryButton->setVisible(false);
-        m_downloadingStatusLabel->setVisible(false);
+//  m_pDrawWidget->SetCurrentCountryChangedListener([this](storage::TCountryId const & countryId,
+//                                                         string const & countryName, storage::Status status,
+//                                                         uint64_t sizeInBytes, uint8_t progress)
+//  {
+//    m_lastCountry = countryId;
+//    if (m_lastCountry.empty() || status == storage::Status::EOnDisk || status == storage::Status::EOnDiskOutOfDate)
+//    {
+//      m_downloadButton->setVisible(false);
+//      m_retryButton->setVisible(false);
+//      m_downloadingStatusLabel->setVisible(false);
+//    }
+//    else
+//    {
+//      if (status == storage::Status::ENotDownloaded)
+//      {
+//        m_downloadButton->setVisible(true);
+//        m_retryButton->setVisible(false);
+//        m_downloadingStatusLabel->setVisible(false);
 
-        string units;
-        size_t sizeToDownload = 0;
-        FormatMapSize(sizeInBytes, units, sizeToDownload);
-        stringstream str;
-        str << "Download (" << countryName << ") " << sizeToDownload << units;
-        m_downloadButton->setText(str.str().c_str());
-      }
-      else if (status == storage::Status::EDownloading)
-      {
-        m_downloadButton->setVisible(false);
-        m_retryButton->setVisible(false);
-        m_downloadingStatusLabel->setVisible(true);
+//        string units;
+//        size_t sizeToDownload = 0;
+//        FormatMapSize(sizeInBytes, units, sizeToDownload);
+//        stringstream str;
+//        str << "Download (" << countryName << ") " << sizeToDownload << units;
+//        m_downloadButton->setText(str.str().c_str());
+//      }
+//      else if (status == storage::Status::EDownloading)
+//      {
+//        m_downloadButton->setVisible(false);
+//        m_retryButton->setVisible(false);
+//        m_downloadingStatusLabel->setVisible(true);
 
-        stringstream str;
-        str << "Downloading (" << countryName << ") " << (int)progress << "%";
-        m_downloadingStatusLabel->setText(str.str().c_str());
-      }
-      else if (status == storage::Status::EInQueue)
-      {
-        m_downloadButton->setVisible(false);
-        m_retryButton->setVisible(false);
-        m_downloadingStatusLabel->setVisible(true);
+//        stringstream str;
+//        str << "Downloading (" << countryName << ") " << (int)progress << "%";
+//        m_downloadingStatusLabel->setText(str.str().c_str());
+//      }
+//      else if (status == storage::Status::EInQueue)
+//      {
+//        m_downloadButton->setVisible(false);
+//        m_retryButton->setVisible(false);
+//        m_downloadingStatusLabel->setVisible(true);
 
-        stringstream str;
-        str << countryName << " is waiting for downloading";
-        m_downloadingStatusLabel->setText(str.str().c_str());
-      }
-      else
-      {
-        m_downloadButton->setVisible(false);
-        m_retryButton->setVisible(true);
-        m_downloadingStatusLabel->setVisible(false);
+//        stringstream str;
+//        str << countryName << " is waiting for downloading";
+//        m_downloadingStatusLabel->setText(str.str().c_str());
+//      }
+//      else
+//      {
+//        m_downloadButton->setVisible(false);
+//        m_retryButton->setVisible(true);
+//        m_downloadingStatusLabel->setVisible(false);
 
-        stringstream str;
-        str << "Retry to download " << countryName;
-        m_retryButton->setText(str.str().c_str());
-      }
-    }
-  });
+//        stringstream str;
+//        str << "Retry to download " << countryName;
+//        m_retryButton->setText(str.str().c_str());
+//      }
+//    }
+//  });
 }
 
 void MainWindow::OnAbout()
@@ -460,39 +461,41 @@ void MainWindow::OnLocationError(location::TLocationError errorCode)
     break;
   }
 
-  m_pDrawWidget->GetFramework().OnLocationError(errorCode);
+//  m_pDrawWidget->GetFramework().OnLocationError(errorCode);
 }
 
 void MainWindow::OnLocationUpdated(location::GpsInfo const & info)
 {
-  m_pDrawWidget->GetFramework().OnLocationUpdate(info);
+//  m_pDrawWidget->GetFramework().OnLocationUpdate(info);
 }
 
 void MainWindow::OnMyPosition()
 {
-  if (m_pMyPositionAction->isEnabled())
-    m_pDrawWidget->GetFramework().SwitchMyPositionNextMode();
+//  if (m_pMyPositionAction->isEnabled())
+//    m_pDrawWidget->GetFramework().SwitchMyPositionNextMode();
 }
 
 void MainWindow::OnCreateFeatureClicked()
 {
   if (m_pCreateFeatureAction->isChecked())
   {
-    m_pDrawWidget->ChoosePositionModeEnable();
+//    m_pDrawWidget->ChoosePositionModeEnable();
   }
   else
   {
-    m_pDrawWidget->ChoosePositionModeDisable();
-    m_pDrawWidget->CreateFeature();
+//    m_pDrawWidget->ChoosePositionModeDisable();
+//    m_pDrawWidget->CreateFeature();
   }
 }
 
 void MainWindow::OnSwitchSelectionMode()
 {
-  m_pDrawWidget->SetSelectionMode(m_selectionMode->isChecked());
+//  m_pDrawWidget->SetSelectionMode(m_selectionMode->isChecked());
 }
 
-void MainWindow::OnClearSelection() { m_pDrawWidget->GetFramework().GetDrapeApi().Clear(); }
+void MainWindow::OnClearSelection() {
+//    m_pDrawWidget->GetFramework().GetDrapeApi().Clear();
+}
 void MainWindow::OnSearchButtonClicked()
 {
   if (m_pSearchAction->isChecked())
@@ -524,10 +527,10 @@ void MainWindow::OnUploadEditsMenuItem()
 
 void MainWindow::OnBeforeEngineCreation()
 {
-  m_pDrawWidget->GetFramework().SetMyPositionModeListener([this](location::EMyPositionMode mode, bool routingActive)
-  {
-    LocationStateModeChanged(mode);
-  });
+//  m_pDrawWidget->GetFramework().SetMyPositionModeListener([this](location::EMyPositionMode mode, bool routingActive)
+//  {
+//    LocationStateModeChanged(mode);
+//  });
 }
 
 void MainWindow::OnPreferences()
@@ -535,15 +538,15 @@ void MainWindow::OnPreferences()
   PreferencesDialog dlg(this);
   dlg.exec();
 
-  m_pDrawWidget->GetFramework().SetupMeasurementSystem();
-  m_pDrawWidget->GetFramework().EnterForeground();
+//  m_pDrawWidget->GetFramework().SetupMeasurementSystem();
+//  m_pDrawWidget->GetFramework().EnterForeground();
 }
 
 #ifndef NO_DOWNLOADER
 void MainWindow::ShowUpdateDialog()
 {
-  UpdateDialog dlg(this, m_pDrawWidget->GetFramework());
-  dlg.ShowModal();
+//  UpdateDialog dlg(this, m_pDrawWidget->GetFramework());
+//  dlg.ShowModal();
 }
 
 #endif // NO_DOWNLOADER
@@ -552,8 +555,8 @@ void MainWindow::CreateSearchBarAndPanel()
 {
   CreatePanelImpl(0, Qt::RightDockWidgetArea, tr("Search"), QKeySequence(), 0);
 
-  SearchPanel * panel = new SearchPanel(m_pDrawWidget, m_Docks[0]);
-  m_Docks[0]->setWidget(panel);
+//  SearchPanel * panel = new SearchPanel(m_pDrawWidget, m_Docks[0]);
+//  m_Docks[0]->setWidget(panel);
 }
 
 void MainWindow::CreatePanelImpl(size_t i, Qt::DockWidgetArea area, QString const & name,
@@ -579,18 +582,18 @@ void MainWindow::CreatePanelImpl(size_t i, Qt::DockWidgetArea area, QString cons
 
 void MainWindow::closeEvent(QCloseEvent * e)
 {
-  m_pDrawWidget->PrepareShutdown();
+//  m_pDrawWidget->PrepareShutdown();
   e->accept();
 }
 
 void MainWindow::OnDownloadClicked()
 {
-  m_pDrawWidget->DownloadCountry(m_lastCountry);
+//  m_pDrawWidget->DownloadCountry(m_lastCountry);
 }
 
 void MainWindow::OnRetryDownloadClicked()
 {
-  m_pDrawWidget->RetryToDownloadCountry(m_lastCountry);
+//  m_pDrawWidget->RetryToDownloadCountry(m_lastCountry);
 }
 
 }
