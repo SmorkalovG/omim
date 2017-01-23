@@ -70,10 +70,10 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     SUBDIRS *= skin_generator
   }
 
-  CONFIG(desktop) {
-    drape_head.depends = $$SUBDIRS
-    SUBDIRS *= drape_head
-  }
+#  CONFIG(desktop) {
+#    drape_head.depends = $$SUBDIRS
+#    SUBDIRS *= drape_head
+#  }
 
   CONFIG(desktop) {
     benchmark_tool.subdir = map/benchmark_tool

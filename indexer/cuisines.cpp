@@ -5,6 +5,8 @@
 
 #include "std/utility.hpp"
 
+#include "base/logging.hpp"
+
 namespace osm
 {
 // static

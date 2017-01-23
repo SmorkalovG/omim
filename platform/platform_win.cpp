@@ -66,6 +66,7 @@ Platform::Platform()
     CHECK(false, ("Can't find resources directory"));
 #endif
   }
+  m_resourcesDir = "C:\\Users\\g.smorkalov\\Documents\\Projects\\omim\\data\\";
 
   // writable path:
   // 1. the same as resources if we have write access to this folder

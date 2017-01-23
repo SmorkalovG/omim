@@ -8,6 +8,7 @@
 #include "base/logging.hpp"
 
 #include "std/sstream.hpp"
+#include <iostream>
 
 
 namespace platform
@@ -35,7 +36,10 @@ void LocalCountryFile::SyncWithDisk()
   m_routingSize = 0;
   Platform & platform = GetPlatform();
 
-  if (platform.GetFileSizeByFullPath(GetPath(MapOptions::Map), m_mapSize))
+  auto size = platform.GetFileSizeByFullPath(GetPath(MapOptions::Map), m_mapSize);
+  std::cout << "size:" << size << std::endl;
+
+  if (size)
     m_files = SetOptions(m_files, MapOptions::Map);
 
   if (version::IsSingleMwm(GetVersion()))

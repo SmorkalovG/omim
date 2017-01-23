@@ -357,7 +357,6 @@ TFunc LoadExtension(string const & ext)
     func = reinterpret_cast<TFunc>(wglGetProcAddress((ext + "EXT").c_str()));
     ASSERT(func, ());
   }
-
   return func;
 }
 
@@ -1024,7 +1023,7 @@ void GLFunctions::glDrawArrays(glConst mode, int32_t first, uint32_t count)
 
 void GLFunctions::glGenFramebuffer(uint32_t * fbo)
 {
-  ASSERT(glGenFramebuffersFn != nullptr, ());
+  ASSERT(glGenFramebuffersFn != nullptr, ("glGenFramebuffersFn is null"));
   GLCHECK(glGenFramebuffersFn(1, fbo));
 }
 

@@ -43,8 +43,9 @@ Thread::~Thread()
   // background, consume system resources and make it hard to reason
   // about program. Thus, all places where Thread is instantiated
   // should be fixed to explicitly detach thread.
-  if (m_thread.joinable())
+  if (m_thread.joinable()) {
     m_thread.detach();
+  }
 }
 
 bool Thread::Create(unique_ptr<IRoutine> && routine)

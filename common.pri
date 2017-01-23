@@ -183,7 +183,7 @@ android-g++ {
 win32-g++ {
   QMAKE_CFLAGS *= -Wextra
   QMAKE_CXXFLAGS *= -Wextra
-  QMAKE_LFLAGS *= -s
+#  QMAKE_LFLAGS_DEBUG *= -s
   QMAKE_LFLAGS_RELEASE *= -O
   LIBS *= -lpthread
 }

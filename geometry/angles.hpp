@@ -91,7 +91,7 @@ namespace ang
 
   /// @return Oriented angle (<= PI) from rad1 to rad2.
   /// >0 - clockwise, <0 - counterclockwise
-  double GetShortestDistance(double rad1, double rad2);
+  double GetShortestDistance(double r, double ra); // FIXME: names rad1 and rad2 don't compile, WTF&!!!
 
   double GetMiddleAngle(double a1, double a2);
 

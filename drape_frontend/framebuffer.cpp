@@ -59,6 +59,7 @@ void Framebuffer::SetSize(uint32_t width, uint32_t height)
   m_colorTextureId = GLFunctions::glGenTexture();
   GLFunctions::glBindTexture(m_colorTextureId);
   GLFunctions::glTexImage2D(m_width, m_height, gl_const::GLRGBA, gl_const::GLUnsignedByteType, NULL);
+  LOG(LINFO, ("texture created: ", m_colorTextureId, m_width, m_height));
   GLFunctions::glTexParameter(gl_const::GLMagFilter, gl_const::GLLinear);
   GLFunctions::glTexParameter(gl_const::GLMinFilter, gl_const::GLLinear);
   GLFunctions::glTexParameter(gl_const::GLWrapT, gl_const::GLClampToEdge);
