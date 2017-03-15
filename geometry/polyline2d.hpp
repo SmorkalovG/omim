@@ -115,6 +115,15 @@ public:
     return m_points.back();
   }
 
+  vector<Point<T>> ExtractSegment(size_t segmentIndex, bool reversed) const
+  {
+    if (segmentIndex + 1 >= m_points.size())
+      return vector<Point<T>>();
+
+    return reversed ? vector<Point<T>>{m_points[segmentIndex + 1], m_points[segmentIndex]} :
+                      vector<Point<T>>{m_points[segmentIndex], m_points[segmentIndex + 1]};
+  }
+
   vector<Point<T> > const & GetPoints() const { return m_points; }
   friend string DebugPrint(Polyline const & p) { return ::DebugPrint(p.m_points); }
 };

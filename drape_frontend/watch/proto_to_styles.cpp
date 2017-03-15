@@ -3,6 +3,7 @@
 #include "indexer/drules_include.hpp"
 
 #include "std/algorithm.hpp"
+#include "std/vector.hpp"
 
 namespace
 {
@@ -102,21 +103,6 @@ void ConvertStyle(AreaRuleProto const * pSrc, BrushInfo & dest)
 void ConvertStyle(SymbolRuleProto const * pSrc, IconInfo & dest)
 {
   dest.m_name = pSrc->name();
-}
-
-void ConvertStyle(CircleRuleProto const * pSrc, double scale, CircleInfo & dest)
-{
-  dest = CircleInfo(pSrc->radius() * scale, ConvertColor(pSrc->color()));
-
-  if (pSrc->has_border())
-  {
-    PenInfo pen;
-    ConvertStyle(&(pSrc->border()), scale, pen);
-
-    dest.m_isOutlined = true;
-    dest.m_outlineColor = pen.m_color;
-    dest.m_outlineWidth = pen.m_w;
-  }
 }
 
 void ConvertStyle(CaptionDefProto const * pSrc, double scale, dp::FontDecl & dest, m2::PointD & offset)

@@ -15,11 +15,10 @@
 #include "std/utility.hpp"
 #include "std/vector.hpp"
 
-#include "3party/succinct/rs_bit_vector.hpp"
-#include "3party/succinct/elias_fano_compressed_list.hpp"
-
 #include "defines.hpp"
 
+#include "3party/succinct/rs_bit_vector.hpp"
+#include "3party/succinct/elias_fano_compressed_list.hpp"
 
 namespace routing
 {
@@ -56,6 +55,8 @@ namespace OsrmMappingTypes
     }
 
     bool IsIntersect(FtSeg const & other) const;
+
+    bool IsForward() const { return m_pointEnd > m_pointStart; }
 
     bool IsValid() const
     {

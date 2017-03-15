@@ -24,6 +24,8 @@
 #include "platform/http_client.hpp"
 #include "platform/platform.hpp"
 
+#include "coding/zlib.hpp"
+
 #include "base/assert.hpp"
 #include "base/exception.hpp"
 #include "base/logging.hpp"
@@ -34,6 +36,7 @@
 
 #include "std/array.hpp"
 #include "std/fstream.hpp"
+#include "std/iterator.hpp"
 #include "std/sstream.hpp"
 #include "std/vector.hpp"
 
@@ -45,6 +48,8 @@
 #else
 #include <unistd.h>  // close
 #endif
+
+using namespace coding;
 
 namespace
 {
@@ -126,7 +131,7 @@ Headers ParseHeaders(string const & raw)
 
     auto const delims = line.find(": ");
     if (delims != string::npos)
-      headers.push_back(make_pair(line.substr(0, delims), line.substr(delims + 2)));
+      headers.emplace_back(line.substr(0, delims), line.substr(delims + 2));
   }
   return headers;
 }
@@ -142,6 +147,18 @@ bool WriteToFile(string const & fileName, string const & data)
 
   ofs << data;
   return true;
+}
+
+std::string Decompress(std::string const & compressed, std::string const & encoding)
+{
+  std::string decompressed;
+
+  if (encoding == "deflate")
+    ZLib::Inflate(compressed, back_inserter(decompressed));
+  else
+    ASSERT(false, ("Unsupported Content-Encoding:", encoding));
+
+  return decompressed;
 }
 }  // namespace
 // Used as a test stub for basic HTTP client implementation.
@@ -160,14 +177,10 @@ bool HttpClient::RunHttpRequest()
 
   string cmd = "curl -s -w '%{http_code}' -X " + m_httpMethod + " -D '" + headers_deleter.m_fileName + "' ";
 
-  if (!m_contentType.empty())
-    cmd += "-H 'Content-Type: " + m_contentType + "' ";
-
-  if (!m_contentEncoding.empty())
-    cmd += "-H 'Content-Encoding: " + m_contentEncoding + "' ";
-
-  if (!m_basicAuthUser.empty())
-    cmd += "-u '" + m_basicAuthUser + ":" + m_basicAuthPassword + "' ";
+  for (auto const & header : m_headers)
+  {
+    cmd += "-H '" + header.first + ": " + header.second + "' ";
+  }
 
   if (!m_cookies.empty())
     cmd += "-b '" + m_cookies + "' ";
@@ -197,11 +210,7 @@ bool HttpClient::RunHttpRequest()
 
   cmd += "-o " + rfile + strings::to_string(" ") + "'" + m_urlRequested + "'";
 
-
-  if (m_debugMode)
-  {
-    LOG(LINFO, ("Executing", cmd));
-  }
+  LOG(LDEBUG, ("Executing", cmd));
 
   try
   {
@@ -213,27 +222,30 @@ bool HttpClient::RunHttpRequest()
     return false;
   }
 
+  m_headers.clear();
   Headers const headers = ParseHeaders(ReadFileAsString(headers_deleter.m_fileName));
+  string serverCookies;
+  string headerKey;
   for (auto const & header : headers)
   {
     if (header.first == "Set-Cookie")
     {
-      m_serverCookies += header.second + ", ";
+      serverCookies += header.second + ", ";
     }
-    else if (header.first == "Content-Type")
+    else
     {
-      m_contentTypeReceived = header.second;
-    }
-    else if (header.first == "Content-Encoding")
-    {
-      m_contentEncodingReceived = header.second;
-    }
-    else if (header.first == "Location")
-    {
-      m_urlReceived = header.second;
+      if (header.first == "Location")
+        m_urlReceived = header.second;
+
+      if (m_loadHeaders)
+      {
+        headerKey = header.first;
+        strings::AsciiToLower(headerKey);
+        m_headers.emplace(headerKey, header.second);
+      }
     }
   }
-  m_serverCookies = NormalizeServerCookies(move(m_serverCookies));
+  m_headers.emplace("Set-Cookie", NormalizeServerCookies(move(serverCookies)));
 
   if (m_urlReceived.empty())
   {
@@ -247,8 +259,7 @@ bool HttpClient::RunHttpRequest()
   {
     // Handle HTTP redirect.
     // TODO(AlexZ): Should we check HTTP redirect code here?
-    if (m_debugMode)
-      LOG(LINFO, ("HTTP redirect", m_errorCode, "to", m_urlReceived));
+    LOG(LDEBUG, ("HTTP redirect", m_errorCode, "to", m_urlReceived));
 
     HttpClient redirect(m_urlReceived);
     redirect.SetCookies(CombinedCookies());
@@ -261,10 +272,15 @@ bool HttpClient::RunHttpRequest()
 
     m_errorCode = redirect.ErrorCode();
     m_urlReceived = redirect.UrlReceived();
-    m_serverCookies = move(redirect.m_serverCookies);
+    m_headers = move(redirect.m_headers);
     m_serverResponse = move(redirect.m_serverResponse);
-    m_contentTypeReceived = move(redirect.m_contentTypeReceived);
-    m_contentEncodingReceived = move(redirect.m_contentEncodingReceived);
+  }
+
+  auto const it = m_headers.find("content-encoding");
+  if (it != m_headers.end())
+  {
+    m_serverResponse = Decompress(m_serverResponse, it->second);
+    LOG(LDEBUG, ("Response with", it->second, "is decompressed."));
   }
 
   return true;

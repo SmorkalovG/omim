@@ -9,6 +9,7 @@ import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AlertDialog;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -18,20 +19,21 @@ import android.widget.TextView;
 import com.mapswithme.maps.Framework;
 import com.mapswithme.maps.MwmApplication;
 import com.mapswithme.maps.R;
-import com.mapswithme.maps.uber.Uber;
-import com.mapswithme.maps.uber.UberInfo;
-import com.mapswithme.maps.uber.UberLinks;
 import com.mapswithme.maps.bookmarks.data.MapObject;
 import com.mapswithme.maps.downloader.MapManager;
 import com.mapswithme.maps.location.LocationHelper;
+import com.mapswithme.maps.uber.Uber;
+import com.mapswithme.maps.uber.UberInfo;
+import com.mapswithme.maps.uber.UberLinks;
 import com.mapswithme.util.Config;
 import com.mapswithme.util.ConnectionState;
+import com.mapswithme.util.NetworkPolicy;
 import com.mapswithme.util.StringUtils;
 import com.mapswithme.util.ThemeSwitcher;
 import com.mapswithme.util.Utils;
 import com.mapswithme.util.concurrency.UiThread;
-import com.mapswithme.util.log.DebugLogger;
 import com.mapswithme.util.log.Logger;
+import com.mapswithme.util.log.LoggerFactory;
 import com.mapswithme.util.statistics.AlohaHelper;
 import com.mapswithme.util.statistics.Statistics;
 
@@ -41,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 @android.support.annotation.UiThread
 public class RoutingController
 {
+  private static final String TAG = RoutingController.class.getSimpleName();
   private static final int NO_SLOT = 0;
 
   private enum State
@@ -69,6 +72,7 @@ public class RoutingController
     void updatePoints();
     void onUberInfoReceived(@NonNull UberInfo info);
     void onUberError(@NonNull Uber.ErrorCode code);
+    void onNavigationCancelled();
 
     /**
      * @param progress progress to be displayed.
@@ -77,7 +81,7 @@ public class RoutingController
   }
 
   private static final RoutingController sInstance = new RoutingController();
-  private final Logger mLogger = new DebugLogger("RCSTATE");
+  private final Logger mLogger = LoggerFactory.INSTANCE.getLogger(LoggerFactory.Type.ROUTING);
   @Nullable
   private Container mContainer;
 
@@ -110,7 +114,7 @@ public class RoutingController
     @Override
     public void onRoutingEvent(final int resultCode, @Nullable final String[] missingMaps)
     {
-      mLogger.d("onRoutingEvent(resultCode: " + resultCode + ")");
+      mLogger.d(TAG, "onRoutingEvent(resultCode: " + resultCode + ")");
 
       UiThread.run(new Runnable()
       {
@@ -121,7 +125,8 @@ public class RoutingController
           mLastMissingMaps = missingMaps;
           mContainsCachedResult = true;
 
-          if (mLastResultCode == ResultCodesHelper.NO_ERROR)
+          if (mLastResultCode == ResultCodesHelper.NO_ERROR
+              || ResultCodesHelper.isMoreMapsNeeded(mLastResultCode))
           {
             mCachedRoutingInfo = Framework.nativeGetRouteFollowingInfo();
             setBuildState(BuildState.BUILT);
@@ -172,9 +177,12 @@ public class RoutingController
       return;
     }
 
-    setBuildState(BuildState.ERROR);
-    mLastBuildProgress = 0;
-    updateProgress();
+    if (!ResultCodesHelper.isMoreMapsNeeded(mLastResultCode))
+    {
+      setBuildState(BuildState.ERROR);
+      mLastBuildProgress = 0;
+      updateProgress();
+    }
 
     RoutingErrorDialogFragment fragment = RoutingErrorDialogFragment.create(mLastResultCode, mLastMissingMaps);
     fragment.show(mContainer.getActivity().getSupportFragmentManager(), RoutingErrorDialogFragment.class.getSimpleName());
@@ -182,7 +190,7 @@ public class RoutingController
 
   private void setState(State newState)
   {
-    mLogger.d("[S] State: " + mState + " -> " + newState + ", BuildState: " + mBuildState);
+    mLogger.d(TAG, "[S] State: " + mState + " -> " + newState + ", BuildState: " + mBuildState);
     mState = newState;
 
     if (mContainer != null)
@@ -191,7 +199,7 @@ public class RoutingController
 
   private void setBuildState(BuildState newState)
   {
-    mLogger.d("[B] State: " + mState + ", BuildState: " + mBuildState + " -> " + newState);
+    mLogger.d(TAG, "[B] State: " + mState + ", BuildState: " + mBuildState + " -> " + newState);
     mBuildState = newState;
 
     if (mBuildState == BuildState.BUILT && !MapObject.isOfType(MapObject.MY_POSITION, mStartPoint))
@@ -265,19 +273,20 @@ public class RoutingController
 
   private void build()
   {
-    mLogger.d("build");
+    mLogger.d(TAG, "build");
     mUberRequestHandled = false;
     mLastBuildProgress = 0;
     mInternetConnected = ConnectionState.isConnected();
 
-    if (mLastRouterType == Framework.ROUTER_TYPE_TAXI)
+    if (isTaxiRouterType())
     {
       if (!mInternetConnected)
       {
         completeUberRequest();
         return;
       }
-      requestUberInfo();
+      if (mContainer != null)
+        requestUberInfo(mContainer.getActivity().getSupportFragmentManager());
     }
 
     setBuildState(BuildState.BUILDING);
@@ -313,8 +322,8 @@ public class RoutingController
         .setTitle(R.string.dialog_routing_disclaimer_title)
         .setMessage(builder.toString())
         .setCancelable(false)
-        .setNegativeButton(R.string.cancel, null)
-        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener()
+        .setNegativeButton(R.string.decline, null)
+        .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener()
         {
           @Override
           public void onClick(DialogInterface dlg, int which)
@@ -332,7 +341,7 @@ public class RoutingController
 
   public void prepare(@Nullable MapObject startPoint, @Nullable MapObject endPoint)
   {
-    mLogger.d("prepare (" + (endPoint == null ? "route)" : "p2p)"));
+    mLogger.d(TAG, "prepare (" + (endPoint == null ? "route)" : "p2p)"));
 
     if (!Config.isRoutingDisclaimerAccepted())
     {
@@ -340,15 +349,25 @@ public class RoutingController
       return;
     }
 
+    if (startPoint != null && endPoint != null)
+      mLastRouterType = Framework.nativeGetBestRouter(startPoint.getLat(), startPoint.getLon(),
+                                                      endPoint.getLat(), endPoint.getLon());
+    prepare(startPoint, endPoint, mLastRouterType);
+  }
+
+  public void prepare(@Nullable MapObject startPoint, @Nullable MapObject endPoint,
+                      @Framework.RouterType int routerType)
+  {
     cancel();
     mStartPoint = startPoint;
     mEndPoint = endPoint;
     setState(State.PREPARE);
 
-    if (mStartPoint != null && mEndPoint != null)
-      mLastRouterType = Framework.nativeGetBestRouter(mStartPoint.getLat(), mStartPoint.getLon(),
-                                                      mEndPoint.getLat(), mEndPoint.getLon());
+    mLastRouterType = routerType;
     Framework.nativeSetRouter(mLastRouterType);
+
+    if (mStartPoint != null || mEndPoint != null)
+      setPointsInternal();
 
     if (mContainer != null)
       mContainer.showRoutePlan(true, new Runnable()
@@ -366,7 +385,7 @@ public class RoutingController
 
   public void start()
   {
-    mLogger.d("start");
+    mLogger.d(TAG, "start");
 
     if (!MapObject.isOfType(MapObject.MY_POSITION, mStartPoint))
     {
@@ -444,7 +463,7 @@ public class RoutingController
 
   private void cancelInternal()
   {
-    mLogger.d("cancelInternal");
+    mLogger.d(TAG, "cancelInternal");
 
     mStartPoint = null;
     mEndPoint = null;
@@ -457,14 +476,13 @@ public class RoutingController
 
     ThemeSwitcher.restart();
     Framework.nativeCloseRouting();
-    LocationHelper.INSTANCE.restart();
   }
 
   public boolean cancel()
   {
     if (isPlanning())
     {
-      mLogger.d("cancel: planning");
+      mLogger.d(TAG, "cancel: planning");
 
       cancelInternal();
       if (mContainer != null)
@@ -474,7 +492,7 @@ public class RoutingController
 
     if (isNavigating())
     {
-      mLogger.d("cancel: navigating");
+      mLogger.d(TAG, "cancel: navigating");
 
       cancelInternal();
       if (mContainer != null)
@@ -482,23 +500,12 @@ public class RoutingController
         mContainer.showNavigation(false);
         mContainer.updateMenu();
       }
+      if (mContainer != null)
+        mContainer.onNavigationCancelled();
       return true;
     }
 
-    mLogger.d("cancel: none");
-    return false;
-  }
-
-  public boolean cancelPlanning()
-  {
-    mLogger.d("cancelPlanning");
-
-    if (isPlanning())
-    {
-      cancel();
-      return true;
-    }
-
+    mLogger.d(TAG, "cancel: none");
     return false;
   }
 
@@ -509,7 +516,17 @@ public class RoutingController
 
   boolean isUberPlanning()
   {
-    return mLastRouterType == Framework.ROUTER_TYPE_TAXI && mUberPlanning;
+    return isTaxiRouterType() && mUberPlanning;
+  }
+
+  boolean isTaxiRouterType()
+  {
+    return mLastRouterType == Framework.ROUTER_TYPE_TAXI;
+  }
+
+  boolean isVehicleRouterType()
+  {
+    return mLastRouterType == Framework.ROUTER_TYPE_VEHICLE;
   }
 
   public boolean isNavigating()
@@ -601,12 +618,12 @@ public class RoutingController
 
   private boolean setStartFromMyPosition()
   {
-    mLogger.d("setStartFromMyPosition");
+    mLogger.d(TAG, "setStartFromMyPosition");
 
     MapObject my = LocationHelper.INSTANCE.getMyPosition();
     if (my == null)
     {
-      mLogger.d("setStartFromMyPosition: no my position - skip");
+      mLogger.d(TAG, "setStartFromMyPosition: no my position - skip");
 
       if (mContainer != null)
         mContainer.updatePoints();
@@ -631,11 +648,11 @@ public class RoutingController
   @SuppressWarnings("Duplicates")
   public boolean setStartPoint(MapObject point)
   {
-    mLogger.d("setStartPoint");
+    mLogger.d(TAG, "setStartPoint");
 
     if (MapObject.same(mStartPoint, point))
     {
-      mLogger.d("setStartPoint: skip the same starting point");
+      mLogger.d(TAG, "setStartPoint: skip the same starting point");
       return false;
     }
 
@@ -643,11 +660,11 @@ public class RoutingController
     {
       if (mStartPoint == null)
       {
-        mLogger.d("setStartPoint: skip because starting point is empty");
+        mLogger.d(TAG, "setStartPoint: skip because starting point is empty");
         return false;
       }
 
-      mLogger.d("setStartPoint: swap with end point");
+      mLogger.d(TAG, "setStartPoint: swap with end point");
       mEndPoint = mStartPoint;
     }
 
@@ -670,14 +687,14 @@ public class RoutingController
   @SuppressWarnings("Duplicates")
   public boolean setEndPoint(MapObject point)
   {
-    mLogger.d("setEndPoint");
+    mLogger.d(TAG, "setEndPoint");
 
     if (MapObject.same(mEndPoint, point))
     {
       if (mStartPoint == null)
         return setStartFromMyPosition();
 
-      mLogger.d("setEndPoint: skip the same end point");
+      mLogger.d(TAG, "setEndPoint: skip the same end point");
       return false;
     }
 
@@ -685,11 +702,11 @@ public class RoutingController
     {
       if (mEndPoint == null)
       {
-        mLogger.d("setEndPoint: skip because end point is empty");
+        mLogger.d(TAG, "setEndPoint: skip because end point is empty");
         return false;
       }
 
-      mLogger.d("setEndPoint: swap with starting point");
+      mLogger.d(TAG, "setEndPoint: swap with starting point");
       mStartPoint = mEndPoint;
     }
 
@@ -705,7 +722,7 @@ public class RoutingController
 
   void swapPoints()
   {
-    mLogger.d("swapPoints");
+    mLogger.d(TAG, "swapPoints");
 
     MapObject point = mStartPoint;
     mStartPoint = mEndPoint;
@@ -720,11 +737,11 @@ public class RoutingController
 
   public void setRouterType(@Framework.RouterType int router)
   {
-    mLogger.d("setRouterType: " + mLastRouterType + " -> " + router);
+    mLogger.d(TAG, "setRouterType: " + mLastRouterType + " -> " + router);
 
     // Repeating tap on Uber icon should trigger the route building always,
     // because it may be "No internet connection, try later" case
-    if (router == mLastRouterType && router != Framework.ROUTER_TYPE_TAXI)
+    if (router == mLastRouterType && !isTaxiRouterType())
       return;
 
     mLastRouterType = router;
@@ -736,12 +753,15 @@ public class RoutingController
 
   void searchPoi(int slotId)
   {
-    mLogger.d("searchPoi: " + slotId);
+    mLogger.d(TAG, "searchPoi: " + slotId);
     Statistics.INSTANCE.trackEvent(Statistics.EventName.ROUTING_SEARCH_POINT);
     AlohaHelper.logClick(AlohaHelper.ROUTING_SEARCH_POINT);
     mWaitingPoiPickSlot = slotId;
-    mContainer.showSearch();
-    mContainer.updateMenu();
+    if (mContainer != null)
+    {
+      mContainer.showSearch();
+      mContainer.updateMenu();
+    }
   }
 
   private void onPoiSelectedInternal(@Nullable MapObject point, int slot)
@@ -811,18 +831,28 @@ public class RoutingController
     return true;
   }
 
-  private void requestUberInfo()
+  private void requestUberInfo(@NonNull FragmentManager fragmentManager)
   {
-    mUberPlanning = true;
-    Uber.nativeRequestUberProducts(mStartPoint.getLat(), mStartPoint.getLon(), mEndPoint.getLat(), mEndPoint.getLon());
-    if (mContainer != null)
-      mContainer.updateBuildProgress(0, mLastRouterType);
+    NetworkPolicy.checkNetworkPolicy(fragmentManager, new NetworkPolicy.NetworkPolicyListener()
+    {
+      @Override
+      public void onResult(@NonNull NetworkPolicy policy)
+      {
+        mUberPlanning = true;
+        Uber.nativeRequestUberProducts(policy, mStartPoint.getLat(),
+                                       mStartPoint.getLon(),
+                                       mEndPoint.getLat(), mEndPoint.getLon());
+        if (mContainer != null)
+          mContainer.updateBuildProgress(0, mLastRouterType);
+      }
+    });
   }
 
   @NonNull
   UberLinks getUberLink(@NonNull String productId)
   {
-    return Uber.nativeGetUberLinks(productId, mStartPoint.getLat(), mStartPoint.getLon(), mEndPoint.getLat(), mEndPoint.getLon());
+    return Uber.nativeGetUberLinks(productId, mStartPoint.getLat(), mStartPoint.getLon(),
+                                   mEndPoint.getLat(), mEndPoint.getLon());
   }
 
   /**
@@ -833,8 +863,8 @@ public class RoutingController
   private void onUberInfoReceived(@NonNull UberInfo info)
   {
     mUberPlanning = false;
-    mLogger.d("onUberInfoReceived uberInfo = " + info);
-    if (mLastRouterType == Framework.ROUTER_TYPE_TAXI && mContainer != null)
+    mLogger.d(TAG, "onUberInfoReceived uberInfo = " + info);
+    if (isTaxiRouterType() && mContainer != null)
     {
       mContainer.onUberInfoReceived(info);
       completeUberRequest();
@@ -850,8 +880,8 @@ public class RoutingController
   {
     mUberPlanning = false;
     Uber.ErrorCode code = Uber.ErrorCode.valueOf(errorCode);
-    mLogger.e("onUberError error = " + code);
-    if (mLastRouterType == Framework.ROUTER_TYPE_TAXI && mContainer != null)
+    mLogger.e(TAG, "onUberError error = " + code);
+    if (isTaxiRouterType() && mContainer != null)
     {
       mContainer.onUberError(code);
       completeUberRequest();

@@ -8,6 +8,7 @@
 #include "indexer/feature_algo.hpp"
 
 #include "base/logging.hpp"
+#include "base/string_utils.hpp"
 
 #include "std/algorithm.hpp"
 #include "std/iterator.hpp"
@@ -32,6 +33,31 @@ void UpdateNameScore(vector<strings::UniString> const & tokens, TSlice const & s
   auto const score = GetNameScore(tokens, slice);
   if (score > bestScore)
     bestScore = score;
+}
+
+NameScore GetNameScore(FeatureType const & ft, Geocoder::Params const & params,
+                       TokenRange const & range, SearchModel::SearchType type)
+{
+  NameScore bestScore = NAME_SCORE_ZERO;
+  TokenSlice slice(params, range);
+  TokenSliceNoCategories sliceNoCategories(params, range);
+
+  for (auto const & lang : params.GetLangs())
+  {
+    string name;
+    if (!ft.GetName(lang, name))
+      continue;
+    vector<strings::UniString> tokens;
+    PrepareStringForMatching(name, tokens);
+
+    UpdateNameScore(tokens, slice, bestScore);
+    UpdateNameScore(tokens, sliceNoCategories, bestScore);
+  }
+
+  if (type == SearchModel::SEARCH_TYPE_BUILDING)
+    UpdateNameScore(ft.GetHouseNumber(), sliceNoCategories, bestScore);
+
+  return bestScore;
 }
 
 void RemoveDuplicatingLinear(vector<IndexedValue> & values)
@@ -140,29 +166,36 @@ class PreResult2Maker
   Geocoder::Params const & m_params;
   storage::CountryInfoGetter const & m_infoGetter;
 
-  unique_ptr<Index::FeaturesLoaderGuard> m_pFV;
+  unique_ptr<Index::FeaturesLoaderGuard> m_loader;
 
-  // For the best performance, incoming id's should be sorted by id.first (mwm file id).
-  bool LoadFeature(FeatureID const & id, FeatureType & f, m2::PointD & center, string & name,
-                   string & country)
+  bool LoadFeature(FeatureID const & id, FeatureType & ft)
   {
-    if (m_pFV.get() == 0 || m_pFV->GetId() != id.m_mwmId)
-      m_pFV.reset(new Index::FeaturesLoaderGuard(m_index, id.m_mwmId));
-
-    if (!m_pFV->GetFeatureByIndex(id.m_index, f))
+    if (!m_loader || m_loader->GetId() != id.m_mwmId)
+      m_loader = make_unique<Index::FeaturesLoaderGuard>(m_index, id.m_mwmId);
+    if (!m_loader->GetFeatureByIndex(id.m_index, ft))
       return false;
 
-    f.SetID(id);
+    ft.SetID(id);
+    return true;
+  }
 
-    center = feature::GetCenter(f);
+  // For the best performance, incoming ids should be sorted by id.first (mwm file id).
+  bool LoadFeature(FeatureID const & id, FeatureType & ft, m2::PointD & center, string & name,
+                   string & country)
+  {
+    if (!LoadFeature(id, ft))
+      return false;
 
-    m_ranker.GetBestMatchName(f, name);
+    center = feature::GetCenter(ft);
+    m_ranker.GetBestMatchName(ft, name);
 
-    // country (region) name is a file name if feature isn't from World.mwm
-    if (m_pFV->IsWorld())
+    // Country (region) name is a file name if feature isn't from
+    // World.mwm.
+    ASSERT(m_loader && m_loader->GetId() == id.m_mwmId, ());
+    if (m_loader->IsWorld())
       country.clear();
     else
-      country = m_pFV->GetCountryFileName();
+      country = m_loader->GetCountryFileName();
 
     return true;
   }
@@ -177,26 +210,23 @@ class PreResult2Maker
     info.m_distanceToPivot = MercatorBounds::DistanceOnEarth(center, pivot);
     info.m_rank = preInfo.m_rank;
     info.m_searchType = preInfo.m_searchType;
-    info.m_nameScore = NAME_SCORE_ZERO;
+    info.m_nameScore = GetNameScore(ft, m_params, preInfo.InnermostTokenRange(), info.m_searchType);
 
-    TokenSlice slice(m_params, preInfo.m_startToken, preInfo.m_endToken);
-    TokenSliceNoCategories sliceNoCategories(m_params, preInfo.m_startToken, preInfo.m_endToken);
-
-    for (auto const & lang : m_params.m_langs)
+    if (info.m_searchType != SearchModel::SEARCH_TYPE_STREET &&
+        preInfo.m_geoParts.m_street != IntersectionResult::kInvalidId)
     {
-      string name;
-      if (!ft.GetName(lang, name))
-        continue;
-      vector<strings::UniString> tokens;
-      SplitUniString(NormalizeAndSimplifyString(name), MakeBackInsertFunctor(tokens), Delimiters());
-
-      UpdateNameScore(tokens, slice, info.m_nameScore);
-      UpdateNameScore(tokens, sliceNoCategories, info.m_nameScore);
+      auto const & mwmId = ft.GetID().m_mwmId;
+      FeatureType street;
+      if (LoadFeature(FeatureID(mwmId, preInfo.m_geoParts.m_street), street))
+      {
+        NameScore const nameScore =
+            GetNameScore(street, m_params, preInfo.m_tokenRange[SearchModel::SEARCH_TYPE_STREET],
+                         SearchModel::SEARCH_TYPE_STREET);
+        info.m_nameScore = min(info.m_nameScore, nameScore);
+      }
     }
 
-    if (info.m_searchType == SearchModel::SEARCH_TYPE_BUILDING)
-      UpdateNameScore(ft.GetHouseNumber(), sliceNoCategories, info.m_nameScore);
-
+    TokenSlice slice(m_params, preInfo.InnermostTokenRange());
     feature::TypesHolder holder(ft);
     vector<pair<size_t, size_t>> matched(slice.Size());
     ForEachCategoryType(QuerySlice(slice), m_ranker.m_params.m_categoryLocales,
@@ -262,8 +292,8 @@ public:
     if (!LoadFeature(res1.GetId(), ft, center, name, country))
       return unique_ptr<PreResult2>();
 
-    auto res2 = make_unique<PreResult2>(ft, &res1, center, m_ranker.m_params.m_position /* pivot */,
-                                        name, country);
+    auto res2 = make_unique<PreResult2>(ft, center, m_ranker.m_params.m_position /* pivot */, name,
+                                        country);
 
     search::RankingInfo info;
     InitRankingInfo(ft, center, res1, info);
@@ -311,8 +341,7 @@ bool Ranker::IsResultExists(PreResult2 const & p, vector<IndexedValue> const & v
                                  });
 }
 
-void Ranker::MakePreResult2(Geocoder::Params const & geocoderParams, vector<IndexedValue> & cont,
-                            vector<FeatureID> & streets)
+void Ranker::MakePreResult2(Geocoder::Params const & geocoderParams, vector<IndexedValue> & cont)
 {
   PreResult2Maker maker(*this, m_index, m_infoGetter, geocoderParams);
   for (auto const & r : m_preResults1)
@@ -326,9 +355,6 @@ void Ranker::MakePreResult2(Geocoder::Params const & geocoderParams, vector<Inde
     {
       continue;
     }
-
-    if (p->IsStreet())
-      streets.push_back(p->GetID());
 
     if (!IsResultExists(*p, cont))
       cont.push_back(IndexedValue(move(p)));
@@ -420,8 +446,8 @@ void Ranker::SuggestStrings()
   string prologue;
   GetStringPrefix(m_params.m_query, prologue);
 
-  for (int i = 0; i < m_params.m_categoryLocales.size(); ++i)
-    MatchForSuggestions(m_params.m_prefix, m_params.m_categoryLocales[i], prologue);
+  for (auto const & locale : m_params.m_categoryLocales)
+    MatchForSuggestions(m_params.m_prefix, locale, prologue);
 }
 
 void Ranker::MatchForSuggestions(strings::UniString const & token, int8_t locale,
@@ -433,7 +459,7 @@ void Ranker::MatchForSuggestions(strings::UniString const & token, int8_t locale
     if ((suggest.m_prefixLength <= token.size()) &&
         (token != s) &&                  // do not push suggestion if it already equals to token
         (suggest.m_locale == locale) &&  // push suggestions only for needed language
-        StartsWith(s.begin(), s.end(), token.begin(), token.end()))
+        strings::StartsWith(s.begin(), s.end(), token.begin(), token.end()))
     {
       string const utf8Str = strings::ToUtf8(s);
       Result r(utf8Str, prologue + utf8Str + " ");
@@ -491,8 +517,7 @@ void Ranker::UpdateResults(bool lastUpdate)
 {
   BailIfCancelled();
 
-  vector<FeatureID> streets;
-  MakePreResult2(m_geocoderParams, m_tentativeResults, streets);
+  MakePreResult2(m_geocoderParams, m_tentativeResults);
   RemoveDuplicatingLinear(m_tentativeResults);
   if (m_tentativeResults.empty())
     return;

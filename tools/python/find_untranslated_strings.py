@@ -9,7 +9,7 @@ from sys import argv
 
 TransAndKey = namedtuple("TransAndKey", "translation, key")
 
-TRANSLATION = re.compile(r"([a-z]{2}|zh-Han[st])\s*=\s*.*$", re.S | re.MULTILINE)
+TRANSLATION = re.compile(r"(.*)\s*=\s*.*$", re.S | re.MULTILINE)
 MANY_DOTS = re.compile(r"\.{4,}")
 SPACE_PUNCTUATION = re.compile(r"\s[.,?!:;]")
 PLACEHOLDERS = re.compile(r"(%\d*\$@|%[@dqus]|\^)")
@@ -67,25 +67,26 @@ class StringsTxt:
                     self.keys_in_order.append(line)
                     continue
                 if line.startswith("["):
-                    if line in self.translations:
-                        print("Duplicate key {}".format(line))
-                        continue
+                    # if line in self.translations:
+                    #     print("Duplicate key {}".format(line))
+                    #     continue
                     self.translations[line] = {}
                     current_key = line
-                    self.keys_in_order.append(current_key)
+                    if current_key not in self.keys_in_order:
+                        self.keys_in_order.append(current_key)
 
                 if TRANSLATION.match(line):
                     lang, tran = self._parse_lang_and_translation(line)
+
+                    if lang == "comment" or lang == "tags":
+                        self.comments_and_tags[current_key][lang] = tran
+                        continue
+
                     self.translations[current_key][lang] = tran
 
                     self.all_langs.add(lang)
                     if line.startswith("en = "):
                         self.with_english.append(current_key)
-                    continue
-
-                if line.startswith("comment") or line.startswith("tags"):
-                    lang, value = self._parse_lang_and_translation(line)
-                    self.comments_and_tags[current_key][lang] = value
                     continue
 
 

@@ -6,6 +6,10 @@
 #include "routing/turns.hpp"
 #include "routing/turns_notification_manager.hpp"
 
+#include "traffic/speed_groups.hpp"
+#include "traffic/traffic_cache.hpp"
+#include "traffic/traffic_info.hpp"
+
 #include "platform/location.hpp"
 #include "platform/measurement_utils.hpp"
 
@@ -16,6 +20,7 @@
 
 #include "std/atomic.hpp"
 #include "std/limits.hpp"
+#include "std/map.hpp"
 #include "std/shared_ptr.hpp"
 #include "std/unique_ptr.hpp"
 
@@ -35,7 +40,7 @@ struct SpeedCameraRestriction
   SpeedCameraRestriction() : m_index(0), m_maxSpeedKmH(numeric_limits<uint8_t>::max()) {}
 };
 
-class RoutingSession
+class RoutingSession : public traffic::TrafficObserver, public traffic::TrafficCache
 {
   friend void UnitTest_TestFollowRoutePercentTest();
 
@@ -83,11 +88,9 @@ public:
   /// @param[in] startPoint and endPoint in mercator
   /// @param[in] timeoutSec timeout in seconds, if zero then there is no timeout
   void BuildRoute(m2::PointD const & startPoint, m2::PointD const & endPoint,
-                  TReadyCallback const & readyCallback,
-                  TProgressCallback const & progressCallback, uint32_t timeoutSec);
+                  uint32_t timeoutSec);
   void RebuildRoute(m2::PointD const & startPoint, TReadyCallback const & readyCallback,
-                    TProgressCallback const & progressCallback, uint32_t timeoutSec,
-                    State routeRebuildingState);
+                    uint32_t timeoutSec, State routeRebuildingState);
 
   m2::PointD GetEndPoint() const { return m_endPoint; }
   bool IsActive() const { return (m_state != RoutingNotActive); }
@@ -123,6 +126,9 @@ public:
 
   void MatchLocationToRoute(location::GpsInfo & location,
                             location::RouteMatchingInfo & routeMatchingInfo) const;
+  // Get traffic speed for the current route position.
+  // Returns SpeedGroup::Unknown if any trouble happens: position doesn't match with route or something else.
+  traffic::SpeedGroup MatchTraffic(location::RouteMatchingInfo const & routeMatchingInfo) const;
 
   void SetUserCurrentPosition(m2::PointD const & position);
   m2::PointD const & GetUserCurrentPosition() const;
@@ -139,6 +145,9 @@ public:
   bool EnableFollowMode();
 
   void SetRoutingSettings(RoutingSettings const & routingSettings);
+  void SetReadyCallbacks(TReadyCallback const & buildReadyCallback,
+                         TReadyCallback const & rebuildReadyCallback);
+  void SetProgressCallback(TProgressCallback const & progressCallback);
 
   // Sound notifications for turn instructions.
   void EnableTurnNotifications(bool enable);
@@ -149,6 +158,15 @@ public:
   void GenerateTurnNotifications(vector<string> & turnNotifications);
 
   void EmitCloseRoutingEvent() const;
+
+  // RoutingObserver overrides:
+  void OnTrafficInfoClear() override;
+  void OnTrafficInfoAdded(traffic::TrafficInfo && info) override;
+  void OnTrafficInfoRemoved(MwmSet::MwmId const & mwmId) override;
+
+  // TrafficCache overrides:
+  shared_ptr<traffic::TrafficInfo::Coloring> GetTrafficInfo(MwmSet::MwmId const & mwmId) const override;
+  void CopyTraffic(std::map<MwmSet::MwmId, std::shared_ptr<traffic::TrafficInfo::Coloring>> & trafficColoring) const override;
 
 private:
   struct DoReadyCallback
@@ -175,6 +193,7 @@ private:
   /// RemoveRoute removes m_route and resets route attributes (m_state, m_lastDistance, m_moveAwayCounter).
   void RemoveRoute();
   void RemoveRouteImpl();
+  void RebuildRouteOnTrafficUpdate();
 
   bool HasRouteAltitudeImpl() const;
   double GetCompletionPercent() const;
@@ -195,7 +214,7 @@ private:
   /// about camera will be sent at most once.
   mutable bool m_speedWarningSignal;
 
-  mutable threads::Mutex m_routeSessionMutex;
+  mutable threads::Mutex m_routingSessionMutex;
 
   /// Current position metrics to check for RouteNeedRebuild state.
   double m_lastDistance;
@@ -207,6 +226,10 @@ private:
   turns::sound::NotificationManager m_turnNotificationsMgr;
 
   RoutingSettings m_routingSettings;
+
+  TReadyCallback m_buildReadyCallback;
+  TReadyCallback m_rebuildReadyCallback;
+  TProgressCallback m_progressCallback;
 
   // Statistics parameters
   // Passed distance on route including reroutes

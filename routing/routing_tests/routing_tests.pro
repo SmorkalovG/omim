@@ -1,4 +1,4 @@
- # Routing lib unit tests
+# Routing lib unit tests
 
 TARGET = routing_tests
 CONFIG += console warn_on
@@ -6,8 +6,8 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 ROOT_DIR = ../..
-DEPENDENCIES = routing indexer platform_tests_support platform editor geometry coding base \
-               osrm protobuf tomcrypt succinct jansson stats_client map pugixml stats_client
+DEPENDENCIES = routing routing_common indexer platform_tests_support platform editor geometry coding base \
+               osrm protobuf succinct jansson stats_client map traffic pugixml stats_client
 
 macx-*: LIBS *= "-framework IOKit" "-framework SystemConfiguration"
 
@@ -21,15 +21,20 @@ INCLUDEPATH += $$ROOT_DIR/3party/jansson/src \
 
 SOURCES += \
   ../../testing/testingmain.cpp \
+  applying_traffic_test.cpp \
   astar_algorithm_test.cpp \
   astar_progress_test.cpp \
   astar_router_test.cpp \
   async_router_test.cpp \
   cross_routing_tests.cpp \
+  cumulative_restriction_test.cpp \
   followed_polyline_test.cpp \
+  index_graph_test.cpp \
+  index_graph_tools.cpp \
   nearest_edge_finder_tests.cpp \
   online_cross_fetcher_test.cpp \
   osrm_router_test.cpp \
+  restriction_test.cpp \
   road_graph_builder.cpp \
   road_graph_nearest_edges_test.cpp \
   route_tests.cpp \
@@ -38,7 +43,7 @@ SOURCES += \
   turns_generator_test.cpp \
   turns_sound_test.cpp \
   turns_tts_text_tests.cpp \
-  vehicle_model_test.cpp \
 
 HEADERS += \
+  index_graph_tools.hpp \
   road_graph_builder.hpp \

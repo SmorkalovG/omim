@@ -1,9 +1,14 @@
-#include "place_page_info.hpp"
+#include "map/place_page_info.hpp"
+#include "map/reachable_by_taxi_checker.hpp"
+
+#include "partners_api/facebook_ads.hpp"
 
 #include "indexer/feature_utils.hpp"
 #include "indexer/osm_editor.hpp"
 
 #include "platform/measurement_utils.hpp"
+#include "platform/preferred_languages.hpp"
+#include "platform/settings.hpp"
 
 namespace place_page
 {
@@ -17,6 +22,11 @@ bool Info::IsFeature() const { return m_featureID.IsValid(); }
 bool Info::IsBookmark() const { return m_bac.IsValid(); }
 bool Info::IsMyPosition() const { return m_isMyPosition; }
 bool Info::IsSponsored() const { return m_sponsoredType != SponsoredType::None; }
+bool Info::IsNotEditableSponsored() const
+{
+  return m_sponsoredType != SponsoredType::None && m_sponsoredType != SponsoredType::Opentable;
+}
+
 bool Info::ShouldShowAddPlace() const
 {
   auto const isPointOrBuilding = IsPointType() || IsBuilding();
@@ -49,7 +59,12 @@ string Info::GetTitle() const
     return m_customName;
 
   string name;
-  feature::GetReadableName(GetID(), m_name, name);
+  auto const deviceLang = StringUtf8Multilang::GetLangIndex(languages::GetCurrentNorm());
+
+  auto const mwmInfo = GetID().m_mwmId.GetInfo();
+
+  if (mwmInfo)
+    feature::GetReadableName(mwmInfo->GetRegionData(), m_name, deviceLang, name);
 
   return name;
 }
@@ -112,16 +127,17 @@ string Info::FormatStars() const
 string Info::GetFormattedCoordinate(bool isDMS) const
 {
   auto const & ll = GetLatLon();
-  return isDMS ? measurement_utils::FormatLatLon(ll.lat, ll.lon) : measurement_utils::FormatLatLonAsDMS(ll.lat, ll.lon, 2);
+  return isDMS ? measurement_utils::FormatLatLon(ll.lat, ll.lon, true)
+               : measurement_utils::FormatLatLonAsDMS(ll.lat, ll.lon, 2);
 }
 
 string Info::GetCustomName() const { return m_customName; }
 BookmarkAndCategory Info::GetBookmarkAndCategory() const { return m_bac; }
 string Info::GetBookmarkCategoryName() const { return m_bookmarkCategoryName; }
 string const & Info::GetApiUrl() const { return m_apiUrl; }
-
 string const & Info::GetSponsoredUrl() const { return m_sponsoredUrl; }
-string const & Info::GetSponsoredDescriptionUrl() const {return m_sponsoredDescriptionUrl; }
+string const & Info::GetSponsoredDescriptionUrl() const { return m_sponsoredDescriptionUrl; }
+string const & Info::GetSponsoredReviewUrl() const { return m_sponsoredReviewUrl; }
 
 string Info::GetRatingFormatted() const
 {
@@ -156,5 +172,36 @@ string Info::GetApproximatePricing() const
   return result;
 }
 
+bool Info::HasBanner() const
+{
+  return facebook::Ads::Instance().HasBanner(m_types);
+}
+
+banners::Banner Info::GetBanner() const
+{
+  using namespace banners;
+  auto const bannerId = facebook::Ads::Instance().GetBannerId(m_types);
+  if (!bannerId.empty())
+    return {Banner::Type::Facebook, bannerId};
+
+  return {Banner::Type::None, ""};
+}
+
+/// Deprecated, there was not only removed in order not to break the build.
+/// Should be removed in nearest time.
+///////////////////////////////////////////////////////////////////////////////
+string Info::GetBannerTitleId() const { return {}; }
+string Info::GetBannerMessageId() const { return {}; }
+string Info::GetBannerIconId() const { return {}; }
+string Info::GetBannerUrl() const { return {}; }
+string Info::GetBannerId() const { return {}; }
+///////////////////////////////////////////////////////////////////////////////
+
+bool Info::IsReachableByTaxi() const
+{
+  return IsReachableByTaxiChecker::Instance()(m_types);
+}
+
 void Info::SetMercator(m2::PointD const & mercator) { m_mercator = mercator; }
+vector<string> Info::GetRawTypes() const { return m_types.ToObjectNames(); }
 }  // namespace place_page

@@ -1,9 +1,9 @@
-#import "Common.h"
+#import "MWMCommon.h"
 #import "EAGLView.h"
 #import "MapsAppDelegate.h"
 #import "MWMDirectionView.h"
 
-#import "../Platform/opengl/iosOGLContextFactory.h"
+#import "iosOGLContextFactory.h"
 
 #import "3party/Alohalytics/src/alohalytics_objc.h"
 
@@ -110,11 +110,17 @@ double getExactDPI(double contentScaleFactor)
   dispatch_async(dispatch_get_main_queue(), ^
   {
     GetFramework().OnSize(width, height);
-    // TODO: Temporary realization of visible viewport, this code must be removed later.
-    GetFramework().SetVisibleViewport(m2::RectD(0.0, 0.0, width, height));
     [self.widgetsManager resize:CGSizeMake(width, height)];
     self->_drapeEngineCreated = YES;
   });
+}
+
+- (m2::PointU)pixelSize
+{
+  CGSize const s = self.bounds.size;
+  uint32_t const w = static_cast<uint32_t>(s.width * self.contentScaleFactor);
+  uint32_t const h = static_cast<uint32_t>(s.height * self.contentScaleFactor);
+  return m2::PointU(w, h);
 }
 
 - (void)onSize:(int)width withHeight:(int)height

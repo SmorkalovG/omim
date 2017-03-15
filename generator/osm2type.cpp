@@ -11,10 +11,12 @@
 #include "base/assert.hpp"
 #include "base/string_utils.hpp"
 
-#include "std/vector.hpp"
 #include "std/bind.hpp"
+#include "std/cstdint.hpp"
 #include "std/function.hpp"
 #include "std/initializer_list.hpp"
+#include "std/set.hpp"
+#include "std/vector.hpp"
 
 namespace ftype
 {
@@ -217,7 +219,7 @@ namespace ftype
   public:
     enum EType { ENTRANCE, HIGHWAY, ADDRESS, ONEWAY, PRIVATE, LIT, NOFOOT, YESFOOT,
                  NOBICYCLE, YESBICYCLE, BICYCLE_BIDIR, SURFPGOOD, SURFPBAD, SURFUGOOD, SURFUBAD,
-                 HASPARTS,
+                 HASPARTS, NOCAR, YESCAR, WLAN,
                  RW_STATION, RW_STATION_SUBWAY, WHEELCHAIR_YES };
 
     CachedTypes()
@@ -234,7 +236,8 @@ namespace ftype
         {"hwtag", "nobicycle"}, {"hwtag", "yesbicycle"}, {"hwtag", "bidir_bicycle"},
         {"psurface", "paved_good"}, {"psurface", "paved_bad"},
         {"psurface", "unpaved_good"}, {"psurface", "unpaved_bad"},
-        {"building", "has_parts"}
+        {"building", "has_parts"}, {"hwtag", "nocar"}, {"hwtag", "yescar"},
+        {"internet_access", "wlan"}
       };
       for (auto const & e : arr)
         m_types.push_back(c.GetTypeByPath(e));
@@ -550,6 +553,7 @@ namespace ftype
     TagProcessor(p).ApplyRules
     ({
       { "wheelchair", "designated", [&params] { params.AddType(types.Get(CachedTypes::WHEELCHAIR_YES)); }},
+      { "wifi", "~", [&params] { params.AddType(types.Get(CachedTypes::WLAN)); }},
       { "building:part", "no", [&params] { params.AddType(types.Get(CachedTypes::HASPARTS)); }},
       { "building:parts", "~", [&params] { params.AddType(types.Get(CachedTypes::HASPARTS)); }},
     });
@@ -557,6 +561,9 @@ namespace ftype
     bool highwayDone = false;
     bool subwayDone = false;
     bool railwayDone = false;
+
+    bool addOneway = false;
+    bool noOneway = false;
 
     // Get a copy of source types, because we will modify params in the loop;
     FeatureParams::TTypes const vTypes = params.m_Types;
@@ -566,11 +573,14 @@ namespace ftype
       {
         TagProcessor(p).ApplyRules
         ({
-          { "oneway", "yes", [&params] { params.AddType(types.Get(CachedTypes::ONEWAY)); }},
-          { "oneway", "1", [&params] { params.AddType(types.Get(CachedTypes::ONEWAY)); }},
-          { "oneway", "-1", [&params] { params.AddType(types.Get(CachedTypes::ONEWAY)); params.m_reverseGeometry = true; }},
+          { "oneway", "yes", [&addOneway] { addOneway = true; }},
+          { "oneway", "1", [&addOneway] { addOneway = true; }},
+          { "oneway", "-1", [&addOneway, &params] { addOneway = true; params.m_reverseGeometry = true; }},
+          { "oneway", "!", [&noOneway] { noOneway = true; }},
+          { "junction", "roundabout", [&addOneway] { addOneway = true; }},
 
           { "access", "private", [&params] { params.AddType(types.Get(CachedTypes::PRIVATE)); }},
+          { "access", "!", [&params] { params.AddType(types.Get(CachedTypes::PRIVATE)); }},
 
           { "lit", "~", [&params] { params.AddType(types.Get(CachedTypes::LIT)); }},
 
@@ -585,7 +595,17 @@ namespace ftype
           { "cycleway:left", "~", [&params] { params.AddType(types.Get(CachedTypes::YESBICYCLE)); }},
           { "oneway:bicycle", "!", [&params] { params.AddType(types.Get(CachedTypes::BICYCLE_BIDIR)); }},
           { "cycleway", "opposite", [&params] { params.AddType(types.Get(CachedTypes::BICYCLE_BIDIR)); }},
+
+          { "motor_vehicle", "private", [&params] { params.AddType(types.Get(CachedTypes::NOCAR)); }},
+          { "motor_vehicle", "!", [&params] { params.AddType(types.Get(CachedTypes::NOCAR)); }},
+          { "motor_vehicle", "yes", [&params] { params.AddType(types.Get(CachedTypes::YESCAR)); }},
+          { "motorcar", "private", [&params] { params.AddType(types.Get(CachedTypes::NOCAR)); }},
+          { "motorcar", "!", [&params] { params.AddType(types.Get(CachedTypes::NOCAR)); }},
+          { "motorcar", "yes", [&params] { params.AddType(types.Get(CachedTypes::YESCAR)); }},
         });
+
+        if (addOneway && !noOneway)
+          params.AddType(types.Get(CachedTypes::ONEWAY));
 
         highwayDone = true;
       }
@@ -670,14 +690,14 @@ namespace ftype
           k.clear(); v.clear();
         }
       },
-      { "layer", "*", [&params](string & k, string & v)
+      { "layer", "*", [&params](string & /* k */, string & v)
         {
           // Get layer.
           if (params.layer == 0)
           {
             params.layer = atoi(v.c_str());
             int8_t const bound = 10;
-            params.layer = my::clamp(params.layer, -bound, bound);
+            params.layer = my::clamp(params.layer, static_cast<int8_t>(-bound), bound);
           }
         }
       },

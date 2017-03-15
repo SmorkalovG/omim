@@ -1,16 +1,34 @@
 #pragma once
 
+#include "search/intersection_result.hpp"
 #include "search/model.hpp"
+#include "search/token_range.hpp"
 
 #include "geometry/point2d.hpp"
 
-#include "std/cstdint.hpp"
+#include "base/assert.hpp"
+
+#include <cstdint>
+#include <string>
 
 namespace search
 {
 struct PreRankingInfo
 {
-  inline size_t GetNumTokens() const { return m_endToken - m_startToken; }
+  PreRankingInfo(SearchModel::SearchType type, TokenRange const & range)
+  {
+    ASSERT_LESS(type, SearchModel::SEARCH_TYPE_COUNT, ());
+    m_searchType = type;
+    m_tokenRange[m_searchType] = range;
+  }
+
+  inline TokenRange const & InnermostTokenRange() const
+  {
+    ASSERT_LESS(m_searchType, SearchModel::SEARCH_TYPE_COUNT, ());
+    return m_tokenRange[m_searchType];
+  }
+
+  inline size_t GetNumTokens() const { return InnermostTokenRange().Size(); }
 
   // An abstract distance from the feature to the pivot.  Measurement
   // units do not matter here.
@@ -19,10 +37,12 @@ struct PreRankingInfo
   m2::PointD m_center = m2::PointD::Zero();
   bool m_centerLoaded = false;
 
-  // Tokens [m_startToken, m_endToken) match to the feature name or
-  // house number.
-  size_t m_startToken = 0;
-  size_t m_endToken = 0;
+  // Tokens match to the feature name or house number.
+  TokenRange m_tokenRange[SearchModel::SEARCH_TYPE_COUNT];
+
+  // Different geo-parts extracted from query.  Currently only poi,
+  // building and street ids are in |m_geoParts|.
+  IntersectionResult m_geoParts;
 
   // Rank of the feature.
   uint8_t m_rank = 0;
@@ -31,6 +51,5 @@ struct PreRankingInfo
   SearchModel::SearchType m_searchType = SearchModel::SEARCH_TYPE_COUNT;
 };
 
-string DebugPrint(PreRankingInfo const & info);
-
+std::string DebugPrint(PreRankingInfo const & info);
 }  // namespace search

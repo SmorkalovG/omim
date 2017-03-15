@@ -1,17 +1,14 @@
 #import "MWMRateAlert.h"
-#import <sys/utsname.h>
 #import "AppInfo.h"
 #import "MWMAlertViewController.h"
 #import "MWMMailViewController.h"
 #import "Statistics.h"
-#import "UIColor+MapsMeColor.h"
 
 #import "3party/Alohalytics/src/alohalytics_objc.h"
 
 #include "platform/platform.hpp"
 
 extern NSString * const kUDAlreadyRatedKey;
-extern NSDictionary * const kDeviceNames;
 extern NSString * const kLocaleUsedInSupportEmails;
 extern NSString * const kRateAlertEventName = @"rateAlertEvent";
 static NSString * const kRateAlertNibName = @"MWMRateAlert";
@@ -142,12 +139,7 @@ static NSString * const kStatisticsEvent = @"Rate Alert";
   alertController.view.alpha = 0.;
   if ([MWMMailViewController canSendMail])
   {
-    struct utsname systemInfo;
-    uname(&systemInfo);
-    NSString * machine = @(systemInfo.machine);
-    NSString * device = kDeviceNames[machine];
-    if (!device)
-      device = machine;
+    NSString * device = [AppInfo sharedInfo].deviceName;
     NSString * languageCode = [[NSLocale preferredLanguages] firstObject];
     NSString * language = [[NSLocale localeWithLocaleIdentifier:kLocaleUsedInSupportEmails]
         displayNameForKey:NSLocaleLanguageCode

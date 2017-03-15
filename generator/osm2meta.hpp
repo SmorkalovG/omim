@@ -80,7 +80,7 @@ public:
     case Metadata::FMD_OPERATOR: valid = ValidateAndFormat_operator(v); break;
     case Metadata::FMD_URL:  // The same validator as for website.
     case Metadata::FMD_WEBSITE: valid = ValidateAndFormat_url(v); break;
-    case Metadata::FMD_INTERNET: ValidateAndFormat_internet(v); break;
+    case Metadata::FMD_INTERNET: valid = ValidateAndFormat_internet(v); break;
     case Metadata::FMD_ELE: valid = ValidateAndFormat_ele(v); break;
     case Metadata::FMD_TURN_LANES: valid = ValidateAndFormat_turn_lanes(v); break;
     case Metadata::FMD_TURN_LANES_FORWARD: valid = ValidateAndFormat_turn_lanes_forward(v); break;
@@ -97,6 +97,7 @@ public:
     case Metadata::FMD_SPONSORED_ID: valid = ValidateAndFormat_sponsored_id(v); break;
     case Metadata::FMD_PRICE_RATE: valid = ValidateAndFormat_price_rate(v); break;
     case Metadata::FMD_RATING: valid = ValidateAndFormat_rating(v); break;
+    case Metadata::FMD_BANNER_URL: valid = ValidateAndFormat_url(v); break;
 
     case Metadata::FMD_TEST_ID:
     case Metadata::FMD_COUNT: CHECK(false, ("FMD_COUNT can not be used as a type."));

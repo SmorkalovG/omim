@@ -65,10 +65,13 @@ public:
     RequestSymbolsSize,
     RecoverGLResources,
     SetVisibleViewport,
-    AddTrafficSegments,
-    SetTrafficTexCoords,
+    EnableTraffic,
+    FlushTrafficGeometry,
+    RegenerateTraffic,
     UpdateTraffic,
     FlushTrafficData,
+    ClearTrafficData,
+    SetSimplifiedTrafficColors,
     DrapeApiAddLines,
     DrapeApiRemove,
     DrapeApiFlush,
@@ -83,7 +86,8 @@ enum class MessagePriority
 {
   Normal,
   High,
-  UberHighSingleton
+  UberHighSingleton,
+  Low
 };
 
 } // namespace df

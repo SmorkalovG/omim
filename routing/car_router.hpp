@@ -1,5 +1,6 @@
 #pragma once
 
+#include "routing/index_router.hpp"
 #include "routing/osrm_data_facade.hpp"
 #include "routing/osrm_engine.hpp"
 #include "routing/route.hpp"
@@ -34,7 +35,7 @@ public:
   typedef vector<double> GeomTurnCandidateT;
 
   CarRouter(Index & index, TCountryFileFn const & countryFileFn,
-            unique_ptr<IRouter> roadGraphRouter);
+            unique_ptr<IndexRouter> localRouter);
 
   virtual string GetName() const override;
 
@@ -84,6 +85,7 @@ private:
   // @TODO(bykoianko) When routing section implementation is merged to master
   // this method should be moved to routing loader.
   bool DoesEdgeIndexExist(Index::MwmId const & mwmId);
+  bool AllMwmsHaveRoutingIndex() const;
 
   /*!
    * \brief Builds a route within one mwm using A* if edge index section is available and osrm
@@ -104,8 +106,8 @@ private:
      * \param rawRoutingResult: routing result store
      * \return true when path exists, false otherwise.
      */
-  bool FindRouteMSMT(TFeatureGraphNodeVec const & source, TFeatureGraphNodeVec const & target,
-                     RouterDelegate const & delegate, TRoutingMappingPtr & mapping, Route & route);
+  IRouter::ResultCode FindRouteMSMT(TFeatureGraphNodeVec const & source, TFeatureGraphNodeVec const & target,
+                                    RouterDelegate const & delegate, TRoutingMappingPtr & mapping, Route & route);
 
   Index & m_index;
 
@@ -114,6 +116,6 @@ private:
 
   RoutingIndexManager m_indexManager;
 
-  unique_ptr<IRouter> m_router;
+  unique_ptr<IndexRouter> m_router;
 };
 }  // namespace routing

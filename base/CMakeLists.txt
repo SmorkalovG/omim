@@ -1,6 +1,7 @@
+project(base)
+
 set(
   SRC
-  SRC_FIRST.hpp
   array_adapters.hpp
   assert.hpp
   base.cpp
@@ -9,19 +10,19 @@ set(
   buffer_vector.hpp
   cache.hpp
   cancellable.hpp
+  checked_cast.hpp
   collection_cast.hpp
   condition.cpp
   condition.hpp
-#    condition_bada.cpp
-  condition_posix.cpp
-#    condition_windows_native.cpp
-  const_helper.hpp
   deferred_task.cpp
   deferred_task.hpp
+  dfa_helpers.hpp
   exception.cpp
   exception.hpp
   gmtime.cpp
   gmtime.hpp
+  levenshtein_dfa.cpp
+  levenshtein_dfa.hpp
   limited_priority_queue.hpp
   logging.cpp
   logging.hpp
@@ -33,9 +34,9 @@ set(
   mutex.hpp
   newtype.hpp
   normalize_unicode.cpp
-  object_tracker.cpp
-  object_tracker.hpp
   observer_list.hpp
+  random.cpp
+  random.hpp
   range_iterator.hpp
   ref_counted.hpp
   rolling_hash.hpp
@@ -43,6 +44,7 @@ set(
   set_operations.hpp
   shared_buffer_manager.cpp
   shared_buffer_manager.hpp
+  small_set.hpp
   src_point.cpp
   src_point.hpp
   stats.hpp
@@ -58,7 +60,6 @@ set(
   strings_bundle.hpp
   sunrise_sunset.cpp
   sunrise_sunset.hpp
-  swap.hpp
   thread.cpp
   thread.hpp
   thread_checker.cpp
@@ -68,15 +69,16 @@ set(
   threaded_container.cpp
   threaded_container.hpp
   threaded_list.hpp
-  threaded_priority_queue.hpp
+  internal/message.cpp
+  internal/message.hpp
   timegm.cpp
   timegm.hpp
   timer.cpp
   timer.hpp
-  worker_thread.hpp
-  internal/message.cpp
+  uni_string_dfa.cpp
+  uni_string_dfa.hpp
 )
 
-add_library(base ${SRC})
+add_library(${PROJECT_NAME} ${SRC})
 
 omim_add_test_subdirectory(base_tests)

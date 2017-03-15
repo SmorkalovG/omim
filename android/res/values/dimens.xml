@@ -45,6 +45,7 @@
   <dimen name="panel_width">360dp</dimen>
   <dimen name="button_width">240dp</dimen>
   <dimen name="placeholder_size">200dp</dimen>
+  <dimen name="placeholder_size_small">160dp</dimen>
 
   <dimen name="width_dialog_base">300dp</dimen>
 
@@ -59,10 +60,11 @@
   <dimen name="direction_frame_min_height">36dp</dimen>
 
   <!-- map widgets -->
-  <dimen name="margin_compass_left">32dp</dimen>
-  <dimen name="margin_compass_bottom">80dp</dimen>
-  <dimen name="margin_ruler_right">8dp</dimen>
-  <dimen name="margin_ruler_bottom">56dp</dimen>
+  <dimen name="margin_compass">34dp</dimen>
+  <dimen name="margin_compass_top">28dp</dimen>
+  <dimen name="margin_ruler_left">10dp</dimen>
+  <dimen name="margin_ruler_bottom">58dp</dimen>
+  <dimen name="compass_height">40dp</dimen>
 
   <!-- routing layout -->
   <dimen name="routing_info_height">48dp</dimen>
@@ -108,10 +110,14 @@
   <dimen name="nav_button_height">36dp</dimen>
   <dimen name="nav_icon_size">48dp</dimen>
   <dimen name="nav_bottom_gap">12dp</dimen>
+  <dimen name="nav_menu_top_offset">0dp</dimen>
 
-  <dimen name="nav_frame_padding">@dimen/margin_half</dimen>
+  <dimen name="nav_frame_padding">@dimen/margin_eighth</dimen>
   <dimen name="nav_button">28dp</dimen>
   <dimen name="nav_zoom_bottom">160dp</dimen>
+  <dimen name="nav_zoom_top">258dp</dimen>
+  <dimen name="nav_button_top_limit">68dp</dimen>
+  <dimen name="nav_my_position_bottom">136dp</dimen>
 
   <dimen name="panel_elevation">12dp</dimen>
   <dimen name="appbar_elevation">4dp</dimen>
@@ -157,4 +163,25 @@
   <!-- Rating-->
   <dimen name="placepage_margin_rating">20dp</dimen>
 
+  <!-- Facilities-->
+  <dimen name="placepage_facilities_item">32dp</dimen>
+
+  <!-- Banner-->
+  <dimen name="placepage_banner_height">64dp</dimen>
+  <dimen name="placepage_banner_icon_size">40dp</dimen>
+  <dimen name="placepage_banner_button_height">36dp</dimen>
+  <dimen name="placepage_banner_button_margin_top">5dp</dimen>
+
+  <!-- Place page taxi-->
+  <dimen name="placepage_taxi_button_min_width">96dp</dimen>
+  <dimen name="placepage_taxi_padding_vert">14dp</dimen>
+  <dimen name="placepage_taxi_button_padding_vert">10dp</dimen>
+
+  <!-- Placeholder-->
+  <dimen name="placeholder_margin_top">20dp</dimen>
+  <dimen name="placeholder_margin_top_no_image">80dp</dimen>
+
+  <dimen name="hotels_filter_padding">128dp</dimen>
+
+  <dimen name="margin_dialog_title">20dp</dimen>
 </resources>

@@ -152,7 +152,7 @@
 	<!-- Add bookmark dialog - bookmark set, Bookmarks dialog - Bookmark set cell -->
 	<string name="set">Grupo</string>
 	<!-- Text hint in Bookmarks dialog when no any bookmarks are added -->
-	<string name="bookmarks_usage_hint">Todavía no tienes favoritos.\nToca en cualquier lugar del mapa y añade favoritos.\nTambién se pueden importar y mostrar marcadores de otras fuentes en la aplicación MAPS.ME. Abre el archivo KML/KMZ con los alfileres guardados desde el corre, Dropbox o Weblink.</string>
+	<string name="bookmarks_usage_hint">Todavía no tienes favoritos.\nToca en cualquier lugar del mapa y añade favoritos.\nTambién se pueden importar y mostrar marcadores de otras fuentes en la aplicación MAPS.ME. Abre el archivo KML/KMZ con los alfileres guardados desde el correo, Dropbox o Weblink.</string>
 	<!-- Text hint in Bookmarks dialog when at least one bookmark is added -->
 	<string name="bookmarks_usage_hint_import_only">Se pueden importar y mostrar marcadores de otras fuentes en la aplicación MAPS.ME. Abre el archivo KML/KMZ con los alfileres guardados desde el corre, Dropbox o Weblink.</string>
 	<!-- Settings button in system menu -->
@@ -373,6 +373,8 @@
 	<string name="follow_on_twitter">Síguenos en Twitter</string>
 	<!-- Text in menu -->
 	<string name="contact_us">Contacta con nosotros</string>
+	<!-- Settings: Send feedback button and dialog title -->
+	<string name="feedback">Comentarios</string>
 	<!-- Text in menu -->
 	<string name="subscribe_to_news">Suscríbete a nuestras noticias</string>
 	<!-- Text in menu -->
@@ -759,7 +761,7 @@
 	<string name="placepage_report_problem_button">Informar de un problema</string>
 	<string name="placepage_add_business_button">Añadir organización</string>
 	<string name="whatsnew_smallmwm_header">Llevas tiempo pidiéndolo y lo hemos hecho</string>
-	<string name="whatsnew_smallmwm_message">Hemos dividido el mapa por partes. Ahora, puedes descargar regiones individuales, en vez de el país entero.</string>
+	<string name="whatsnew_smallmwm_message">Hemos dividido el mapa por partes. Ahora, puedes descargar regiones individuales, en vez del país entero.</string>
 	<string name="whatsnew_search_header">Nueva búsqueda</string>
 	<string name="whatsnew_search_message">Hemos mejorado notablemente la búsqueda por dirección. Compruébalo.</string>
 	<string name="whatsnew_editor_title">Editar el mapa*</string>
@@ -940,4 +942,121 @@
 	<string name="whats_new_route_profile_message">Ahora se muestra el perfil de elevación en los itinerarios pedestres y en bicicleta.</string>
 	<string name="whats_new_booking_improve_title">Ahorrar al reservar hoteles</string>
 	<string name="whats_new_booking_improve_message">La búsqueda de resultados de hoteles ahora contiene la categoría de precios.\nHemos añadido más de 110 000 hoteles.</string>
+	<!-- For place page hotel facilities block -->
+	<string name="placepage_hotel_facilities">Instalaciones</string>
+	<!-- For place page hotel nearby block -->
+	<string name="placepage_hotel_nearby">Cercano</string>
+	<!-- For ordering a taxi (as opposed to hotels or other things) -->
+	<string name="taxi_order">Pedir un taxi</string>
+	<!-- How long it is until the taxi arrives -->
+	<string name="taxi_wait">Se espera en %s</string>
+	<!-- When there are no available taxis nearby -->
+	<string name="taxi_not_found">No se puede encontrar un taxi cerca</string>
+	<string name="install_app">Instalar</string>
+	<!-- `Filter` is a noun here -->
+	<string name="booking_filters">Filtrar</string>
+	<string name="booking_filters_reset">Restablecer</string>
+	<string name="booking_filters_rating">Clasificación</string>
+	<string name="booking_filters_rating_any">Cualquier</string>
+	<string name="booking_filters_ragting_good">Bueno</string>
+	<string name="booking_filters_rating_very_good">Muy bueno</string>
+	<string name="booking_filters_rating_excellent">Excelente</string>
+	<string name="booking_filters_price_category">Categoría de precios</string>
+	<string name="search_no_results_title">No se han encontrado resultados</string>
+	<string name="search_no_results_message">Pruebe un término de búsqueda general, aléjese o restablezca el filtro.</string>
+	<string name="search_no_results_expand_area_button">Alejarse</string>
+	<string name="search_no_results_reset_button">Restablecer filtro</string>
+	<!-- noun -->
+	<string name="search_in_table">Lista</string>
+	<string name="booking_based_on_reviews">Basado en %d reseñas de hoteles</string>
+	<string name="booking_show_more">Mostrar más</string>
+	<string name="booking_reviews">Reseñas</string>
+	<string name="booking_hotel">Hotel</string>
+	<!-- hotel room -->
+	<string name="booking_hotel_room">Habitación</string>
+	<!-- A neologism for a chat based on geographical proximity -->
+	<string name="chat">Geochat</string>
+	<!-- Verb. Text on a button that opens the chat. -->
+	<string name="chat_open">Abrir</string>
+	<string name="whatsnew_uber_header">MAPS.ME &amp; Uber</string>
+	<string name="whatsnew_uber_message">¡Pide un taxi Uber directamente desde la aplicación!</string>
+	<string name="dialog_taxi_offline">La opción para solicitar un taxi no se encuentra disponible en el modo sin conexión.</string>
+	<string name="dialog_taxi_error">La opción para solicitar un taxi se encuentra temporalmente no disponible.</string>
+	<string name="advertisement">Anuncio</string>
+	<string name="mobile_data_dialog">¿Usar Internet móvil para mostrar información detallada?</string>
+	<string name="mobile_data_option_always">Usar siempre</string>
+	<string name="mobile_data_option_today">Solo hoy</string>
+	<string name="mobile_data_option_not_today">No usar hoy</string>
+	<string name="mobile_data">Internet móvil</string>
+	<string name="mobile_data_description">Se necesita Internet móvil para mostrar información detallada de los lugares, como fotografías, precios y reseñas.</string>
+	<string name="mobile_data_option_never">No usar nunca</string>
+	<string name="mobile_data_option_ask">Preguntar siempre</string>
+	<string name="traffic_update_maps_text">Para mostrar los datos de tráfico, deben actualizarse los mapas.</string>
+	<string name="traffic_outdated">Los datos de tráfico están obsoletos.</string>
+	<string name="big_font">Aumentar el tamaño de fuente en el mapa</string>
+	<string name="traffic_update_app">Por favor, actualice MAPS.ME</string>
+	<!-- "traffic" as in road congestion -->
+	<string name="traffic_update_app_message">Para mostrar los datos de tráfico, debe actualizar la aplicación.</string>
+	<!-- "traffic" as in "road congestion" -->
+	<string name="traffic_data_unavailable">Los datos de tráfico no están disponibles</string>
+	<string name="banner_deliveryclub_title">Entrega de alimentos</string>
+	<string name="banner_deliveryclub_message">Entrega rápida de 4000 restaurantes. Haga el pedido en Delivery Club.</string>
+	<string name="banner_lamoda_title">Tienda online de ropa y calzado</string>
+	<string name="banner_lamoda_message">Más de 1000 marcas. Descuentos de hasta 70%. Entrega gratuita en todo el territorio nacional.</string>
+	<string name="banner_tutu_title">Billetes de tren en línea</string>
+	<string name="banner_tutu_message">Billetes de tren en línea a cualquier ciudad en línea: precios, búsqueda y reservas.</string>
+	<string name="banner_geerbest_title">Tienda online de electrónica</string>
+	<string name="banner_geerbest_message">Búsqueda instantánea de más de 50 000 artículos a precios bajos.</string>
+	<string name="banner_rentalcars_title">Alquiler de coches en línea</string>
+	<string name="banner_rentalcars_message">800 compañías de alquiler de coches en más de 49 000 localidades.</string>
+	<string name="banner_viator_title">Reserva de visitas guiadas en línea</string>
+	<string name="banner_viator_message">Más de 50 000 visitas guiadas por todo el mundo.</string>
+	<!-- december -->
+	<string name="whatsnew_traffic">Datos del tráfico en 36 países</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_text">¡Información actualizada del tráfico y de las rutas más rápidas basadas en ella!</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming">Información del tráfico en roaming</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming_text">Precisa menos de 1 MB de ancho de banda móvil por viaje.</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi">Pedir un taxi</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi_text">La mayoría de las páginas de localización incluyen un botón para pedir un taxi ahora.</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search">Búsqueda mejorada</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search_text">Incluso las consultas mal escritas proporcionan resultados de búsqueda precisos.</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search">Filtros de búsqueda</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search_text">Búsqueda de hoteles según su precio y clasificación.</string>
+	<!-- january -->
+	<string name="whatsnew_font_size">Tamaño de la fuente</string>
+	<!-- january -->
+	<string name="whatsnew_font_size_text">Las etiquetas del mapa pueden ampliarse.</string>
+	<!-- Seven points and higher -->
+	<string name="booking_filter_rating_num_good">7,0+</string>
+	<!-- Eight points and higher -->
+	<string name="booking_filter_rating_num_very_good">8,0+</string>
+	<!-- Nine points and higher -->
+	<string name="booking_filter_rating_num_excellent">9,0+</string>
+	<!-- Simplified colour scheme for traffic information, fewer colours are used to display traffic jams on the map. The string should be kept as short as possible -->
+	<string name="pref_traffic_simplified_colors_title">Colores simples para tráfico</string>
+	<string name="enable_logging">Habilitar historial</string>
+	<string name="whatsnew_more_info_on_hotels_title">Más información sobre hoteles</string>
+	<string name="whatsnew_more_info_on_hotels_message">Nuevo diseño de páginas de hoteles: vea nuevas fotos, opiniones de usuarios y otra información en línea.</string>
+	<string name="whatsnew_better_routing_title">Planificación de rutas mejorada</string>
+	<string name="whatsnew_better_routing_message">• Estimación más precisa de la hora de llegada.\n• La aplicación tiene en cuenta las áreas restringidas y las señales de tráfico.</string>
+	<string name="whatsnew_smaller_mwm_title">Los mapas son más pequeños</string>
+	<string name="whatsnew_smaller_mwm_message">Los mapas requieren un 20% menos de espacio de almacenamiento.</string>
+	<string name="whatsnew_waypoints_title">Puntos de referencia en las rutas</string>
+	<string name="whatsnew_waypoints_message">Pulse sobre los lugares para añadir puntos de referencia a su ruta.</string>
+	<string name="whatsnew_driving_style_title">Nuevo estilo de mapa para la conducción</string>
+	<string name="whatsnew_driving_style_message">Modo de navegación más fácil de usar.</string>
+	<string name="more_on_bookingcom">Más información en Booking.com</string>
+	<string name="details_on_bookingcom">Detalles en Booking.com</string>
+	<string name="reviews_on_bookingcom">Más valoraciones en Booking.com</string>
+	<string name="offline_place_page_more_information">Conéctese a internet para obtener más información sobre este lugar.</string>
+	<string name="failed_load_information">No se ha podido cargar la información.</string>
 </resources>

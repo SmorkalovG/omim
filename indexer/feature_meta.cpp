@@ -57,10 +57,10 @@ bool Metadata::TypeFromString(string const & k, Metadata::EType & outType)
   else if (k == "operator")
     outType = Metadata::FMD_OPERATOR;
   else if (k == "url")  // TODO: Should we match url to website here?
-    outType = Metadata::FMD_URL;
+    outType = Metadata::FMD_WEBSITE;
   else if (k == "website" || k == "contact:website")
     outType = Metadata::FMD_WEBSITE;
-  else if (k == "internet_access")
+  else if (k == "internet_access" || k == "wifi")
     outType = Metadata::FMD_INTERNET;
   else if (k == "ele")
     outType = Metadata::FMD_ELE;
@@ -94,10 +94,27 @@ bool Metadata::TypeFromString(string const & k, Metadata::EType & outType)
     outType = Metadata::FMD_PRICE_RATE;
   else if (k == "rating:sponsored")
     outType = Metadata::FMD_RATING;
+  else if (k == "banner_url")
+    outType = Metadata::FMD_BANNER_URL;
   else
     return false;
 
   return true;
+}
+
+// static
+bool Metadata::IsSponsoredType(Metadata::EType const & type)
+{
+  switch (type)
+  {
+  case Metadata::FMD_SPONSORED_ID:
+  case Metadata::FMD_PRICE_RATE:
+  case Metadata::FMD_RATING:
+  case Metadata::FMD_BANNER_URL:
+    return true;
+  default:
+    return false;
+  }
 }
 
 void RegionData::SetLanguages(vector<string> const & codes)
@@ -176,6 +193,7 @@ string DebugPrint(feature::Metadata::EType type)
   case Metadata::FMD_SPONSORED_ID: return "ref:sponsored";
   case Metadata::FMD_PRICE_RATE: return "price_rate";
   case Metadata::FMD_RATING: return "rating:sponsored";
+  case Metadata::FMD_BANNER_URL: return "banner_url";
   case Metadata::FMD_TEST_ID: return "test_id";
   case Metadata::FMD_COUNT: CHECK(false, ("FMD_COUNT can not be used as a type."));
   };

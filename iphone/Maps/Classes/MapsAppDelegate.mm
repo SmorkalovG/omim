@@ -2,19 +2,20 @@
 #import <CoreSpotlight/CoreSpotlight.h>
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import <FBSDKCoreKit/FBSDKCoreKit.h>
-#import <Pushwoosh/PushNotificationManager.h>
 #import "AppInfo.h"
-#import "Common.h"
 #import "EAGLView.h"
 #import "LocalNotificationManager.h"
 #import "MWMAlertViewController.h"
 #import "MWMAuthorizationCommon.h"
+#import "MWMCommon.h"
 #import "MWMController.h"
 #import "MWMFrameworkListener.h"
 #import "MWMFrameworkObservers.h"
 #import "MWMKeyboard.h"
 #import "MWMLocationManager.h"
 #import "MWMMapViewControlsManager.h"
+#import "MWMPushNotifications.h"
+#import "MWMRoutePoint.h"
 #import "MWMRouter.h"
 #import "MWMRouterSavedState.h"
 #import "MWMSearch+CoreSpotlight.h"
@@ -23,14 +24,12 @@
 #import "MWMTextToSpeech.h"
 #import "MapViewController.h"
 #import "Statistics.h"
-#import "UIColor+MapsMeColor.h"
-#import "UIFont+MapsMeFonts.h"
+#import "SwiftBridge.h"
 
 #import "3party/Alohalytics/src/alohalytics_objc.h"
 
 #include <sys/xattr.h>
 
-#include "base/sunrise_sunset.hpp"
 #include "indexer/osm_editor.hpp"
 #include "map/gps_tracker.hpp"
 #include "platform/http_thread_apple.h"
@@ -42,13 +41,12 @@
 
 // If you have a "missing header error" here, then please run configure.sh script in the root repo
 // folder.
-#import "../../../private.h"
+#import "private.h"
 
 #ifdef OMIM_PRODUCTION
 
 #import <Crashlytics/Crashlytics.h>
 #import <Fabric/Fabric.h>
-#import <HockeySDK/HockeySDK.h>
 
 #endif
 
@@ -62,7 +60,6 @@ static NSString * const kUDLastRateRequestDate = @"LastRateRequestDate";
 extern NSString * const kUDAlreadySharedKey = @"UserAlreadyShared";
 static NSString * const kUDLastShareRequstDate = @"LastShareRequestDate";
 static NSString * const kUDAutoNightModeOff = @"AutoNightModeOff";
-static NSString * const kPushDeviceTokenLogEvent = @"iOSPushDeviceToken";
 static NSString * const kIOSIDFA = @"IFA";
 static NSString * const kBundleVersion = @"BundleVersion";
 
@@ -113,16 +110,6 @@ void InitCrashTrackers()
   if (![MWMSettings statisticsEnabled])
     return;
 
-  NSString * hockeyKey = @(HOCKEY_APP_KEY);
-  if (hockeyKey.length != 0)
-  {
-    // Initialize Hockey App SDK.
-    BITHockeyManager * hockeyManager = [BITHockeyManager sharedHockeyManager];
-    [hockeyManager configureWithIdentifier:hockeyKey];
-    [hockeyManager.crashManager setCrashManagerStatus:BITCrashManagerStatusAutoSend];
-    [hockeyManager startManager];
-  }
-
   NSString * fabricKey = @(CRASHLYTICS_IOS_KEY);
   if (fabricKey.length != 0)
   {
@@ -169,41 +156,20 @@ using namespace osm_auth_ios;
 
 #pragma mark - Notifications
 
-+ (void)initPushNotificationsWithLaunchOptions:(NSDictionary *)launchOptions
-{
-  // Do not initialize Pushwoosh for open-source version.
-  if (string(PUSHWOOSH_APPLICATION_ID).empty())
-    return;
-  [PushNotificationManager
-      initializeWithAppCode:@(PUSHWOOSH_APPLICATION_ID)
-                    appName:[[NSBundle mainBundle]
-                                objectForInfoDictionaryKey:@"CFBundleDisplayName"]];
-  PushNotificationManager * pushManager = [PushNotificationManager pushManager];
-
-  if (launchOptions)
-    [pushManager handlePushReceived:launchOptions];
-
-  // make sure we count app open in Pushwoosh stats
-  [pushManager sendAppOpen];
-
-  // register for push notifications!
-  [pushManager registerForPushNotifications];
-}
-
 // system push notification registration success callback, delegate to pushManager
 - (void)application:(UIApplication *)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
 {
-  PushNotificationManager * pushManager = [PushNotificationManager pushManager];
-  [pushManager handlePushRegistration:deviceToken];
-  [Alohalytics logEvent:kPushDeviceTokenLogEvent withValue:pushManager.getHWID];
+  [MWMPushNotifications application:application
+      didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
 }
 
 // system push notification registration error callback, delegate to pushManager
 - (void)application:(UIApplication *)application
     didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
 {
-  [[PushNotificationManager pushManager] handlePushRegistrationFailure:error];
+  [MWMPushNotifications application:application
+      didFailToRegisterForRemoteNotificationsWithError:error];
 }
 
 // system push notifications callback, delegate to pushManager
@@ -211,22 +177,9 @@ using namespace osm_auth_ios;
     didReceiveRemoteNotification:(NSDictionary *)userInfo
           fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
 {
-  [Statistics logEvent:kStatEventName(kStatApplication, kStatPushReceived) withParameters:userInfo];
-  if (![self handleURLPush:userInfo])
-    [[PushNotificationManager pushManager] handlePushReceived:userInfo];
-  completionHandler(UIBackgroundFetchResultNoData);
-}
-
-- (BOOL)handleURLPush:(NSDictionary *)userInfo
-{
-  auto app = UIApplication.sharedApplication;
-  if (app.applicationState != UIApplicationStateInactive)
-    return NO;
-  NSString * openLink = userInfo[@"openURL"];
-  if (!openLink)
-    return NO;
-  [app openURL:[NSURL URLWithString:openLink]];
-  return YES;
+  [MWMPushNotifications application:application
+       didReceiveRemoteNotification:userInfo
+             fetchCompletionHandler:completionHandler];
 }
 
 - (BOOL)isDrapeEngineCreated
@@ -272,8 +225,8 @@ using namespace osm_auth_ios;
       auto const points = parsedData.m_points;
       auto const & p1 = points[0];
       auto const & p2 = points[1];
-      [[MWMRouter router] buildFromPoint:MWMRoutePoint(p1.m_org, @(p1.m_name.c_str()))
-                                 toPoint:MWMRoutePoint(p2.m_org, @(p2.m_name.c_str()))
+      [[MWMRouter router] buildFromPoint:routePoint(p1.m_org, @(p1.m_name.c_str()))
+                                 toPoint:routePoint(p2.m_org, @(p2.m_name.c_str()))
                               bestRouter:NO];
       [self showMap];
       [self.mapViewController showAPIBar];
@@ -338,95 +291,6 @@ using namespace osm_auth_ios;
   [self updateApplicationIconBadgeNumber];
 }
 
-- (void)determineMapStyle
-{
-  auto & f = GetFramework();
-  if ([MWMSettings autoNightModeEnabled])
-  {
-    f.SetMapStyle(MapStyleClear);
-    [UIColor setNightMode:NO];
-  }
-  else
-  {
-    [UIColor setNightMode:f.GetMapStyle() == MapStyleDark];
-  }
-}
-
-+ (void)setAutoNightModeOff:(BOOL)off
-{
-  [MWMSettings setAutoNightModeEnabled:!off];
-  if (!off)
-    [MapsAppDelegate.theApp stopMapStyleChecker];
-}
-
-- (void)startMapStyleChecker
-{
-  if (![MWMSettings autoNightModeEnabled])
-    return;
-  self.mapStyleSwitchTimer =
-      [NSTimer scheduledTimerWithTimeInterval:(30 * 60)
-                                       target:[MapsAppDelegate class]
-                                     selector:@selector(changeMapStyleIfNedeed)
-                                     userInfo:nil
-                                      repeats:YES];
-}
-
-- (void)stopMapStyleChecker { [self.mapStyleSwitchTimer invalidate]; }
-+ (void)resetToDefaultMapStyle
-{
-  MapsAppDelegate * app = MapsAppDelegate.theApp;
-  auto & f = GetFramework();
-  auto style = f.GetMapStyle();
-  if (style == MapStyleClear || style == MapStyleLight)
-    return;
-  f.SetMapStyle(MapStyleClear);
-  [UIColor setNightMode:NO];
-  [static_cast<id<MWMController>>(app.mapViewController.navigationController.topViewController)
-      mwm_refreshUI];
-  [app stopMapStyleChecker];
-}
-
-+ (void)changeMapStyleIfNedeed
-{
-  if (![MWMSettings autoNightModeEnabled])
-    return;
-  auto & f = GetFramework();
-  CLLocation * lastLocation = [MWMLocationManager lastLocation];
-  if (!lastLocation || !f.IsRoutingActive())
-    return;
-  CLLocationCoordinate2D const coord = lastLocation.coordinate;
-  dispatch_async(dispatch_get_main_queue(), [coord] {
-    auto & f = GetFramework();
-    MapsAppDelegate * app = MapsAppDelegate.theApp;
-    auto const dayTime = GetDayTime(static_cast<time_t>(NSDate.date.timeIntervalSince1970),
-                                    coord.latitude, coord.longitude);
-    id<MWMController> vc = static_cast<id<MWMController>>(
-        app.mapViewController.navigationController.topViewController);
-    auto style = f.GetMapStyle();
-    switch (dayTime)
-    {
-    case DayTimeType::Day:
-    case DayTimeType::PolarDay:
-      if (style != MapStyleClear && style != MapStyleLight)
-      {
-        f.SetMapStyle(MapStyleClear);
-        [UIColor setNightMode:NO];
-        [vc mwm_refreshUI];
-      }
-      break;
-    case DayTimeType::Night:
-    case DayTimeType::PolarNight:
-      if (style != MapStyleDark)
-      {
-        f.SetMapStyle(MapStyleDark);
-        [UIColor setNightMode:YES];
-        [vc mwm_refreshUI];
-      }
-      break;
-    }
-  });
-}
-
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
@@ -448,7 +312,7 @@ using namespace osm_auth_ios;
   [HttpThread setDownloadIndicatorProtocol:self];
 
   InitLocalizedStrings();
-  [self determineMapStyle];
+  [MWMThemeManager invalidate];
 
   GetFramework().EnterForeground();
 
@@ -466,10 +330,13 @@ using namespace osm_auth_ios;
   }
   else
   {
+    if ([MWMSettings statisticsEnabled])
+      [Alohalytics enable];
+    else
+      [Alohalytics disable];
     [self incrementSessionsCountAndCheckForAlert];
-    [MapsAppDelegate initPushNotificationsWithLaunchOptions:launchOptions];
   }
-
+  [MWMPushNotifications setup:launchOptions];
   [self enableTTSForTheFirstTime];
 
   return returnValue;
@@ -536,7 +403,7 @@ using namespace osm_auth_ios;
       }
     });
   };
-  auto const runFetchTask = ^(TMWMVoidBlock task) {
+  auto const runFetchTask = ^(MWMVoidBlock task) {
     ++fetchRunningTasks;
     task();
   };
@@ -622,7 +489,17 @@ using namespace osm_auth_ios;
   LOG(LINFO, ("applicationWillResignActive"));
   [self.mapViewController onGetFocus:NO];
   [MWMRouterSavedState store];
-  GetFramework().SetRenderingDisabled(false);
+  // On some devices we have to free all belong-to-graphics memory
+  // because of new OpenGL driver powered by Metal.
+  if ([AppInfo sharedInfo].isMetalDriver)
+  {
+    GetFramework().SetRenderingDisabled(true);
+    GetFramework().OnDestroyGLContext();
+  }
+  else
+  {
+    GetFramework().SetRenderingDisabled(false);
+  }
   [MWMLocationManager applicationWillResignActive];
 }
 
@@ -653,11 +530,18 @@ using namespace osm_auth_ios;
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
   LOG(LINFO, ("applicationDidBecomeActive"));
-  LOG(LINFO, ("Pushwoosh: ", [[PushNotificationManager pushManager] getPushToken].UTF8String));
+  LOG(LINFO, ("Pushwoosh: ", [MWMPushNotifications pushToken].UTF8String));
   [self.mapViewController onGetFocus:YES];
   [self handleURLs];
   [[Statistics instance] applicationDidBecomeActive];
   GetFramework().SetRenderingEnabled();
+  // On some devices we have to free all belong-to-graphics memory
+  // because of new OpenGL driver powered by Metal.
+  if ([AppInfo sharedInfo].isMetalDriver)
+  {
+    m2::PointU const size = ((EAGLView *)self.mapViewController.view).pixelSize;
+    GetFramework().OnRecoverGLContext(static_cast<int>(size.x), static_cast<int>(size.y));
+  }
   [MWMLocationManager applicationDidBecomeActive];
   [MWMRouterSavedState restore];
   [MWMSearch addCategoriesToSpotlight];
@@ -670,7 +554,8 @@ using namespace osm_auth_ios;
 {
   if (![userActivity.activityType isEqualToString:CSSearchableItemActionType])
     return NO;
-  NSString * searchString = L(userActivity.userInfo[CSSearchableItemActivityIdentifier]);
+  NSString * searchStringKey = userActivity.userInfo[CSSearchableItemActivityIdentifier];
+  NSString * searchString = L(searchStringKey);
   if (!searchString)
     return NO;
 
@@ -775,6 +660,7 @@ using namespace osm_auth_ios;
     NSForegroundColorAttributeName : [UIColor lightGrayColor],
   }
                         forState:UIControlStateDisabled];
+  barBtn.tintColor = [UIColor whitePrimaryText];
 
   UIPageControl * pageControl = [UIPageControl appearance];
   pageControl.pageIndicatorTintColor = [UIColor blackHintText];
@@ -936,6 +822,7 @@ using namespace osm_auth_ios;
 
 - (void)firstLaunchSetup
 {
+  [MWMSettings setStatisticsEnabled:YES];
   NSString * currentVersion =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:(NSString *)kCFBundleVersionKey];
   NSUserDefaults * standartDefaults = [NSUserDefaults standardUserDefaults];
@@ -981,14 +868,10 @@ using namespace osm_auth_ios;
   if (!Platform::IsConnected())
     return;
 
-  UIViewController * topViewController =
-      [(UINavigationController *)self.window.rootViewController visibleViewController];
-  MWMAlertViewController * alert =
-      [[MWMAlertViewController alloc] initWithViewController:topViewController];
   if (isRate)
-    [alert presentRateAlert];
+    [[MWMAlertViewController activeAlertController] presentRateAlert];
   else
-    [alert presentFacebookAlert];
+    [[MWMAlertViewController activeAlertController] presentFacebookAlert];
   [[NSUserDefaults standardUserDefaults]
       setObject:NSDate.date
          forKey:isRate ? kUDLastRateRequestDate : kUDLastShareRequstDate];

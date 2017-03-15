@@ -1,6 +1,5 @@
-#import "Common.h"
+#import "MWMCommon.h"
 #import "MWMButton.h"
-#import "UIColor+MapsMeColor.h"
 
 namespace
 {

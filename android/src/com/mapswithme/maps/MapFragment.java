@@ -54,7 +54,6 @@ public class MapFragment extends BaseMwmFragment
   private int mWidth;
   private boolean mRequireResize;
   private boolean mContextCreated;
-  private boolean mFirstStart;
   private static boolean sWasCopyrightDisplayed;
 
   interface MapRenderingListener
@@ -72,16 +71,16 @@ public class MapFragment extends BaseMwmFragment
     if (!sWasCopyrightDisplayed)
     {
       nativeSetupWidget(WIDGET_COPYRIGHT,
-                        mWidth - UiUtils.dimen(R.dimen.margin_ruler_right),
+                        UiUtils.dimen(R.dimen.margin_ruler_left),
                         mHeight - UiUtils.dimen(R.dimen.margin_ruler_bottom),
-                        ANCHOR_RIGHT_BOTTOM);
+                        ANCHOR_LEFT_BOTTOM);
       sWasCopyrightDisplayed = true;
     }
 
     nativeSetupWidget(WIDGET_RULER,
-                      mWidth - UiUtils.dimen(R.dimen.margin_ruler_right),
+                      UiUtils.dimen(R.dimen.margin_ruler_left),
                       mHeight - UiUtils.dimen(R.dimen.margin_ruler_bottom),
-                      ANCHOR_RIGHT_BOTTOM);
+                      ANCHOR_LEFT_BOTTOM);
 
     if (BuildConfig.DEBUG)
     {
@@ -91,14 +90,14 @@ public class MapFragment extends BaseMwmFragment
                         ANCHOR_LEFT_TOP);
     }
 
-    setupCompass(0, 0, false);
+    setupCompass(UiUtils.getCompassYOffset(getContext()), false);
   }
 
-  void setupCompass(int offsetX, int offsetY, boolean forceRedraw)
+  void setupCompass(int offsetY, boolean forceRedraw)
   {
     nativeSetupWidget(WIDGET_COMPASS,
-                      UiUtils.dimen(R.dimen.margin_compass_left) + offsetX,
-                      mHeight - UiUtils.dimen(R.dimen.margin_compass_bottom) + offsetY,
+                      mWidth - UiUtils.dimen(R.dimen.margin_compass),
+                      offsetY + UiUtils.dimen(R.dimen.margin_compass_top),
                       ANCHOR_CENTER);
     if (forceRedraw && mContextCreated)
       nativeApplyWidgets();
@@ -107,9 +106,9 @@ public class MapFragment extends BaseMwmFragment
   void setupRuler(int offsetX, int offsetY, boolean forceRedraw)
   {
     nativeSetupWidget(WIDGET_RULER,
-                      mWidth - UiUtils.dimen(R.dimen.margin_ruler_right) + offsetX,
+                      UiUtils.dimen(R.dimen.margin_ruler_left) + offsetX,
                       mHeight - UiUtils.dimen(R.dimen.margin_ruler_bottom) + offsetY,
-                      ANCHOR_RIGHT_BOTTOM);
+                      ANCHOR_LEFT_BOTTOM);
     if (forceRedraw && mContextCreated)
       nativeApplyWidgets();
   }
@@ -167,11 +166,11 @@ public class MapFragment extends BaseMwmFragment
     getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
     final float exactDensityDpi = metrics.densityDpi;
 
-    mFirstStart = ((MwmActivity) getMwmActivity()).isFirstStart();
-    if (mFirstStart)
+    boolean firstStart = ((MwmActivity) getMwmActivity()).isFirstStart();
+    if (firstStart)
       PushwooshHelper.nativeProcessFirstLaunch();
 
-    if (!nativeCreateEngine(surface, (int) exactDensityDpi, mFirstStart))
+    if (!nativeCreateEngine(surface, (int) exactDensityDpi, firstStart))
     {
       reportUnsupported();
       return;
@@ -284,13 +283,6 @@ public class MapFragment extends BaseMwmFragment
                       event.getPointerId(1), event.getX(1), event.getY(1), pointerIndex);
         return true;
     }
-  }
-
-  boolean isFirstStart()
-  {
-    boolean res = mFirstStart;
-    mFirstStart = false;
-    return res;
   }
 
   boolean isContextCreated()

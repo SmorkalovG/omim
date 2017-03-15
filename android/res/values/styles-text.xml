@@ -16,6 +16,11 @@
     <item name="android:textColor">?android:textColorPrimary</item>
   </style>
 
+  <style name="MwmTextAppearance.Title.Toolbar">
+    <item name="android:textSize">@dimen/text_size_toolbar</item>
+    <item name="android:fontFamily" tools:targetApi="jelly_bean">@string/robotoMedium</item>
+  </style>
+
   <style name="MwmTextAppearance.Headline">
     <item name="android:textSize">@dimen/text_size_headline</item>
     <item name="android:textColor">?android:textColorPrimary</item>
@@ -170,5 +175,15 @@
 
   <style name="MwmTextAppearance.Editor.Buttons">
     <item name="android:textSize">@dimen/text_size_body_3</item>
+  </style>
+
+  <style name="MwmTextAppearance.Banner" parent="MwmTextAppearance.Body4">
+    <item name="android:textSize">@dimen/text_size_banner</item>
+    <item name="android:textAllCaps">true</item>
+    <item name="android:textColor">?bannerText</item>
+  </style>
+
+  <style name="MwmTextAppearance.Tab" parent="MwmTextAppearance.Body4">
+    <item name="android:textAllCaps">true</item>
   </style>
 </resources>

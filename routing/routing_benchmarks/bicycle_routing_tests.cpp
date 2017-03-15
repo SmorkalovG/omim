@@ -3,8 +3,9 @@
 #include "routing/routing_benchmarks/helpers.hpp"
 
 #include "routing/bicycle_directions.hpp"
-#include "routing/bicycle_model.hpp"
 #include "routing/road_graph.hpp"
+
+#include "routing_common/bicycle_model.hpp"
 
 #include "geometry/mercator.hpp"
 
@@ -26,7 +27,8 @@ protected:
   // RoutingTest overrides:
   unique_ptr<routing::IDirectionsEngine> CreateDirectionsEngine() override
   {
-    unique_ptr<routing::IDirectionsEngine> engine(new routing::BicycleDirectionsEngine(m_index));
+    unique_ptr<routing::IDirectionsEngine> engine(
+        new routing::BicycleDirectionsEngine(m_index, nullptr /* numMwmIds */));
     return engine;
   }
 

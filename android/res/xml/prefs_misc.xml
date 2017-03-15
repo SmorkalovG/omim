@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
   xmlns:android="http://schemas.android.com/apk/res/android">
+
   <CheckBoxPreference
     android:key="@string/pref_showcase_switched_on"
     android:title="@string/showcase_settings_title"
@@ -16,4 +17,16 @@
     android:title="Google Play Services"
     android:summary="@string/pref_use_google_play"
     android:defaultValue="true"/>
+
+  <CheckBoxPreference
+    android:key="@string/pref_enable_logging"
+    android:title="Enable logging"
+    android:defaultValue="false"/>
+
+  <ListPreference
+    android:key="@string/pref_use_mobile_data"
+    android:title="@string/mobile_data"
+    android:summary="@string/mobile_data_option_ask"
+    android:entries="@array/mobile_data_options"
+    android:entryValues="@array/mobile_data_options_values"/>
 </PreferenceScreen>

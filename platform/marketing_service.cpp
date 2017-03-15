@@ -7,6 +7,8 @@ namespace marketing
 char const * const kMapVersion = "map_version";
 char const * const kMapListing = "map_listing";
 char const * const kMapDownloadDiscovered = "map_download_discovered";
+char const * const kMapLastDownloaded = "last_map_downloaded";
+char const * const kMapLastDownloadedTimestamp = "last_map_downloaded_time";
 char const * const kRoutingP2PVehicleDiscovered = "routing_p2p_vehicle_discovered";
 char const * const kRoutingP2PPedestrianDiscovered = "routing_p2p_pedestrian_discovered";
 char const * const kRoutingP2PBicycleDiscovered = "routing_p2p_bicycle_discovered";
@@ -17,6 +19,7 @@ char const * const kRoutingBicycleDiscovered = "routing_bicycle_discovered";
 char const * const kRoutingTaxiDiscovered = "routing_taxi_discovered";
 char const * const kEditorAddDiscovered = "editor_add_discovered";
 char const * const kEditorEditDiscovered = "editor_edit_discovered";
+char const * const kTrafficDiscovered = "traffic_discovered";
 
 // Events.
 char const * const kDownloaderMapActionFinished = "Downloader_Map_action_finished";
@@ -42,7 +45,9 @@ void MarketingService::ProcessFirstLaunch()
     kRoutingVehicleDiscovered, kRoutingPedestrianDiscovered,
     kRoutingBicycleDiscovered, kRoutingTaxiDiscovered,
 
-    kEditorAddDiscovered, kEditorEditDiscovered
+    kEditorAddDiscovered, kEditorEditDiscovered,
+
+    kTrafficDiscovered
   };
 
   for (auto const & tag : tags)

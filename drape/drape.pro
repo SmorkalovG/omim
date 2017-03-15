@@ -16,16 +16,21 @@ OTHER_FILES += \
     shaders/area3d_outline_vertex_shader.vsh \
     shaders/area_vertex_shader.vsh \
     shaders/arrow3d_fragment_shader.fsh \
+    shaders/arrow3d_outline_fragment_shader.fsh \
     shaders/arrow3d_shadow_fragment_shader.fsh \
     shaders/arrow3d_shadow_vertex_shader.vsh \
     shaders/arrow3d_vertex_shader.vsh \
     shaders/circle_shader.fsh \
     shaders/circle_shader.vsh \
+    shaders/colored_symbol_billboard_shader.vsh \
+    shaders/colored_symbol_shader.fsh \
+    shaders/colored_symbol_shader.vsh \
     shaders/compass_vertex_shader.vsh \
     shaders/dashed_fragment_shader.fsh \
     shaders/dashed_vertex_shader.vsh \
     shaders/debug_rect_fragment_shader.fsh \
     shaders/debug_rect_vertex_shader.vsh \
+    shaders/discarded_texturing_fragment_shader.fsh \
     shaders/line_fragment_shader.fsh \
     shaders/line_vertex_shader.vsh \
     shaders/masked_texturing_billboard_vertex_shader.vsh \
@@ -42,6 +47,8 @@ OTHER_FILES += \
     shaders/shader_index.txt \
     shaders/solid_color_fragment_shader.fsh \
     shaders/text_billboard_vertex_shader.vsh \
+    shaders/text_fixed_fragment_shader.fsh \
+    shaders/text_fixed_vertex_shader.vsh \
     shaders/text_fragment_shader.fsh \
     shaders/text_outlined_billboard_vertex_shader.vsh \
     shaders/text_outlined_gui_vertex_shader.vsh \
@@ -56,6 +63,8 @@ OTHER_FILES += \
     shaders/trackpoint_fragment_shader.fsh \
     shaders/traffic_fragment_shader.fsh \
     shaders/traffic_vertex_shader.vsh \
+    shaders/traffic_line_fragment_shader.fsh \
+    shaders/traffic_line_vertex_shader.vsh \
     shaders/transparent_layer_fragment_shader.fsh \
     shaders/transparent_layer_vertex_shader.vsh \
     shaders/user_mark.vsh \

@@ -8,14 +8,13 @@
 #include "generator/osm2type.hpp"
 #include "generator/tag_admixer.hpp"
 
-#include "routing/car_model.hpp"
+#include "routing_common/car_model.hpp"
 
 #include "indexer/feature_data.hpp"
 #include "indexer/classificator.hpp"
 #include "indexer/classificator_loader.hpp"
 
 #include "std/iostream.hpp"
-
 
 using namespace tests;
 
@@ -608,7 +607,7 @@ UNIT_TEST(OsmType_Ferry)
   FeatureParams params;
   ftype::GetNameAndType(&e, params);
 
-  TEST_EQUAL(params.m_Types.size(), 2, (params));
+  TEST_EQUAL(params.m_Types.size(), 3, (params));
 
   uint32_t type = GetType({"highway", "primary", "bridge"});
   TEST(params.IsTypeExist(type), ());
@@ -621,6 +620,9 @@ UNIT_TEST(OsmType_Ferry)
   type = GetType({"route", "ferry"});
   TEST(!params.IsTypeExist(type), ());
   TEST(!carModel.IsRoadType(type), ());
+
+  type = GetType({"hwtag", "yescar"});
+  TEST(params.IsTypeExist(type), ());
 }
 
 UNIT_TEST(OsmType_Boundary)

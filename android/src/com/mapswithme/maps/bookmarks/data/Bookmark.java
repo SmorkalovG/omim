@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
 
 import com.mapswithme.maps.Framework;
 import com.mapswithme.util.Constants;
@@ -17,15 +19,19 @@ public class Bookmark extends MapObject
   private int mBookmarkId;
   private double mMerX;
   private double mMerY;
+  @Nullable
+  private final String mObjectTitle;
 
-  Bookmark(@IntRange(from = 0) int categoryId, @IntRange(from = 0) int bookmarkId, String title)
+  Bookmark(@IntRange(from = 0) int categoryId, @IntRange(from = 0) int bookmarkId, String title,
+           @Nullable String objectTitle, @Nullable Banner banner, boolean reachableByTaxi)
   {
-    super(BOOKMARK, title, "", "", 0, 0, "");
+    super(BOOKMARK, title, "", "", 0, 0, "", banner, reachableByTaxi);
 
     mCategoryId = categoryId;
     mBookmarkId = bookmarkId;
     mIcon = getIconInternal();
     initXY();
+    mObjectTitle = objectTitle;
   }
 
   private void initXY()
@@ -34,8 +40,8 @@ public class Bookmark extends MapObject
     mMerX = ll.x;
     mMerY = ll.y;
 
-    mLat = Math.toDegrees(2.0 * Math.atan(Math.exp(Math.toRadians(ll.y))) - Math.PI / 2.0);
-    mLon = ll.x;
+    setLat(Math.toDegrees(2.0 * Math.atan(Math.exp(Math.toRadians(ll.y))) - Math.PI / 2.0));
+    setLon(ll.x);
   }
 
   @Override
@@ -44,6 +50,7 @@ public class Bookmark extends MapObject
     super.writeToParcel(dest, flags);
     dest.writeInt(mCategoryId);
     dest.writeInt(mBookmarkId);
+    dest.writeString(mObjectTitle);
   }
 
   protected Bookmark(Parcel source)
@@ -53,6 +60,7 @@ public class Bookmark extends MapObject
     mBookmarkId = source.readInt();
     mIcon = getIconInternal();
     initXY();
+    mObjectTitle = source.readString();
   }
 
   @Override
@@ -92,8 +100,10 @@ public class Bookmark extends MapObject
   @Override
   public String getSubtitle()
   {
-    // TODO get correct value
-    return getCategory().getName();
+    String subtitle = getCategoryName();
+    if (!TextUtils.isEmpty(mObjectTitle) && !mTitle.equals(mObjectTitle))
+      subtitle += " - " + mObjectTitle;
+    return subtitle;
   }
 
   public String getCategoryName()

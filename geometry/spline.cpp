@@ -15,9 +15,9 @@ Spline::Spline(vector<PointD> const & path)
   m_direction = vector<PointD>(cnt);
   m_length = vector<double>(cnt);
 
-  for(int i = 0; i < cnt; ++i)
+  for(size_t i = 0; i < cnt; ++i)
   {
-    m_direction[i] = path[i+1] - path[i];
+    m_direction[i] = path[i + 1] - path[i];
     m_length[i] = m_direction[i].Length();
     m_direction[i] = m_direction[i].Normalize();
   }
@@ -35,11 +35,9 @@ void Spline::AddPoint(PointD const & pt)
 {
   /// TODO remove this check when fix generator.
   /// Now we have line objects with zero length segments
+  /// https://jira.mail.ru/browse/MAPSME-3561
   if (!IsEmpty() && (pt - m_position.back()).IsAlmostZero())
-  {
-    LOG(LDEBUG, ("Found a zero-length segment (the endpoints coincide)"));
     return;
-  }
 
   if(IsEmpty())
     m_position.push_back(pt);

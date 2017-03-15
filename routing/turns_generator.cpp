@@ -1,7 +1,8 @@
-#include "routing/car_model.hpp"
 #include "routing/osrm_helpers.hpp"
 #include "routing/routing_mapping.hpp"
 #include "routing/turns_generator.hpp"
+
+#include "routing_common/car_model.hpp"
 
 #include "indexer/ftypes_matcher.hpp"
 #include "indexer/scales.hpp"
@@ -10,11 +11,11 @@
 
 #include "base/macros.hpp"
 
-#include "3party/osrm/osrm-backend/data_structures/internal_route_result.hpp"
-
 #include "std/cmath.hpp"
 #include "std/numeric.hpp"
 #include "std/string.hpp"
+
+#include "3party/osrm/osrm-backend/data_structures/internal_route_result.hpp"
 
 using namespace routing;
 using namespace routing::turns;
@@ -45,7 +46,7 @@ bool KeepTurnByHighwayClass(TurnDirection turn, TurnCandidates const & possibleT
   ftypes::HighwayClass maxClassForPossibleTurns = ftypes::HighwayClass::Error;
   for (auto const & t : possibleTurns.candidates)
   {
-    if (t.node == turnInfo.m_outgoing.m_nodeId)
+    if (t.m_nodeId == turnInfo.m_outgoing.m_nodeId)
       continue;
     ftypes::HighwayClass const highwayClass = t.highwayClass;
     if (static_cast<int>(highwayClass) > static_cast<int>(maxClassForPossibleTurns))
@@ -84,7 +85,7 @@ bool KeepRoundaboutTurnByHighwayClass(TurnDirection turn, TurnCandidates const &
 {
   for (auto const & t : possibleTurns.candidates)
   {
-    if (t.node == turnInfo.m_outgoing.m_nodeId)
+    if (t.m_nodeId == turnInfo.m_outgoing.m_nodeId)
       continue;
     if (static_cast<int>(t.highwayClass) != static_cast<int>(ftypes::HighwayClass::Service))
       return true;
@@ -254,9 +255,11 @@ bool TurnInfo::IsSegmentsValid() const
 }
 
 IRouter::ResultCode MakeTurnAnnotation(turns::IRoutingResult const & result,
-                                       RouterDelegate const & delegate, vector<Junction> & junctions,
+                                       RouterDelegate const & delegate,
+                                       vector<Junction> & junctions,
                                        Route::TTurns & turnsDir, Route::TTimes & times,
-                                       Route::TStreets & streets)
+                                       Route::TStreets & streets,
+                                       vector<Segment> & trafficSegs)
 {
   double estimatedTime = 0;
 
@@ -271,6 +274,7 @@ IRouter::ResultCode MakeTurnAnnotation(turns::IRoutingResult const & result,
   // Annotate turns.
   size_t skipTurnSegments = 0;
   auto const & loadedSegments = result.GetSegments();
+  trafficSegs.reserve(loadedSegments.size());
   for (auto loadedSegmentIt = loadedSegments.cbegin(); loadedSegmentIt != loadedSegments.cend();
        ++loadedSegmentIt)
   {
@@ -320,6 +324,8 @@ IRouter::ResultCode MakeTurnAnnotation(turns::IRoutingResult const & result,
 
     // Path geometry.
     junctions.insert(junctions.end(), loadedSegmentIt->m_path.begin(), loadedSegmentIt->m_path.end());
+    trafficSegs.insert(trafficSegs.end(), loadedSegmentIt->m_trafficSegs.cbegin(),
+                       loadedSegmentIt->m_trafficSegs.cend());
   }
 
   // Path found. Points will be replaced by start and end edges junctions.
@@ -610,9 +616,9 @@ void GetTurnDirection(IRoutingResult const & result, TurnInfo & turnInfo, TurnIt
   }
   else
   {
-    if (nodes.candidates.front().node == turnInfo.m_outgoing.m_nodeId)
+    if (nodes.candidates.front().m_nodeId == turnInfo.m_outgoing.m_nodeId)
       turn.m_turn = LeftmostDirection(turnAngle);
-    else if (nodes.candidates.back().node == turnInfo.m_outgoing.m_nodeId)
+    else if (nodes.candidates.back().m_nodeId == turnInfo.m_outgoing.m_nodeId)
       turn.m_turn = RightmostDirection(turnAngle);
     else
       turn.m_turn = intermediateDirection;

@@ -1,4 +1,5 @@
 #include "routing/pedestrian_directions.hpp"
+
 #include "routing/road_graph.hpp"
 
 #include "indexer/classificator.hpp"
@@ -32,10 +33,12 @@ PedestrianDirectionsEngine::PedestrianDirectionsEngine()
 {
 }
 
-void PedestrianDirectionsEngine::Generate(IRoadGraph const & graph, vector<Junction> const & path,
+void PedestrianDirectionsEngine::Generate(RoadGraphBase const & graph,
+                                          vector<Junction> const & path,
+                                          my::Cancellable const & cancellable,
                                           Route::TTimes & times, Route::TTurns & turns,
                                           vector<Junction> & routeGeometry,
-                                          my::Cancellable const & cancellable)
+                                          vector<Segment> & /* trafficSegs */)
 {
   times.clear();
   turns.clear();
@@ -59,7 +62,7 @@ void PedestrianDirectionsEngine::Generate(IRoadGraph const & graph, vector<Junct
   routeGeometry = path;
 }
 
-void PedestrianDirectionsEngine::CalculateTurns(IRoadGraph const & graph,
+void PedestrianDirectionsEngine::CalculateTurns(RoadGraphBase const & graph,
                                                 vector<Edge> const & routeEdges,
                                                 Route::TTurns & turns,
                                                 my::Cancellable const & cancellable) const

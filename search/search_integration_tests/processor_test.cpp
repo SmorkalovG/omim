@@ -4,6 +4,7 @@
 #include "search/search_integration_tests/helpers.hpp"
 #include "search/search_tests_support/test_results_matching.hpp"
 #include "search/search_tests_support/test_search_request.hpp"
+#include "search/token_range.hpp"
 #include "search/token_slice.hpp"
 
 #include "generator/feature_builder.hpp"
@@ -11,6 +12,7 @@
 #include "generator/generator_tests_support/test_mwm_builder.hpp"
 
 #include "indexer/feature.hpp"
+#include "indexer/ftypes_matcher.hpp"
 #include "indexer/index.hpp"
 
 #include "geometry/mercator.hpp"
@@ -18,6 +20,8 @@
 #include "geometry/rect2d.hpp"
 
 #include "base/assert.hpp"
+#include "base/checked_cast.hpp"
+#include "base/macros.hpp"
 #include "base/math.hpp"
 
 #include "std/shared_ptr.hpp"
@@ -33,8 +37,10 @@ namespace
 class TestHotel : public TestPOI
 {
 public:
+  using Type = ftypes::IsHotelChecker::Type;
+
   TestHotel(m2::PointD const & center, string const & name, string const & lang, float rating,
-            int priceRate)
+            int priceRate, Type type)
     : TestPOI(center, name, lang), m_rating(rating), m_priceRate(priceRate)
   {
     CHECK_GREATER_OR_EQUAL(m_rating, 0.0, ());
@@ -43,7 +49,7 @@ public:
     CHECK_GREATER_OR_EQUAL(m_priceRate, 0, ());
     CHECK_LESS_OR_EQUAL(m_priceRate, 5, ());
 
-    SetTypes({{"tourism", "hotel"}});
+    SetTypes({{"tourism", ftypes::IsHotelChecker::GetHotelTypeTag(type)}});
   }
 
   // TestPOI overrides:
@@ -63,25 +69,6 @@ private:
 
 class ProcessorTest : public SearchTest
 {
-public:
-  unique_ptr<TestSearchRequest> MakeRequest(string const & query)
-  {
-    SearchParams params;
-    params.m_query = query;
-    params.m_inputLocale = "en";
-    params.m_mode = Mode::Everywhere;
-    params.m_suggestsEnabled = false;
-
-    auto request = make_unique<TestSearchRequest>(m_engine, params, m_viewport);
-    request->Run();
-    return request;
-  }
-
-  bool MatchResults(vector<shared_ptr<MatchingRule>> rules,
-                    vector<search::Result> const & actual) const
-  {
-    return ::MatchResults(m_engine, rules, actual);
-  }
 };
 
 UNIT_CLASS_TEST(ProcessorTest, Smoke)
@@ -172,6 +159,10 @@ UNIT_CLASS_TEST(ProcessorTest, Smoke)
                                    });
 
   SetViewport(m2::RectD(m2::PointD(-1.0, -1.0), m2::PointD(1.0, 1.0)));
+  {
+    TRules rules = {};
+    TEST(ResultsMatch("", rules), ());
+  }
   {
     TRules rules = {ExactMatch(wonderlandId, busStop)};
     TEST(ResultsMatch("Bus stop", rules), ());
@@ -330,7 +321,7 @@ UNIT_CLASS_TEST(ProcessorTest, DisableSuggests)
     request.Run();
     TRules rules = {ExactMatch(worldId, london1), ExactMatch(worldId, london2)};
 
-    TEST(MatchResults(rules, request.Results()), ());
+    TEST(ResultsMatch(request.Results(), rules), ());
   }
 }
 
@@ -392,7 +383,7 @@ UNIT_CLASS_TEST(ProcessorTest, TestRankingInfo)
     TRules rules = {ExactMatch(wonderlandId, goldenGateBridge),
                     ExactMatch(wonderlandId, goldenGateStreet)};
 
-    TEST(MatchResults(rules, request->Results()), ());
+    TEST(ResultsMatch(request->Results(), rules), ());
     for (auto const & result : request->Results())
     {
       auto const & info = result.GetRankingInfo();
@@ -409,11 +400,11 @@ UNIT_CLASS_TEST(ProcessorTest, TestRankingInfo)
 
     TRules rules{ExactMatch(wonderlandId, cafe1), ExactMatch(wonderlandId, cafe2),
                  ExactMatch(wonderlandId, lermontov)};
-    TEST(MatchResults(rules, results), ());
+    TEST(ResultsMatch(results, rules), ());
 
     TEST_EQUAL(3, results.size(), ("Unexpected number of retrieved cafes."));
     auto const & top = results.front();
-    TEST(MatchResults({ExactMatch(wonderlandId, lermontov)}, {top}), ());
+    TEST(ResultsMatch({top}, {ExactMatch(wonderlandId, lermontov)}), ());
   }
 
   {
@@ -527,10 +518,12 @@ UNIT_CLASS_TEST(ProcessorTest, TestPostcodes)
     my::Cancellable cancellable;
 
     QueryParams params;
-    params.m_tokens.emplace_back();
-    params.m_tokens.back().push_back(strings::MakeUniString("141702"));
-    auto features = RetrievePostcodeFeatures(context, cancellable,
-                                             TokenSlice(params, 0, params.m_tokens.size()));
+    {
+      strings::UniString const tokens[] = {strings::MakeUniString("141702")};
+      params.InitNoPrefix(tokens, tokens + ARRAY_SIZE(tokens));
+    }
+    auto features = RetrievePostcodeFeatures(
+        context, cancellable, TokenSlice(params, TokenRange(0, params.GetNumTokens())));
     TEST_EQUAL(1, features->PopCount(), ());
 
     uint64_t index = 0;
@@ -539,7 +532,7 @@ UNIT_CLASS_TEST(ProcessorTest, TestPostcodes)
 
     Index::FeaturesLoaderGuard loader(m_engine, countryId);
     FeatureType ft;
-    TEST(loader.GetFeatureByIndex(index, ft), ());
+    TEST(loader.GetFeatureByIndex(base::checked_cast<uint32_t>(index), ft), ());
 
     auto rule = ExactMatch(countryId, building31);
     TEST(rule->Matches(ft), ());
@@ -631,7 +624,7 @@ UNIT_CLASS_TEST(ProcessorTest, TestCategories)
                           ExactMatch(wonderlandId, busStop)};
 
     auto request = MakeRequest("atm");
-    TEST(MatchResults(rules, request->Results()), ());
+    TEST(ResultsMatch(request->Results(), rules), ());
     for (auto const & result : request->Results())
     {
       Index::FeaturesLoaderGuard loader(m_engine, wonderlandId);
@@ -653,26 +646,9 @@ UNIT_CLASS_TEST(ProcessorTest, TestCategories)
     }
   }
 
-  {
-    TRules const rules = {ExactMatch(wonderlandId, nonameAtm), ExactMatch(wonderlandId, namedAtm)};
-
-    auto request = MakeRequest("#atm");
-
-    TEST(MatchResults(rules, request->Results()), ());
-    for (auto const & result : request->Results())
-    {
-      auto const & info = result.GetRankingInfo();
-
-      // Token with a hashtag should not participate in name-score
-      // calculations.
-      TEST_EQUAL(NAME_SCORE_ZERO, info.m_nameScore, (result));
-    }
-  }
-
-  // Tests that inexistent hashtagged categories do not crash.
-  TEST(ResultsMatch("#void-", TRules{}), ());
-
   TEST(ResultsMatch("wifi", {ExactMatch(wonderlandId, cafe)}), ());
+  TEST(ResultsMatch("wi-fi", {ExactMatch(wonderlandId, cafe)}), ());
+  TEST(ResultsMatch("wai-fai", TRules{}), ());
   TEST(ResultsMatch("toilet", {ExactMatch(wonderlandId, toi)}), ());
   TEST(ResultsMatch("beach ",
                     {ExactMatch(wonderlandId, nonameBeach), ExactMatch(wonderlandId, namedBeach)}),
@@ -698,10 +674,14 @@ UNIT_CLASS_TEST(ProcessorTest, HotelsFiltering)
 {
   char const countryName[] = "Wonderland";
 
-  TestHotel h1(m2::PointD(0, 0), "h1", "en", 8.0 /* rating */, 2 /* priceRate */);
-  TestHotel h2(m2::PointD(0, 1), "h2", "en", 7.0 /* rating */, 5 /* priceRate */);
-  TestHotel h3(m2::PointD(1, 0), "h3", "en", 9.0 /* rating */, 0 /* priceRate */);
-  TestHotel h4(m2::PointD(1, 1), "h4", "en", 2.0 /* rating */, 4 /* priceRate */);
+  TestHotel h1(m2::PointD(0, 0), "h1", "en", 8.0 /* rating */, 2 /* priceRate */,
+               TestHotel::Type::Hotel);
+  TestHotel h2(m2::PointD(0, 1), "h2", "en", 7.0 /* rating */, 5 /* priceRate */,
+               TestHotel::Type::Hostel);
+  TestHotel h3(m2::PointD(1, 0), "h3", "en", 9.0 /* rating */, 0 /* priceRate */,
+               TestHotel::Type::GuestHouse);
+  TestHotel h4(m2::PointD(1, 1), "h4", "en", 2.0 /* rating */, 4 /* priceRate */,
+               TestHotel::Type::GuestHouse);
 
   auto id = BuildCountry(countryName, [&](TestMwmBuilder & builder) {
     builder.Add(h1);
@@ -718,36 +698,153 @@ UNIT_CLASS_TEST(ProcessorTest, HotelsFiltering)
 
   SetViewport(m2::RectD(m2::PointD(-1, -1), m2::PointD(2, 2)));
   {
-    TestSearchRequest request(m_engine, params, m_viewport);
-    request.Run();
     TRules rules = {ExactMatch(id, h1), ExactMatch(id, h2), ExactMatch(id, h3), ExactMatch(id, h4)};
-    TEST(MatchResults(rules, request.Results()), ());
+    TEST(ResultsMatch(params, rules), ());
   }
 
   using namespace hotels_filter;
 
   params.m_hotelsFilter = And(Gt<Rating>(7.0), Le<PriceRate>(2));
   {
-    TestSearchRequest request(m_engine, params, m_viewport);
-    request.Run();
     TRules rules = {ExactMatch(id, h1), ExactMatch(id, h3)};
-    TEST(MatchResults(rules, request.Results()), ());
+    TEST(ResultsMatch(params, rules), ());
   }
 
   params.m_hotelsFilter = Or(Eq<Rating>(9.0), Le<PriceRate>(4));
   {
-    TestSearchRequest request(m_engine, params, m_viewport);
-    request.Run();
     TRules rules = {ExactMatch(id, h1), ExactMatch(id, h3), ExactMatch(id, h4)};
-    TEST(MatchResults(rules, request.Results()), ());
+    TEST(ResultsMatch(params, rules), ());
   }
 
   params.m_hotelsFilter = Or(And(Eq<Rating>(7.0), Eq<PriceRate>(5)), Eq<PriceRate>(4));
   {
-    TestSearchRequest request(m_engine, params, m_viewport);
-    request.Run();
     TRules rules = {ExactMatch(id, h2), ExactMatch(id, h4)};
-    TEST(MatchResults(rules, request.Results()), ());
+    TEST(ResultsMatch(params, rules), ());
+  }
+
+  params.m_hotelsFilter = Or(Is(TestHotel::Type::GuestHouse), Is(TestHotel::Type::Hostel));
+  {
+    TRules rules = {ExactMatch(id, h2), ExactMatch(id, h3), ExactMatch(id, h4)};
+    TEST(ResultsMatch(params, rules), ());
+  }
+
+  params.m_hotelsFilter = And(Gt<PriceRate>(3), Is(TestHotel::Type::GuestHouse));
+  {
+    TRules rules = {ExactMatch(id, h4)};
+    TEST(ResultsMatch(params, rules), ());
+  }
+
+  params.m_hotelsFilter = OneOf((1U << static_cast<unsigned>(TestHotel::Type::Hotel)) |
+                                (1U << static_cast<unsigned>(TestHotel::Type::Hostel)));
+  {
+    TRules rules = {ExactMatch(id, h1), ExactMatch(id, h2)};
+    TEST(ResultsMatch(params, rules), ());
+  }
+}
+
+UNIT_CLASS_TEST(ProcessorTest, FuzzyMatch)
+{
+  string const countryName = "Wonderland";
+  TestCountry country(m2::PointD(10, 10), countryName, "en");
+
+  TestCity city(m2::PointD(0, 0), "Москва", "ru", 100 /* rank */);
+  TestStreet street(vector<m2::PointD>{m2::PointD(-0.001, -0.001), m2::PointD(0.001, 0.001)},
+                    "Ленинградский", "ru");
+  TestPOI bar(m2::PointD(0, 0), "Черчилль", "ru");
+  bar.SetTypes({{"amenity", "pub"}});
+
+  TestPOI metro(m2::PointD(5.0, 5.0), "Liceu", "es");
+  metro.SetTypes({{"railway", "subway_entrance"}});
+
+  BuildWorld([&](TestMwmBuilder & builder) {
+    builder.Add(country);
+    builder.Add(city);
+  });
+
+  auto id = BuildCountry(countryName, [&](TestMwmBuilder & builder) {
+    builder.Add(street);
+    builder.Add(bar);
+    builder.Add(metro);
+  });
+
+  SetViewport(m2::RectD(m2::PointD(-1.0, -1.0), m2::PointD(1.0, 1.0)));
+  {
+    TRules rules = {ExactMatch(id, bar)};
+    TEST(ResultsMatch("москва черчилль", "ru", rules), ());
+    TEST(ResultsMatch("москва ленинградский черчилль", "ru", rules), ());
+    TEST(ResultsMatch("москва ленинградский паб черчилль", "ru", rules), ());
+
+    TEST(ResultsMatch("масква лининградский черчиль", "ru", rules), ());
+    TEST(ResultsMatch("масква ленинргадский черчиль", "ru", rules), ());
+
+    // Too many errors, can't do anything.
+    TEST(ResultsMatch("масква ленинргадский чирчиль", "ru", TRules{}), ());
+
+    TEST(ResultsMatch("моксва ленинргадский черчиль", "ru", rules), ());
+
+    TEST(ResultsMatch("food", "ru", rules), ());
+    TEST(ResultsMatch("foood", "ru", rules), ());
+    TEST(ResultsMatch("fod", "ru", TRules{}), ());
+
+    TRules rulesMetro = {ExactMatch(id, metro)};
+    TEST(ResultsMatch("transporte", "es", rulesMetro), ());
+    TEST(ResultsMatch("transport", "es", rulesMetro), ());
+    TEST(ResultsMatch("transpurt", "en", rulesMetro), ());
+    TEST(ResultsMatch("transpurrt", "es", rulesMetro), ());
+    TEST(ResultsMatch("transportation", "en", TRules{}), ());
+  }
+}
+
+UNIT_CLASS_TEST(ProcessorTest, SpacesInCategories)
+{
+  string const countryName = "Wonderland";
+  TestCountry country(m2::PointD(10, 10), countryName, "en");
+
+  TestCity city(m2::PointD(5.0, 5.0), "Москва", "ru", 100 /* rank */);
+  TestPOI nightclub(m2::PointD(5.0, 5.0), "Crasy daizy", "ru");
+  nightclub.SetTypes({{"amenity", "nightclub"}});
+
+  BuildWorld([&](TestMwmBuilder & builder) {
+    builder.Add(country);
+    builder.Add(city);
+  });
+
+  auto id = BuildCountry(countryName, [&](TestMwmBuilder & builder) { builder.Add(nightclub); });
+
+  {
+    TRules rules = {ExactMatch(id, nightclub)};
+    TEST(ResultsMatch("nightclub", "en", rules), ());
+    TEST(ResultsMatch("night club", "en", rules), ());
+    TEST(ResultsMatch("n i g h t c l u b", "en", TRules{}), ());
+    TEST(ResultsMatch("Москва ночной клуб", "ru", rules), ());
+  }
+}
+
+UNIT_CLASS_TEST(ProcessorTest, StopWords)
+{
+  TestCountry country(m2::PointD(0, 0), "France", "en");
+  TestCity city(m2::PointD(0, 0), "Paris", "en", 100 /* rank */);
+  TestStreet street(
+      vector<m2::PointD>{m2::PointD(-0.001, -0.001), m2::PointD(0, 0), m2::PointD(0.001, 0.001)},
+      "Rue de la Paix", "en");
+
+  BuildWorld([&](TestMwmBuilder & builder) {
+    builder.Add(country);
+    builder.Add(city);
+  });
+
+  auto id = BuildCountry(country.GetName(), [&](TestMwmBuilder & builder) { builder.Add(street); });
+
+  {
+    auto request = MakeRequest("la France à Paris Rue de la Paix");
+
+    TRules rules = {ExactMatch(id, street)};
+
+    auto const & results = request->Results();
+    TEST(ResultsMatch(results, rules), ());
+
+    auto const & info = results[0].GetRankingInfo();
+    TEST_EQUAL(info.m_nameScore, NAME_SCORE_FULL_MATCH, ());
   }
 }
 }  // namespace

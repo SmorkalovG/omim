@@ -1,14 +1,16 @@
 package com.mapswithme.maps.routing;
 
-import android.os.Build;
+import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.mapswithme.maps.MwmActivity;
 import com.mapswithme.maps.R;
 import com.mapswithme.maps.bookmarks.data.MapObject;
-import com.mapswithme.util.ThemeUtils;
 import com.mapswithme.util.UiUtils;
 
 public class RoutingPlanInplaceController extends RoutingPlanController
@@ -17,20 +19,12 @@ public class RoutingPlanInplaceController extends RoutingPlanController
 
   private Boolean mSlotsRestoredState;
 
-  private void updateStatusBarColor()
-  {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-      mActivity.getWindow().setStatusBarColor(ThemeUtils.getColor(mActivity, UiUtils.isVisible(mFrame) ? R.attr.statusBar
-                                                                                                       : android.R.attr.colorPrimaryDark));
-  }
-
   public RoutingPlanInplaceController(MwmActivity activity)
   {
     super(activity.findViewById(R.id.routing_plan_frame), activity);
-    updateStatusBarColor();
   }
 
-  public void show(boolean show)
+  public void show(final boolean show)
   {
     if (show == UiUtils.isVisible(mFrame))
       return;
@@ -46,10 +40,21 @@ public class RoutingPlanInplaceController extends RoutingPlanController
       mSlotsRestoredState = null;
     }
 
-    UiUtils.showIf(show, mFrame);
-    updateStatusBarColor();
     if (show)
+    {
+      UiUtils.show(mFrame);
       updatePoints();
+    }
+
+    animateFrame(show, new Runnable()
+    {
+      @Override
+      public void run()
+      {
+        if (!show)
+          UiUtils.hide(mFrame);
+      }
+    });
   }
 
   public void onSaveState(@NonNull Bundle outState)
@@ -70,6 +75,45 @@ public class RoutingPlanInplaceController extends RoutingPlanController
   public void showRouteAltitudeChart()
   {
     ImageView altitudeChart = (ImageView) mActivity.findViewById(R.id.altitude_chart);
-    showRouteAltitudeChartInternal(altitudeChart);
+    TextView altitudeDifference = (TextView) mActivity.findViewById(R.id.altitude_difference);
+    showRouteAltitudeChartInternal(altitudeChart, altitudeDifference);
+  }
+
+  private void animateFrame(final boolean show, final @Nullable Runnable completion)
+  {
+    if (!checkFrameHeight())
+    {
+      mFrame.post(new Runnable()
+      {
+        @Override
+        public void run()
+        {
+          animateFrame(show, completion);
+        }
+      });
+      return;
+    }
+
+    ValueAnimator animator =
+        ValueAnimator.ofFloat(show ? -mFrameHeight : 0, show ? 0 : -mFrameHeight);
+    animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener()
+    {
+      @Override
+      public void onAnimationUpdate(ValueAnimator animation)
+      {
+        mFrame.setTranslationY((Float) animation.getAnimatedValue());
+      }
+    });
+    animator.addListener(new UiUtils.SimpleAnimatorListener()
+    {
+      @Override
+      public void onAnimationEnd(Animator animation)
+      {
+        if (completion != null)
+          completion.run();
+      }
+    });
+    animator.setDuration(ANIM_TOGGLE);
+    animator.start();
   }
 }

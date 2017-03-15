@@ -3,6 +3,7 @@
 #include "drape_frontend/gui/layer_render.hpp"
 
 #include "drape_frontend/base_renderer.hpp"
+#include "drape_frontend/batchers_pool.hpp"
 #include "drape_frontend/drape_api_builder.hpp"
 #include "drape_frontend/map_data_provider.hpp"
 #include "drape_frontend/overlay_batcher.hpp"
@@ -24,7 +25,6 @@ namespace df
 {
 
 class Message;
-class BatchersPool;
 class ReadManager;
 class RouteBuilder;
 
@@ -38,18 +38,23 @@ public:
     Params(ref_ptr<ThreadsCommutator> commutator, ref_ptr<dp::OGLContextFactory> factory,
            ref_ptr<dp::TextureManager> texMng, MapDataProvider const & model,
            TUpdateCurrentCountryFn const & updateCurrentCountryFn,
-           ref_ptr<RequestedTiles> requestedTiles, bool allow3dBuildings)
+           ref_ptr<RequestedTiles> requestedTiles, bool allow3dBuildings,
+           bool trafficEnabled, bool simplifiedTrafficColors)
       : BaseRenderer::Params(commutator, factory, texMng)
       , m_model(model)
       , m_updateCurrentCountryFn(updateCurrentCountryFn)
       , m_requestedTiles(requestedTiles)
       , m_allow3dBuildings(allow3dBuildings)
+      , m_trafficEnabled(trafficEnabled)
+      , m_simplifiedTrafficColors(simplifiedTrafficColors)
     {}
 
     MapDataProvider const & m_model;
     TUpdateCurrentCountryFn m_updateCurrentCountryFn;
     ref_ptr<RequestedTiles> m_requestedTiles;
     bool m_allow3dBuildings;
+    bool m_trafficEnabled;
+    bool m_simplifiedTrafficColors;
   };
 
   BackendRenderer(Params const & params);
@@ -88,12 +93,14 @@ private:
   void ReleaseResources();
 
   void InitGLDependentResource();
-  void FlushGeometry(drape_ptr<Message> && message);
+  void FlushGeometry(TileKey const & key, dp::GLState const & state, drape_ptr<dp::RenderBucket> && buffer);
+
+  void FlushTrafficRenderData(TrafficRenderData && renderData);
 
   void CleanupOverlays(TileKey const & tileKey);
 
   MapDataProvider m_model;
-  drape_ptr<BatchersPool> m_batchersPool;
+  drape_ptr<BatchersPool<TileKey, TileKeyStrictComparator>> m_batchersPool;
   drape_ptr<ReadManager> m_readManager;
   drape_ptr<RouteBuilder> m_routeBuilder;
   drape_ptr<TrafficGenerator> m_trafficGenerator;

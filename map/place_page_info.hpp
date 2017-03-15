@@ -4,6 +4,7 @@
 
 #include "storage/index.hpp"
 
+#include "indexer/banners.hpp"
 #include "indexer/feature_data.hpp"
 #include "indexer/feature_meta.hpp"
 #include "indexer/map_object.hpp"
@@ -14,6 +15,8 @@
 
 #include "std/string.hpp"
 
+namespace place_page
+{
 enum class SponsoredType
 {
   None,
@@ -22,8 +25,6 @@ enum class SponsoredType
   Geochat
 };
 
-namespace place_page
-{
 class Info : public osm::MapObject
 {
 public:
@@ -37,6 +38,7 @@ public:
   bool IsBookmark() const;
   bool IsMyPosition() const;
   bool IsSponsored() const;
+  bool IsNotEditableSponsored() const;
 
   bool ShouldShowAddPlace() const;
   bool ShouldShowAddBusiness() const;
@@ -71,13 +73,30 @@ public:
 
   string const & GetSponsoredUrl() const;
   string const & GetSponsoredDescriptionUrl() const;
+  string const & GetSponsoredReviewUrl() const;
 
   /// @returns formatted rating string for booking object, or empty if it isn't booking object
   string GetRatingFormatted() const;
   /// @returns string with |kPricingSymbol| signs or empty string if it isn't booking object
   string GetApproximatePricing() const;
 
+  bool HasBanner() const;
+  banners::Banner GetBanner() const;
+  /// Deprecated, there was not only removed in order not to break the build.
+  /// Should be removed in nearest time.
+  ///////////////////////////////////////////////////////////////////////////////
+  string GetBannerTitleId() const;
+  string GetBannerMessageId() const;
+  string GetBannerIconId() const;
+  string GetBannerUrl() const;
+  string GetBannerId() const;
+  ///////////////////////////////////////////////////////////////////////////////
+
+  bool IsReachableByTaxi() const;
+
   void SetMercator(m2::PointD const & mercator);
+
+  vector<string> GetRawTypes() const;
 
   /// Comes from API, shared links etc.
   string m_customName;
@@ -103,6 +122,7 @@ public:
   /// Sponsored feature urls.
   string m_sponsoredUrl;
   string m_sponsoredDescriptionUrl;
+  string m_sponsoredReviewUrl;
 
   /// Which country this MapObject is in.
   /// For a country point it will be set to topmost node for country.

@@ -354,6 +354,7 @@ world  +
         boundary_stone  -
         castle  -
         citywalls  -
+        fort  -
         memorial  -
         monument  -
         museum  -
@@ -367,10 +368,12 @@ world  +
         bidir_bicycle  -
         lit  -
         nobicycle  -
+        nocar  -
         nofoot  -
         oneway  -
         private  -
         yesbicycle  -
+        yescar  -
         yesfoot  -
         {}
     internet_access  +
@@ -806,6 +809,18 @@ world  +
         wine  -
         {}
     sponsored  +
+        banner  +
+            deliveryclub  -
+            geerbest_de  -
+            geerbest_fr  -
+            geerbest_uk  -
+            lamoda_ru  -
+            lamoda_ua  -
+            raileurope  -
+            rentalcars  -
+            tutu  -
+            viator  -
+            {}
         booking  -
         opentable  -
         {}
@@ -841,6 +856,7 @@ world  +
         camp_site  -
         caravan_site  -
         chalet  -
+        gallery  -
         guest_house  -
         hostel  -
         hotel  -

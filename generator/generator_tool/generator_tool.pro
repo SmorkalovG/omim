@@ -2,9 +2,10 @@
 
 ROOT_DIR = ../..
 
-DEPENDENCIES = generator routing search storage indexer editor platform geometry \
-               coding base freetype expat fribidi tomcrypt jansson protobuf osrm stats_client \
-               minizip succinct pugixml tess2 gflags oauthcpp opening_hours
+DEPENDENCIES = generator routing traffic routing_common search storage indexer editor platform geometry \
+               coding base freetype expat fribidi jansson protobuf osrm stats_client \
+               minizip succinct pugixml tess2 gflags oauthcpp 
+
 include($$ROOT_DIR/common.pri)
 
 INCLUDEPATH *= $$ROOT_DIR/3party/gflags/src

@@ -1,6 +1,6 @@
 #include "parallel_animation.hpp"
 
-#include "animation_system.hpp"
+#include "drape_frontend/animation_system.hpp"
 
 namespace df
 {
@@ -8,6 +8,12 @@ namespace df
 ParallelAnimation::ParallelAnimation()
   : Animation(true /* couldBeInterrupted */, true /* couldBeBlended */)
 {}
+
+void ParallelAnimation::Init(ScreenBase const & screen, TPropertyCache const & properties)
+{
+  for (auto const & anim : m_animations)
+    anim->Init(screen, properties);
+}
 
 string ParallelAnimation::GetCustomType() const
 {
@@ -24,18 +30,18 @@ Animation::TAnimObjects const & ParallelAnimation::GetObjects() const
   return m_objects;
 }
 
-bool ParallelAnimation::HasObject(TObject object) const
+bool ParallelAnimation::HasObject(Object object) const
 {
   return m_objects.find(object) != m_objects.end();
 }
 
-Animation::TObjectProperties const & ParallelAnimation::GetProperties(TObject object) const
+Animation::TObjectProperties const & ParallelAnimation::GetProperties(Object object) const
 {
   ASSERT(HasObject(object), ());
   return m_properties.find(object)->second;
 }
 
-bool ParallelAnimation::HasProperty(TObject object, TProperty property) const
+bool ParallelAnimation::HasProperty(Object object, ObjectProperty property) const
 {
   if (!HasObject(object))
     return false;
@@ -43,7 +49,7 @@ bool ParallelAnimation::HasProperty(TObject object, TProperty property) const
   return properties.find(property) != properties.end();
 }
 
-bool ParallelAnimation::HasTargetProperty(TObject object, TProperty property) const
+bool ParallelAnimation::HasTargetProperty(Object object, ObjectProperty property) const
 {
   ASSERT(!m_animations.empty(), ());
   for (auto const & anim : m_animations)
@@ -60,6 +66,12 @@ void ParallelAnimation::SetMaxDuration(double maxDuration)
     anim->SetMaxDuration(maxDuration);
 }
 
+void ParallelAnimation::SetMinDuration(double minDuration)
+{
+  for (auto const & anim : m_animations)
+    anim->SetMinDuration(minDuration);
+}
+
 double ParallelAnimation::GetDuration() const
 {
   double duration = 0.0;
@@ -68,12 +80,40 @@ double ParallelAnimation::GetDuration() const
   return duration;
 }
 
+double ParallelAnimation::GetMaxDuration() const
+{
+  double maxDuration = Animation::kInvalidAnimationDuration;
+  double duration;
+  for (auto const & anim : m_animations)
+  {
+    duration = anim->GetMaxDuration();
+    if (duration < 0.0)
+      return Animation::kInvalidAnimationDuration;
+    maxDuration = maxDuration >= 0 ? max(duration, maxDuration) : duration;
+  }
+  return maxDuration;
+}
+
+double ParallelAnimation::GetMinDuration() const
+{
+  double minDuration = Animation::kInvalidAnimationDuration;
+  double duration;
+  for (auto const & anim : m_animations)
+  {
+    duration = anim->GetMinDuration();
+    if (duration < 0.0)
+      return Animation::kInvalidAnimationDuration;
+    minDuration = minDuration >= 0 ? min(duration, minDuration) : duration;
+  }
+  return minDuration;
+}
+
 bool ParallelAnimation::IsFinished() const
 {
   return m_animations.empty();
 }
 
-bool ParallelAnimation::GetProperty(TObject object, TProperty property, PropertyValue & value) const
+bool ParallelAnimation::GetProperty(Object object, ObjectProperty property, PropertyValue & value) const
 {
   ASSERT(!m_animations.empty(), ());
   for (auto const & anim : m_animations)
@@ -84,7 +124,7 @@ bool ParallelAnimation::GetProperty(TObject object, TProperty property, Property
   return false;
 }
 
-bool ParallelAnimation::GetTargetProperty(TObject object, TProperty property, PropertyValue & value) const
+bool ParallelAnimation::GetTargetProperty(Object object, ObjectProperty property, PropertyValue & value) const
 {
   ASSERT(!m_animations.empty(), ());
   for (auto const & anim : m_animations)

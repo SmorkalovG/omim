@@ -4,7 +4,8 @@
 #include "routing/road_graph.hpp"
 #include "routing/router.hpp"
 #include "routing/routing_algorithm.hpp"
-#include "routing/vehicle_model.hpp"
+
+#include "routing_common/vehicle_model.hpp"
 
 #include "indexer/mwm_set.hpp"
 
@@ -37,9 +38,6 @@ public:
                             Route & route) override;
 
 private:
-  void ReconstructRoute(vector<Junction> && junctions, Route & route,
-                        my::Cancellable const & cancellable) const;
-
   /// Checks existance and add absent maps to route.
   /// Returns true if map exists
   bool CheckMapExistence(m2::PointD const & point, Route & route) const;
@@ -55,6 +53,4 @@ private:
 unique_ptr<IRouter> CreatePedestrianAStarRouter(Index & index, TCountryFileFn const & countryFileFn);
 unique_ptr<IRouter> CreatePedestrianAStarBidirectionalRouter(Index & index, TCountryFileFn const & countryFileFn);
 unique_ptr<IRouter> CreateBicycleAStarBidirectionalRouter(Index & index, TCountryFileFn const & countryFileFn);
-unique_ptr<IRouter> CreateCarAStarBidirectionalRouter(Index & index,
-                                                      TCountryFileFn const & countryFileFn);
 }  // namespace routing

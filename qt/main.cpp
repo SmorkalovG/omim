@@ -1,6 +1,7 @@
-
 #include "qt/info_dialog.hpp"
 #include "qt/mainwindow.hpp"
+
+#include "map/framework.hpp"
 
 #include "platform/platform.hpp"
 #include "platform/settings.hpp"
@@ -9,7 +10,6 @@
 
 #include "base/logging.hpp"
 #include "base/macros.hpp"
-#include "base/object_tracker.hpp"
 
 #include "std/cstdio.hpp"
 #include "std/cstdlib.hpp"
@@ -63,6 +63,8 @@ namespace
 
 int main(int argc, char * argv[])
 {
+  Q_INIT_RESOURCE(resources_common);
+
   // Our double parsing code (base/string_utils.hpp) needs dots as a floating point delimiters, not commas.
   // TODO: Refactor our doubles parsing code to use locale-independent delimiters.
   // For example, https://github.com/google/double-conversion can be used.
@@ -103,12 +105,11 @@ int main(int argc, char * argv[])
   int returnCode = -1;
   if (eulaAccepted)   // User has accepted EULA
   {
-    qt::MainWindow w;
+    Framework framework;
+    qt::MainWindow w(framework);
     w.show();
     returnCode = a.exec();
   }
-
-  dbg::ObjectTracker::PrintLeaks();
 
   LOG_SHORT(LINFO, ("MapsWithMe finished with code", returnCode));
   return returnCode;

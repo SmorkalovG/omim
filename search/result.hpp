@@ -54,7 +54,7 @@ public:
 
   /// For RESULT_FEATURE.
   Result(FeatureID const & id, m2::PointD const & pt, string const & str, string const & address,
-         string const & type, uint32_t featureType, Metadata const & meta = {});
+         string const & type, uint32_t featureType, Metadata const & meta);
 
   /// For RESULT_LATLON.
   Result(m2::PointD const & pt, string const & latlon, string const & address);
@@ -73,6 +73,7 @@ public:
   string const & GetCuisine() const { return m_metadata.m_cuisine; }
   string const & GetHotelRating() const { return m_metadata.m_hotelRating; }
   string const & GetHotelApproximatePricing() const { return m_metadata.m_hotelApproximatePricing; }
+  bool IsHotel() const { return m_metadata.m_isHotel; }
   //@}
 
   osm::YesNoUnknown IsOpenNow() const { return m_metadata.m_isOpenNow; }

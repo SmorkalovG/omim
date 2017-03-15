@@ -1,9 +1,10 @@
-#include "Framework.hpp"
-#include "UserMarkHelper.hpp"
+#include "com/mapswithme/maps/Framework.hpp"
 #include "com/mapswithme/core/jni_helper.hpp"
+#include "com/mapswithme/maps/UserMarkHelper.hpp"
 #include "com/mapswithme/maps/bookmarks/data/BookmarkManager.hpp"
 #include "com/mapswithme/opengl/androidoglcontextfactory.hpp"
 #include "com/mapswithme/platform/Platform.hpp"
+#include "com/mapswithme/util/NetworkPolicy.hpp"
 
 #include "map/chart_generator.hpp"
 #include "map/user_mark.hpp"
@@ -12,10 +13,10 @@
 
 #include "storage/storage_helpers.hpp"
 
-#include "drape_frontend/visual_params.hpp"
-#include "drape_frontend/user_event_stream.hpp"
 #include "drape/pointers.hpp"
 #include "drape/visual_scale.hpp"
+#include "drape_frontend/user_event_stream.hpp"
+#include "drape_frontend/visual_params.hpp"
 
 #include "coding/file_container.hpp"
 #include "coding/file_name_utils.hpp"
@@ -27,19 +28,29 @@
 #include "platform/local_country_file_utils.hpp"
 #include "platform/location.hpp"
 #include "platform/measurement_utils.hpp"
+#include "platform/network_policy.hpp"
 #include "platform/platform.hpp"
 #include "platform/preferred_languages.hpp"
 #include "platform/settings.hpp"
 
-#include "base/math.hpp"
 #include "base/logging.hpp"
+#include "base/math.hpp"
 #include "base/sunrise_sunset.hpp"
 
 android::Framework * g_framework = 0;
 
+namespace platform
+{
+NetworkPolicy ToNativeNetworkPolicy(JNIEnv * env, jobject obj)
+{
+  return NetworkPolicy(network_policy::GetNetworkPolicyStatus(env, obj));
+}
+}  // namespace platform
+
 using namespace storage;
 using platform::CountryFile;
 using platform::LocalCountryFile;
+using platform::ToNativeNetworkPolicy;
 
 static_assert(sizeof(int) >= 4, "Size of jint in less than 4 bytes.");
 
@@ -73,6 +84,8 @@ Framework::Framework()
 {
   ASSERT_EQUAL ( g_framework, 0, () );
   g_framework = this;
+
+  m_work.GetTrafficManager().SetStateListener(bind(&Framework::TrafficStateChanged, this, _1));
 }
 
 void Framework::OnLocationError(int errorCode)
@@ -82,14 +95,8 @@ void Framework::OnLocationError(int errorCode)
 
 void Framework::OnLocationUpdated(location::GpsInfo const & info)
 {
+  ASSERT(IsDrapeEngineCreated(), ());
   m_work.OnLocationUpdate(info);
-
-  if (!IsDrapeEngineCreated())
-  {
-    location::EMyPositionMode const mode = GetMyPositionMode();
-    if (mode == location::PendingPosition)
-      SetMyPositionMode(location::Follow);
-  }
 }
 
 void Framework::OnCompassUpdated(location::CompassInfo const & info, bool forceRedraw)
@@ -116,11 +123,10 @@ void Framework::MyPositionModeChanged(location::EMyPositionMode mode, bool routi
     m_myPositionModeSignal(mode, routingActive);
 }
 
-void Framework::SetMyPositionMode(location::EMyPositionMode mode)
+void Framework::TrafficStateChanged(TrafficManager::TrafficState state)
 {
-    OnMyPositionModeChanged(mode);
-    settings::Set(settings::kLocationStateMode, m_currentMode);
-    MyPositionModeChanged(m_currentMode, false /* routingActive, does not matter */);
+  if (m_onTrafficStateChangedFn)
+    m_onTrafficStateChangedFn(state);
 }
 
 bool Framework::CreateDrapeEngine(JNIEnv * env, jobject jSurface, int densityDpi, bool firstLaunch)
@@ -175,6 +181,7 @@ void Framework::DetachSurface(bool destroyContext)
     LOG(LINFO, ("Destroy context."));
     m_isContextDestroyed = true;
     m_work.EnterBackground();
+    m_work.OnDestroyGLContext();
   }
   m_work.SetRenderingDisabled(destroyContext);
 
@@ -204,7 +211,7 @@ bool Framework::AttachSurface(JNIEnv * env, jobject jSurface)
   if (m_isContextDestroyed)
   {
     LOG(LINFO, ("Recover GL resources, viewport size:", factory->GetWidth(), factory->GetHeight()));
-    m_work.UpdateDrapeEngine(factory->GetWidth(), factory->GetHeight());
+    m_work.OnRecoverGLContext(factory->GetWidth(), factory->GetHeight());
     m_isContextDestroyed = false;
 
     m_work.EnterForeground();
@@ -401,6 +408,23 @@ void Framework::ShowTrack(int category, int track)
   NativeFramework()->ShowTrack(*nTrack);
 }
 
+void Framework::SetTrafficStateListener(TrafficManager::TrafficStateChangedFn const & fn)
+{
+  m_onTrafficStateChangedFn = fn;
+}
+
+void Framework::EnableTraffic()
+{
+  m_work.GetTrafficManager().SetEnabled(true);
+  NativeFramework()->SaveTrafficEnabled(true);
+}
+
+void Framework::DisableTraffic()
+{
+  m_work.GetTrafficManager().SetEnabled(false);
+  NativeFramework()->SaveTrafficEnabled(false);
+}
+
 void Framework::SetMyPositionModeListener(location::TMyPositionModeChanged const & fn)
 {
   m_myPositionModeSignal = fn;
@@ -426,15 +450,8 @@ void Framework::OnMyPositionModeChanged(location::EMyPositionMode mode)
 
 void Framework::SwitchMyPositionNextMode()
 {
-  if (IsDrapeEngineCreated())
-  {
-    m_work.SwitchMyPositionNextMode();
-    return;
-  }
-
-  // Engine is not available, but the client requests to change mode.
-  if (GetMyPositionMode() == location::NotFollowNoPosition)
-    SetMyPositionMode(location::PendingPosition);
+  ASSERT(IsDrapeEngineCreated(), ());
+  m_work.SwitchMyPositionNextMode();
 }
 
 void Framework::SetupWidget(gui::EWidget widget, float x, float y, dp::Anchor anchor)
@@ -470,16 +487,22 @@ place_page::Info & Framework::GetPlacePageInfo()
 {
   return m_info;
 }
-
-void Framework::RequestBookingMinPrice(string const & hotelId, string const & currencyCode, function<void(string const &, string const &)> const & callback)
+void Framework::RequestBookingMinPrice(JNIEnv * env, jobject policy,
+                                       string const & hotelId, string const & currencyCode,
+                                       booking::GetMinPriceCallback const & callback)
 {
-  return m_work.GetBookingApi().GetMinPrice(hotelId, currencyCode, callback);
+  auto const bookingApi = m_work.GetBookingApi(ToNativeNetworkPolicy(env, policy));
+  if (bookingApi)
+    bookingApi->GetMinPrice(hotelId, currencyCode, callback);
 }
 
-void Framework::RequestBookingInfo(string const & hotelId, string const & lang,
-                                   function<void(BookingApi::HotelInfo const &)> const & callback)
+void Framework::RequestBookingInfo(JNIEnv * env, jobject policy,
+                                   string const & hotelId, string const & lang,
+                                   booking::GetHotelInfoCallback const & callback)
 {
-  return m_work.GetBookingApi().GetHotelInfo(hotelId, lang, callback);
+  auto const bookingApi = m_work.GetBookingApi(ToNativeNetworkPolicy(env, policy));
+  if (bookingApi)
+    bookingApi->GetHotelInfo(hotelId, lang, callback);
 }
 
 bool Framework::HasSpaceForMigration()
@@ -512,12 +535,16 @@ void Framework::EnableDownloadOn3g()
 {
   m_work.GetDownloadingPolicy().EnableCellularDownload(true);
 }
-
-uint64_t Framework::RequestUberProducts(ms::LatLon const & from, ms::LatLon const & to,
+uint64_t Framework::RequestUberProducts(JNIEnv * env, jobject policy, ms::LatLon const & from,
+                                        ms::LatLon const & to,
                                         uber::ProductsCallback const & callback,
                                         uber::ErrorCallback const & errorCallback)
 {
-  return m_work.GetUberApi().GetAvailableProducts(from, to, callback, errorCallback);
+  auto const uberApi = m_work.GetUberApi(ToNativeNetworkPolicy(env, policy));
+  if (!uberApi)
+    return 0;
+
+  return uberApi->GetAvailableProducts(from, to, callback, errorCallback);
 }
 
 uber::RideRequestLinks Framework::GetUberLinks(string const & productId, ms::LatLon const & from, ms::LatLon const & to)
@@ -670,8 +697,9 @@ Java_com_mapswithme_maps_Framework_nativeGetDistanceAndAzimuthFromLatLon(
 JNIEXPORT jobject JNICALL
 Java_com_mapswithme_maps_Framework_nativeFormatLatLon(JNIEnv * env, jclass, jdouble lat, jdouble lon, jboolean useDMSFormat)
 {
-  return jni::ToJavaString(env, (useDMSFormat ? measurement_utils::FormatLatLonAsDMS(lat, lon, 2)
-                                              : measurement_utils::FormatLatLon(lat, lon, 6)));
+  return jni::ToJavaString(
+      env, (useDMSFormat ? measurement_utils::FormatLatLonAsDMS(lat, lon, 2)
+                         : measurement_utils::FormatLatLon(lat, lon, true /* withSemicolon */, 6)));
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1011,20 +1039,6 @@ Java_com_mapswithme_maps_Framework_nativeDeactivatePopup(JNIEnv * env, jclass)
   return g_framework->DeactivatePopup();
 }
 
-JNIEXPORT jdoubleArray JNICALL
-Java_com_mapswithme_maps_Framework_nativePredictLocation(JNIEnv * env, jclass, jdouble lat, jdouble lon, jdouble accuracy,
-                                                         jdouble bearing, jdouble speed, jdouble elapsedSeconds)
-{
-  double latitude = lat;
-  double longitude = lon;
-  ::Framework::PredictLocation(lat, lon, accuracy, bearing, speed, elapsedSeconds);
-  double latlon[] = { lat, lon };
-  jdoubleArray jLatLon = env->NewDoubleArray(2);
-  env->SetDoubleArrayRegion(jLatLon, 0, 2, latlon);
-
-  return jLatLon;
-}
-
 JNIEXPORT void JNICALL
 Java_com_mapswithme_maps_Framework_nativeSetMapStyle(JNIEnv * env, jclass, jint mapStyle)
 {
@@ -1131,9 +1145,23 @@ Java_com_mapswithme_maps_Framework_nativeSetAutoZoomEnabled(JNIEnv * env, jclass
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_mapswithme_maps_Framework_nativeGetAutoZoomEnabled(JNIEnv * env, jclass)
+Java_com_mapswithme_maps_Framework_nativeGetAutoZoomEnabled(JNIEnv *, jclass)
 {
   return frm()->LoadAutoZoom();
+}
+
+JNIEXPORT void JNICALL
+Java_com_mapswithme_maps_Framework_nativeSetSimplifiedTrafficColorsEnabled(JNIEnv *, jclass, jboolean enabled)
+{
+  bool const simplifiedEnabled = static_cast<bool>(enabled);
+  frm()->GetTrafficManager().SetSimplifiedColorScheme(simplifiedEnabled);
+  frm()->SaveTrafficSimplifiedColors(simplifiedEnabled);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_mapswithme_maps_Framework_nativeGetSimplifiedTrafficColorsEnabled(JNIEnv * env, jclass)
+{
+  return frm()->LoadTrafficSimplifiedColors();
 }
 
 // static void nativeZoomToPoint(double lat, double lon, int zoom, boolean animate);
@@ -1195,5 +1223,11 @@ JNIEXPORT void JNICALL
 Java_com_mapswithme_maps_Framework_nativeSetVisibleRect(JNIEnv * env, jclass, jint left, jint top, jint right, jint bottom)
 {
   frm()->SetVisibleViewport(m2::RectD(left, top, right, bottom));
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_mapswithme_maps_Framework_nativeIsRouteFinished(JNIEnv * env, jclass)
+{
+  return frm()->IsRouteFinished();
 }
 }  // extern "C"

@@ -19,8 +19,12 @@ jclass g_bookmarkClazz;
 jclass g_myTrackerClazz;
 jclass g_httpClientClazz;
 jclass g_httpParamsClazz;
-jclass g_socketWrapperClazz;
+jclass g_httpHeaderClazz;
+jclass g_platformSocketClazz;
 jclass g_utilsClazz;
+jclass g_bannerClazz;
+jclass g_arrayListClazz;
+jclass g_loggerFactoryClazz;
 
 extern "C"
 {
@@ -37,8 +41,11 @@ JNI_OnLoad(JavaVM * jvm, void *)
   g_myTrackerClazz = jni::GetGlobalClassRef(env, "com/my/tracker/MyTracker");
   g_httpClientClazz = jni::GetGlobalClassRef(env, "com/mapswithme/util/HttpClient");
   g_httpParamsClazz = jni::GetGlobalClassRef(env, "com/mapswithme/util/HttpClient$Params");
-  g_socketWrapperClazz = jni::GetGlobalClassRef(env, "com/mapswithme/maps/location/SocketWrapper");
+  g_httpHeaderClazz = jni::GetGlobalClassRef(env, "com/mapswithme/util/HttpClient$HttpHeader");
+  g_platformSocketClazz = jni::GetGlobalClassRef(env, "com/mapswithme/maps/location/PlatformSocket");
   g_utilsClazz = jni::GetGlobalClassRef(env, "com/mapswithme/util/Utils");
+  g_bannerClazz = jni::GetGlobalClassRef(env, "com/mapswithme/maps/bookmarks/data/Banner");
+  g_loggerFactoryClazz = jni::GetGlobalClassRef(env, "com/mapswithme/util/log/LoggerFactory");
 
   return JNI_VERSION_1_6;
 }
@@ -53,8 +60,11 @@ JNI_OnUnload(JavaVM *, void *)
   env->DeleteGlobalRef(g_myTrackerClazz);
   env->DeleteGlobalRef(g_httpClientClazz);
   env->DeleteGlobalRef(g_httpParamsClazz);
-  env->DeleteGlobalRef(g_socketWrapperClazz);
+  env->DeleteGlobalRef(g_httpHeaderClazz);
+  env->DeleteGlobalRef(g_platformSocketClazz);
   env->DeleteGlobalRef(g_utilsClazz);
+  env->DeleteGlobalRef(g_bannerClazz);
+  env->DeleteGlobalRef(g_loggerFactoryClazz);
 }
 } // extern "C"
 
@@ -64,8 +74,10 @@ JNIEnv * GetEnv()
 {
   JNIEnv * env;
   if (JNI_OK != g_jvm->GetEnv((void **)&env, JNI_VERSION_1_6))
-    MYTHROW(RootException, ("Can't get JNIEnv. Was thread attached to JVM?"));
-
+  {
+    LOG(LERROR, ("Can't get JNIEnv. Is the thread attached to JVM?"));
+    MYTHROW(RootException, ("Can't get JNIEnv. Is the thread attached to JVM?"));
+  }
   return env;
 }
 
@@ -166,6 +178,32 @@ shared_ptr<jobject> make_global_ref(jobject obj)
   return shared_ptr<jobject>(ref, global_ref_deleter());
 }
 
+string ToNativeString(JNIEnv * env, const jthrowable & e)
+{
+  jni::TScopedLocalClassRef logClassRef(env, env->FindClass("android/util/Log"));
+  ASSERT(logClassRef.get(), ());
+  static jmethodID const getStacktraceMethod =
+    jni::GetStaticMethodID(env, logClassRef.get(), "getStackTraceString",
+                           "(Ljava/lang/Throwable;)Ljava/lang/String;");
+  ASSERT(getStacktraceMethod, ());
+  TScopedLocalRef resultRef(env, env->CallStaticObjectMethod(logClassRef.get(), getStacktraceMethod, e));
+  return ToNativeString(env, (jstring) resultRef.get());
+}
+
+
+bool HandleJavaException(JNIEnv * env)
+{
+  if (env->ExceptionCheck())
+   {
+     const jthrowable e = env->ExceptionOccurred();
+     env->ExceptionDescribe();
+     env->ExceptionClear();
+     LOG(LERROR, (ToNativeString(env, e)));
+     return true;
+   }
+   return false;
+}
+
 string DescribeException()
 {
   JNIEnv * env = GetEnv();
@@ -177,16 +215,9 @@ string DescribeException()
     // have to clear the exception before JNI will work again.
     env->ExceptionClear();
 
-    jclass eclass = env->GetObjectClass(e);
-
-    jmethodID mid = env->GetMethodID(eclass, "toString", "()Ljava/lang/String;");
-
-    jstring jErrorMsg = (jstring) env->CallObjectMethod(e, mid);
-
-    return ToNativeString(env, jErrorMsg);
+    return ToNativeString(env, e);
   }
-
-  return "";
+  return {};
 }
 
 jobject GetNewParcelablePointD(JNIEnv * env, m2::PointD const & point)

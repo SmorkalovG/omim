@@ -8,6 +8,7 @@
 #include "map/mwm_url.hpp"
 #include "map/place_page_info.hpp"
 #include "map/track.hpp"
+#include "map/traffic_manager.hpp"
 
 #include "drape_frontend/gui/skin.hpp"
 #include "drape_frontend/drape_api.hpp"
@@ -18,9 +19,9 @@
 #include "drape/oglcontextfactory.hpp"
 
 #include "indexer/data_header.hpp"
+#include "indexer/index_helpers.hpp"
 #include "indexer/map_style.hpp"
 #include "indexer/new_feature_categories.hpp"
-#include "indexer/index_helpers.hpp"
 
 #include "editor/user_stats.hpp"
 
@@ -88,6 +89,11 @@ namespace df
   {
     class CPUDrawer;
   }
+}
+
+namespace platform
+{
+class NetworkPolicy;
 }
 
 /// Uncomment line to make fixed position settings and
@@ -159,14 +165,15 @@ protected:
 
   BookmarkManager m_bmManager;
 
-  BookingApi m_bookingApi;
-
-  uber::Api m_uberApi;
+  unique_ptr<booking::Api> m_bookingApi = make_unique<booking::Api>();
+  unique_ptr<uber::Api> m_uberApi = make_unique<uber::Api>();
 
   df::DrapeApi m_drapeApi;
 
   bool m_isRenderingEnabled;
   tracking::Reporter m_trackingReporter;
+
+  TrafficManager m_trafficManager;
 
   /// This function will be called by m_storage when latest local files
   /// is downloaded.
@@ -192,12 +199,11 @@ public:
   virtual ~Framework();
 
   /// Get access to booking api helpers
-  BookingApi & GetBookingApi() { return m_bookingApi; }
-  BookingApi const & GetBookingApi() const { return m_bookingApi; }
+  booking::Api * GetBookingApi(platform::NetworkPolicy const & policy);
+  booking::Api const * GetBookingApi(platform::NetworkPolicy const & policy) const;
+  uber::Api * GetUberApi(platform::NetworkPolicy const & policy);
 
   df::DrapeApi & GetDrapeApi() { return m_drapeApi; }
-
-  uber::Api & GetUberApi() { return m_uberApi;}
 
   /// Migrate to new version of very different data.
   bool IsEnoughSpaceForMigrate() const;
@@ -267,6 +273,8 @@ public:
   storage::CountryInfoGetter & GetCountryInfoGetter() { return *m_infoGetter; }
   StorageDownloadingPolicy & GetDownloadingPolicy() { return m_storageDownloadingPolicy; }
 
+  Index const & GetIndex() const { return m_model.GetIndex(); }
+
   /// @name Bookmarks, Tracks and other UserMarks
   //@{
   /// Scans and loads all kml files with bookmarks in WritableDir.
@@ -304,7 +312,7 @@ public:
   m2::PointD GetSearchMarkSize(SearchMarkType searchMarkType);
 
   // Utilities
-  void VizualizeRoadsInRect(m2::RectD const & rect);
+  void VisualizeRoadsInRect(m2::RectD const & rect);
 
 protected:
   // search::ViewportSearchCallback::Delegate overrides:
@@ -357,6 +365,8 @@ public:
   /// Guarantees that listener is called in the main thread context.
   void SetCurrentCountryChangedListener(TCurrentCountryChanged const & listener);
 
+  vector<MwmSet::MwmId> GetMwmsByRect(m2::RectD const & rect);
+
 private:
   struct TapEvent
   {
@@ -392,7 +402,7 @@ private:
   /// Here we store last selected feature to get its polygons in case of adding organization.
   mutable FeatureID m_selectedFeature;
 
-  vector<m2::PointU> m_searchMarksSizes;
+  vector<m2::PointF> m_searchMarksSizes;
 
 private:
   vector<m2::TriangleD> GetSelectedFeatureTriangles() const;
@@ -437,9 +447,8 @@ public:
   void SetRenderingEnabled(ref_ptr<dp::OGLContextFactory> contextFactory = nullptr);
   void SetRenderingDisabled(bool destroyContext);
 
-  void UpdateDrapeEngine(int width, int height);
-
-  void SetFontScaleFactor(double scaleFactor);
+  void OnRecoverGLContext(int width, int height);
+  void OnDestroyGLContext();
 
 private:
   /// Depends on initialized Drape engine.
@@ -611,6 +620,8 @@ private:
   //void GetLocality(m2::PointD const & pt, search::AddressInfo & info) const;
   /// @returns true if command was handled by editor.
   bool ParseEditorDebugCommand(search::SearchParams const & params);
+  /// @returns true if command was handled by drape.
+  bool ParseDrapeDebugCommand(std::string const & query);
 
   void FillFeatureInfo(FeatureID const & fid, place_page::Info & info) const;
   /// @param customTitle, if not empty, overrides any other calculated name.
@@ -645,7 +656,7 @@ public:
   }
   /// Set parse to false if you don't need all feature fields ready.
   /// TODO(AlexZ): Refactor code which uses this method to get rid of it.
-  /// FeatureType instances shoud not be used outside ForEach* core methods.
+  /// FeatureType instances should not be used outside ForEach* core methods.
   WARN_UNUSED_RESULT bool GetFeatureByID(FeatureID const & fid, FeatureType & ft) const;
 
   void MemoryWarning();
@@ -720,7 +731,7 @@ public:
   /// lambdas/functors before calling RunOnGuiThread.
   void SetRouteBuildingListener(TRouteBuildingCallback const & buildingCallback) { m_routingCallback = buildingCallback; }
   /// See warning above.
-  void SetRouteProgressListener(TRouteProgressCallback const & progressCallback) { m_progressCallback = progressCallback; }
+  void SetRouteProgressListener(TRouteProgressCallback const & progressCallback) { m_routingSession.SetProgressCallback(progressCallback); }
   void FollowRoute();
   void CloseRouting();
   void GetRouteFollowingInfo(location::FollowingInfo & info) const { m_routingSession.GetRouteFollowingInfo(info); }
@@ -764,9 +775,21 @@ public:
   void Save3dMode(bool allow3d, bool allow3dBuildings);
   void Load3dMode(bool & allow3d, bool & allow3dBuildings);
 
+  void SetLargeFontsSize(bool isLargeSize);
+  void SaveLargeFontsSize(bool isLargeSize);
+  bool LoadLargeFontsSize();
+
   bool LoadAutoZoom();
   void AllowAutoZoom(bool allowAutoZoom);
   void SaveAutoZoom(bool allowAutoZoom);
+
+  TrafficManager & GetTrafficManager();
+
+  bool LoadTrafficEnabled();
+  void SaveTrafficEnabled(bool trafficEnabled);
+
+  bool LoadTrafficSimplifiedColors();
+  void SaveTrafficSimplifiedColors(bool simplified);
 
   /// \returns true if altitude information along |m_route| is available and
   /// false otherwise.
@@ -817,9 +840,10 @@ private:
                         storage::TCountriesVec const & absentCountries);
   void MatchLocationToRoute(location::GpsInfo & info, location::RouteMatchingInfo & routeMatchingInfo) const;
   string GetRoutingErrorMessage(routing::IRouter::ResultCode code);
+  void OnBuildRouteReady(routing::Route const & route, routing::IRouter::ResultCode code);
+  void OnRebuildRouteReady(routing::Route const & route, routing::IRouter::ResultCode code);
 
   TRouteBuildingCallback m_routingCallback;
-  TRouteProgressCallback m_progressCallback;
   routing::RouterType m_currentRouterType;
   //@}
 

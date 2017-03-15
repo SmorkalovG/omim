@@ -10,6 +10,7 @@ import com.mapswithme.maps.bookmarks.data.MapObject;
 import com.mapswithme.maps.bookmarks.data.Metadata;
 import com.mapswithme.maps.gallery.Image;
 import com.mapswithme.maps.review.Review;
+import com.mapswithme.util.NetworkPolicy;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -131,16 +132,19 @@ public final class Sponsored
     final Review[] mReviews;
     @Nullable
     final NearbyObject[] mNearby;
+    final long mReviewsAmount;
+
 
     public HotelInfo(@Nullable String description, @Nullable Image[] photos,
                      @Nullable FacilityType[] facilities, @Nullable Review[] reviews,
-                     @Nullable NearbyObject[] nearby)
+                     @Nullable NearbyObject[] nearby, long reviewsAmount)
     {
       mDescription = description;
       mPhotos = photos;
       mFacilities = facilities;
       mReviews = reviews;
       mNearby = nearby;
+      mReviewsAmount = reviewsAmount;
     }
   }
 
@@ -186,23 +190,27 @@ public final class Sponsored
   private String mId;
 
   @NonNull
-  final String mRating;
+  private final String mRating;
   @NonNull
-  final String mPrice;
+  private final String mPrice;
   @NonNull
-  final String mUrl;
+  private final String mUrl;
   @NonNull
-  final String mUrlDescription;
+  private final String mDescriptionUrl;
+  @NonNull
+  private final String mReviewUrl;
   @SponsoredType
   private final int mType;
 
   public Sponsored(@NonNull String rating, @NonNull String price, @NonNull String url,
-                   @NonNull String urlDescription, @SponsoredType int type)
+                   @NonNull String descriptionUrl, @NonNull String reviewUrl,
+                   @SponsoredType int type)
   {
     mRating = rating;
     mPrice = price;
     mUrl = url;
-    mUrlDescription = urlDescription;
+    mDescriptionUrl = descriptionUrl;
+    mReviewUrl = reviewUrl;
     mType = type;
   }
 
@@ -212,19 +220,19 @@ public final class Sponsored
   }
 
   @Nullable
-  public String getId()
+  String getId()
   {
     return mId;
   }
 
   @NonNull
-  public String getRating()
+  String getRating()
   {
     return mRating;
   }
 
   @NonNull
-  public String getPrice()
+  String getPrice()
   {
     return mPrice;
   }
@@ -236,9 +244,15 @@ public final class Sponsored
   }
 
   @NonNull
-  public String getUrlDescription()
+  String getDescriptionUrl()
   {
-    return mUrlDescription;
+    return mDescriptionUrl;
+  }
+
+  @NonNull
+  String getReviewUrl()
+  {
+    return mReviewUrl;
   }
 
   @SponsoredType
@@ -261,21 +275,23 @@ public final class Sponsored
    * Make request to obtain hotel price information.
    * This method also checks cache for requested hotel id
    * and if cache exists - call {@link #onPriceReceived(String, String, String) onPriceReceived} immediately
-   *
-   * @param id A Hotel id
+   *  @param id A Hotel id
    * @param currencyCode A user currency
+   * @param policy A network policy
    */
-  static void requestPrice(String id, String currencyCode)
+  static void requestPrice(@NonNull String id, @NonNull String currencyCode,
+                           @NonNull NetworkPolicy policy)
   {
     Price p = sPriceCache.get(id);
     if (p != null)
       onPriceReceived(id, p.mPrice, p.mCurrency);
 
-    nativeRequestPrice(id, currencyCode);
+    nativeRequestPrice(policy, id, currencyCode);
   }
 
 
-  static void requestInfo(Sponsored sponsored, String locale)
+  static void requestInfo(@NonNull Sponsored sponsored,
+                          @NonNull String locale, @NonNull NetworkPolicy policy)
   {
     String id = sponsored.getId();
     if (id == null)
@@ -284,7 +300,7 @@ public final class Sponsored
     switch (sponsored.getType())
     {
       case TYPE_BOOKING:
-        requestHotelInfo(id, locale);
+        requestHotelInfo(id, locale, policy);
         break;
       case TYPE_GEOCHAT:
 //        TODO: request geochat info
@@ -301,17 +317,18 @@ public final class Sponsored
    * Make request to obtain hotel information.
    * This method also checks cache for requested hotel id
    * and if cache exists - call {@link #onHotelInfoReceived(String, HotelInfo) onHotelInfoReceived} immediately
-   *
-   * @param id A Hotel id
+   *  @param id A Hotel id
    * @param locale A user locale
+   * @param policy A network policy
    */
-  private static void requestHotelInfo(String id, String locale)
+  private static void requestHotelInfo(@NonNull String id, @NonNull String locale,
+                                       @NonNull NetworkPolicy policy)
   {
     HotelInfo info = sInfoCache.get(id);
     if (info != null)
       onHotelInfoReceived(id, info);
 
-    nativeRequestHotelInfo(id, locale);
+    nativeRequestHotelInfo(policy, id, locale);
   }
 
   private static void onPriceReceived(@NonNull String id, @NonNull String price,
@@ -340,7 +357,9 @@ public final class Sponsored
   @Nullable
   public static native Sponsored nativeGetCurrent();
 
-  private static native void nativeRequestPrice(@NonNull String id, @NonNull String currencyCode);
+  private static native void nativeRequestPrice(@NonNull NetworkPolicy policy,
+                                                @NonNull String id, @NonNull String currencyCode);
 
-  private static native void nativeRequestHotelInfo(@NonNull String id, @NonNull String locale);
+  private static native void nativeRequestHotelInfo(@NonNull NetworkPolicy policy,
+                                                    @NonNull String id, @NonNull String locale);
 }

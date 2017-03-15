@@ -18,24 +18,15 @@ size_t constexpr kRealTimeBufferSize = 60;
 
 namespace tracking
 {
-// static
-// Apple and Android applications use different keys for settings.ini.
-// Keys saved for existing users, so can' fix it easy, need migration.
-// Use this hack until change to special traffic key.
-#if defined(OMIM_OS_IPHONE)
 const char Reporter::kEnableTrackingKey[] = "StatisticsEnabled";
-#elif defined(OMIM_OS_ANDROID)
-const char Reporter::kEnableTrackingKey[] = "AllowStat";
-#else
-const char Reporter::kEnableTrackingKey[] = "AllowStat";
-#endif
 
 // static
-milliseconds const Reporter::kPushDelayMs = milliseconds(10000);
+milliseconds const Reporter::kPushDelayMs = milliseconds(20000);
 
 Reporter::Reporter(unique_ptr<platform::Socket> socket, string const & host, uint16_t port,
                    milliseconds pushDelay)
-  : m_realtimeSender(move(socket), host, port, false)
+  : m_allowSendingPoints(true)
+  , m_realtimeSender(move(socket), host, port, false)
   , m_pushDelay(pushDelay)
   , m_points(kRealTimeBufferSize)
   , m_thread([this] { Run(); })
@@ -52,7 +43,7 @@ Reporter::~Reporter()
   m_thread.join();
 }
 
-void Reporter::AddLocation(location::GpsInfo const & info)
+void Reporter::AddLocation(location::GpsInfo const & info, traffic::SpeedGroup /* speedGroup */)
 {
   lock_guard<mutex> lg(m_mutex);
 
@@ -102,6 +93,16 @@ void Reporter::Run()
 
 bool Reporter::SendPoints()
 {
+  if (!m_allowSendingPoints)
+  {
+    if (m_wasConnected)
+    {
+      m_realtimeSender.Shutdown();
+      m_wasConnected = false;
+    }
+    return true;
+  }
+
   if (m_points.empty())
     return true;
 

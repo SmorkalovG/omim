@@ -208,12 +208,15 @@ namespace
 
   /// Add here all exception classificator types: needed for algorithms,
   /// but don't have drawing rules.
+  /// See also ftypes_matcher.cpp, IsInvisibleIndexedChecker.
   bool TypeAlwaysExists(uint32_t type, EGeomType g = GEOM_UNDEFINED)
   {
     static const uint32_t roundabout = classif().GetTypeByPath({ "junction", "roundabout" });
     static const uint32_t hwtag = classif().GetTypeByPath({ "hwtag" });
     static const uint32_t psurface = classif().GetTypeByPath({ "psurface" });
     static const uint32_t wheelchair = classif().GetTypeByPath({ "wheelchair" });
+    static const uint32_t sponsored = classif().GetTypeByPath({ "sponsored" });
+    static const uint32_t internet = classif().GetTypeByPath({ "internet_access" });
 
     // Caching type length to exclude generic [wheelchair].
     uint8_t const typeLength = ftype::GetLevel(type);
@@ -234,6 +237,9 @@ namespace
     // We're okay with the type being already truncated above.
     ftype::TruncValue(type, 1);
     if (wheelchair == type && typeLength == 2)
+      return true;
+
+    if (sponsored == type || internet == type)
       return true;
 
     return false;

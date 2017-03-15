@@ -72,7 +72,7 @@ vector<m2::PointD> NaiveSample(vector<m2::PointD> const & source, size_t count)
   indexes.reserve(count);
 
   minstd_rand engine;
-  uniform_int_distribution<> distrib(0, source.size());
+  uniform_int_distribution<size_t> distrib(0, source.size());
 
   while (count--)
   {
@@ -281,8 +281,8 @@ string ChangesetWrapper::TypeCountToString(TTypeCount const & typeCount)
        });
 
   ostringstream ss;
-  auto const limit = min(size_t(3), items.size());
-  for (auto i = 0; i < limit; ++i)
+  size_t const limit = min(size_t(3), items.size());
+  for (size_t i = 0; i < limit; ++i)
   {
     if (i > 0)
     {

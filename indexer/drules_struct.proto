@@ -103,6 +103,8 @@ message ShieldRuleProto
   optional uint32 stroke_color = 3;
   required int32 priority = 4;
   optional int32 min_distance = 5;
+  required uint32 text_color = 6;
+  optional uint32 text_stroke_color = 7;
 }
 
 message DrawElementProto
@@ -124,7 +126,21 @@ message ClassifElementProto
   repeated DrawElementProto element = 2;
 }
 
+message ColorElementProto
+{
+  required string name = 1;
+  required uint32 color = 2;
+  optional float x = 3;
+  optional float y = 4;
+}
+
+message ColorsElementProto
+{
+  repeated ColorElementProto value = 1;
+}
+
 message ContainerProto
 {
   repeated ClassifElementProto cont = 1;
+  optional ColorsElementProto colors = 2;
 }

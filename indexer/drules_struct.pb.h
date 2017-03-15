@@ -43,6 +43,8 @@ class PathTextRuleProto;
 class ShieldRuleProto;
 class DrawElementProto;
 class ClassifElementProto;
+class ColorElementProto;
+class ColorsElementProto;
 class ContainerProto;
 
 enum LineJoin {
@@ -1431,6 +1433,20 @@ class ShieldRuleProto : public ::google::protobuf::MessageLite {
   inline ::google::protobuf::int32 min_distance() const;
   inline void set_min_distance(::google::protobuf::int32 value);
 
+  // required uint32 text_color = 6;
+  inline bool has_text_color() const;
+  inline void clear_text_color();
+  static const int kTextColorFieldNumber = 6;
+  inline ::google::protobuf::uint32 text_color() const;
+  inline void set_text_color(::google::protobuf::uint32 value);
+
+  // optional uint32 text_stroke_color = 7;
+  inline bool has_text_stroke_color() const;
+  inline void clear_text_stroke_color();
+  static const int kTextStrokeColorFieldNumber = 7;
+  inline ::google::protobuf::uint32 text_stroke_color() const;
+  inline void set_text_stroke_color(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:ShieldRuleProto)
  private:
   inline void set_has_height();
@@ -1443,6 +1459,10 @@ class ShieldRuleProto : public ::google::protobuf::MessageLite {
   inline void clear_has_priority();
   inline void set_has_min_distance();
   inline void clear_has_min_distance();
+  inline void set_has_text_color();
+  inline void clear_has_text_color();
+  inline void set_has_text_stroke_color();
+  inline void clear_has_text_stroke_color();
 
   ::std::string _unknown_fields_;
 
@@ -1453,6 +1473,8 @@ class ShieldRuleProto : public ::google::protobuf::MessageLite {
   ::google::protobuf::uint32 stroke_color_;
   ::google::protobuf::int32 priority_;
   ::google::protobuf::int32 min_distance_;
+  ::google::protobuf::uint32 text_color_;
+  ::google::protobuf::uint32 text_stroke_color_;
   #ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
   friend void  protobuf_AddDesc_drules_5fstruct_2eproto_impl();
   #else
@@ -1768,6 +1790,226 @@ class ClassifElementProto : public ::google::protobuf::MessageLite {
 };
 // -------------------------------------------------------------------
 
+class ColorElementProto : public ::google::protobuf::MessageLite {
+ public:
+  ColorElementProto();
+  virtual ~ColorElementProto();
+
+  ColorElementProto(const ColorElementProto& from);
+
+  inline ColorElementProto& operator=(const ColorElementProto& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::std::string& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::std::string* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ColorElementProto& default_instance();
+
+  #ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
+  // Returns the internal default instance pointer. This function can
+  // return NULL thus should not be used by the user. This is intended
+  // for Protobuf internal code. Please use default_instance() declared
+  // above instead.
+  static inline const ColorElementProto* internal_default_instance() {
+    return default_instance_;
+  }
+  #endif
+
+  void Swap(ColorElementProto* other);
+
+  // implements Message ----------------------------------------------
+
+  ColorElementProto* New() const;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from);
+  void CopyFrom(const ColorElementProto& from);
+  void MergeFrom(const ColorElementProto& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  void DiscardUnknownFields();
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  ::std::string GetTypeName() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string name = 1;
+  inline bool has_name() const;
+  inline void clear_name();
+  static const int kNameFieldNumber = 1;
+  inline const ::std::string& name() const;
+  inline void set_name(const ::std::string& value);
+  inline void set_name(const char* value);
+  inline void set_name(const char* value, size_t size);
+  inline ::std::string* mutable_name();
+  inline ::std::string* release_name();
+  inline void set_allocated_name(::std::string* name);
+
+  // required uint32 color = 2;
+  inline bool has_color() const;
+  inline void clear_color();
+  static const int kColorFieldNumber = 2;
+  inline ::google::protobuf::uint32 color() const;
+  inline void set_color(::google::protobuf::uint32 value);
+
+  // optional float x = 3;
+  inline bool has_x() const;
+  inline void clear_x();
+  static const int kXFieldNumber = 3;
+  inline float x() const;
+  inline void set_x(float value);
+
+  // optional float y = 4;
+  inline bool has_y() const;
+  inline void clear_y();
+  static const int kYFieldNumber = 4;
+  inline float y() const;
+  inline void set_y(float value);
+
+  // @@protoc_insertion_point(class_scope:ColorElementProto)
+ private:
+  inline void set_has_name();
+  inline void clear_has_name();
+  inline void set_has_color();
+  inline void clear_has_color();
+  inline void set_has_x();
+  inline void clear_has_x();
+  inline void set_has_y();
+  inline void clear_has_y();
+
+  ::std::string _unknown_fields_;
+
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::std::string* name_;
+  ::google::protobuf::uint32 color_;
+  float x_;
+  float y_;
+  #ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
+  friend void  protobuf_AddDesc_drules_5fstruct_2eproto_impl();
+  #else
+  friend void  protobuf_AddDesc_drules_5fstruct_2eproto();
+  #endif
+  friend void protobuf_AssignDesc_drules_5fstruct_2eproto();
+  friend void protobuf_ShutdownFile_drules_5fstruct_2eproto();
+
+  void InitAsDefaultInstance();
+  static ColorElementProto* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class ColorsElementProto : public ::google::protobuf::MessageLite {
+ public:
+  ColorsElementProto();
+  virtual ~ColorsElementProto();
+
+  ColorsElementProto(const ColorsElementProto& from);
+
+  inline ColorsElementProto& operator=(const ColorsElementProto& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::std::string& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::std::string* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ColorsElementProto& default_instance();
+
+  #ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
+  // Returns the internal default instance pointer. This function can
+  // return NULL thus should not be used by the user. This is intended
+  // for Protobuf internal code. Please use default_instance() declared
+  // above instead.
+  static inline const ColorsElementProto* internal_default_instance() {
+    return default_instance_;
+  }
+  #endif
+
+  void Swap(ColorsElementProto* other);
+
+  // implements Message ----------------------------------------------
+
+  ColorsElementProto* New() const;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from);
+  void CopyFrom(const ColorsElementProto& from);
+  void MergeFrom(const ColorsElementProto& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  void DiscardUnknownFields();
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  ::std::string GetTypeName() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // repeated .ColorElementProto value = 1;
+  inline int value_size() const;
+  inline void clear_value();
+  static const int kValueFieldNumber = 1;
+  inline const ::ColorElementProto& value(int index) const;
+  inline ::ColorElementProto* mutable_value(int index);
+  inline ::ColorElementProto* add_value();
+  inline const ::google::protobuf::RepeatedPtrField< ::ColorElementProto >&
+      value() const;
+  inline ::google::protobuf::RepeatedPtrField< ::ColorElementProto >*
+      mutable_value();
+
+  // @@protoc_insertion_point(class_scope:ColorsElementProto)
+ private:
+
+  ::std::string _unknown_fields_;
+
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::google::protobuf::RepeatedPtrField< ::ColorElementProto > value_;
+  #ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
+  friend void  protobuf_AddDesc_drules_5fstruct_2eproto_impl();
+  #else
+  friend void  protobuf_AddDesc_drules_5fstruct_2eproto();
+  #endif
+  friend void protobuf_AssignDesc_drules_5fstruct_2eproto();
+  friend void protobuf_ShutdownFile_drules_5fstruct_2eproto();
+
+  void InitAsDefaultInstance();
+  static ColorsElementProto* default_instance_;
+};
+// -------------------------------------------------------------------
+
 class ContainerProto : public ::google::protobuf::MessageLite {
  public:
   ContainerProto();
@@ -1841,14 +2083,26 @@ class ContainerProto : public ::google::protobuf::MessageLite {
   inline ::google::protobuf::RepeatedPtrField< ::ClassifElementProto >*
       mutable_cont();
 
+  // optional .ColorsElementProto colors = 2;
+  inline bool has_colors() const;
+  inline void clear_colors();
+  static const int kColorsFieldNumber = 2;
+  inline const ::ColorsElementProto& colors() const;
+  inline ::ColorsElementProto* mutable_colors();
+  inline ::ColorsElementProto* release_colors();
+  inline void set_allocated_colors(::ColorsElementProto* colors);
+
   // @@protoc_insertion_point(class_scope:ContainerProto)
  private:
+  inline void set_has_colors();
+  inline void clear_has_colors();
 
   ::std::string _unknown_fields_;
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
   ::google::protobuf::RepeatedPtrField< ::ClassifElementProto > cont_;
+  ::ColorsElementProto* colors_;
   #ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
   friend void  protobuf_AddDesc_drules_5fstruct_2eproto_impl();
   #else
@@ -3411,6 +3665,54 @@ inline void ShieldRuleProto::set_min_distance(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:ShieldRuleProto.min_distance)
 }
 
+// required uint32 text_color = 6;
+inline bool ShieldRuleProto::has_text_color() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void ShieldRuleProto::set_has_text_color() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void ShieldRuleProto::clear_has_text_color() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void ShieldRuleProto::clear_text_color() {
+  text_color_ = 0u;
+  clear_has_text_color();
+}
+inline ::google::protobuf::uint32 ShieldRuleProto::text_color() const {
+  // @@protoc_insertion_point(field_get:ShieldRuleProto.text_color)
+  return text_color_;
+}
+inline void ShieldRuleProto::set_text_color(::google::protobuf::uint32 value) {
+  set_has_text_color();
+  text_color_ = value;
+  // @@protoc_insertion_point(field_set:ShieldRuleProto.text_color)
+}
+
+// optional uint32 text_stroke_color = 7;
+inline bool ShieldRuleProto::has_text_stroke_color() const {
+  return (_has_bits_[0] & 0x00000040u) != 0;
+}
+inline void ShieldRuleProto::set_has_text_stroke_color() {
+  _has_bits_[0] |= 0x00000040u;
+}
+inline void ShieldRuleProto::clear_has_text_stroke_color() {
+  _has_bits_[0] &= ~0x00000040u;
+}
+inline void ShieldRuleProto::clear_text_stroke_color() {
+  text_stroke_color_ = 0u;
+  clear_has_text_stroke_color();
+}
+inline ::google::protobuf::uint32 ShieldRuleProto::text_stroke_color() const {
+  // @@protoc_insertion_point(field_get:ShieldRuleProto.text_stroke_color)
+  return text_stroke_color_;
+}
+inline void ShieldRuleProto::set_text_stroke_color(::google::protobuf::uint32 value) {
+  set_has_text_stroke_color();
+  text_stroke_color_ = value;
+  // @@protoc_insertion_point(field_set:ShieldRuleProto.text_stroke_color)
+}
+
 // -------------------------------------------------------------------
 
 // DrawElementProto
@@ -3905,6 +4207,192 @@ ClassifElementProto::mutable_element() {
 
 // -------------------------------------------------------------------
 
+// ColorElementProto
+
+// required string name = 1;
+inline bool ColorElementProto::has_name() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void ColorElementProto::set_has_name() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void ColorElementProto::clear_has_name() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void ColorElementProto::clear_name() {
+  if (name_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    name_->clear();
+  }
+  clear_has_name();
+}
+inline const ::std::string& ColorElementProto::name() const {
+  // @@protoc_insertion_point(field_get:ColorElementProto.name)
+  return *name_;
+}
+inline void ColorElementProto::set_name(const ::std::string& value) {
+  set_has_name();
+  if (name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    name_ = new ::std::string;
+  }
+  name_->assign(value);
+  // @@protoc_insertion_point(field_set:ColorElementProto.name)
+}
+inline void ColorElementProto::set_name(const char* value) {
+  set_has_name();
+  if (name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    name_ = new ::std::string;
+  }
+  name_->assign(value);
+  // @@protoc_insertion_point(field_set_char:ColorElementProto.name)
+}
+inline void ColorElementProto::set_name(const char* value, size_t size) {
+  set_has_name();
+  if (name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    name_ = new ::std::string;
+  }
+  name_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:ColorElementProto.name)
+}
+inline ::std::string* ColorElementProto::mutable_name() {
+  set_has_name();
+  if (name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    name_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:ColorElementProto.name)
+  return name_;
+}
+inline ::std::string* ColorElementProto::release_name() {
+  clear_has_name();
+  if (name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = name_;
+    name_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void ColorElementProto::set_allocated_name(::std::string* name) {
+  if (name_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete name_;
+  }
+  if (name) {
+    set_has_name();
+    name_ = name;
+  } else {
+    clear_has_name();
+    name_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:ColorElementProto.name)
+}
+
+// required uint32 color = 2;
+inline bool ColorElementProto::has_color() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void ColorElementProto::set_has_color() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void ColorElementProto::clear_has_color() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void ColorElementProto::clear_color() {
+  color_ = 0u;
+  clear_has_color();
+}
+inline ::google::protobuf::uint32 ColorElementProto::color() const {
+  // @@protoc_insertion_point(field_get:ColorElementProto.color)
+  return color_;
+}
+inline void ColorElementProto::set_color(::google::protobuf::uint32 value) {
+  set_has_color();
+  color_ = value;
+  // @@protoc_insertion_point(field_set:ColorElementProto.color)
+}
+
+// optional float x = 3;
+inline bool ColorElementProto::has_x() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void ColorElementProto::set_has_x() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void ColorElementProto::clear_has_x() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void ColorElementProto::clear_x() {
+  x_ = 0;
+  clear_has_x();
+}
+inline float ColorElementProto::x() const {
+  // @@protoc_insertion_point(field_get:ColorElementProto.x)
+  return x_;
+}
+inline void ColorElementProto::set_x(float value) {
+  set_has_x();
+  x_ = value;
+  // @@protoc_insertion_point(field_set:ColorElementProto.x)
+}
+
+// optional float y = 4;
+inline bool ColorElementProto::has_y() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void ColorElementProto::set_has_y() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void ColorElementProto::clear_has_y() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void ColorElementProto::clear_y() {
+  y_ = 0;
+  clear_has_y();
+}
+inline float ColorElementProto::y() const {
+  // @@protoc_insertion_point(field_get:ColorElementProto.y)
+  return y_;
+}
+inline void ColorElementProto::set_y(float value) {
+  set_has_y();
+  y_ = value;
+  // @@protoc_insertion_point(field_set:ColorElementProto.y)
+}
+
+// -------------------------------------------------------------------
+
+// ColorsElementProto
+
+// repeated .ColorElementProto value = 1;
+inline int ColorsElementProto::value_size() const {
+  return value_.size();
+}
+inline void ColorsElementProto::clear_value() {
+  value_.Clear();
+}
+inline const ::ColorElementProto& ColorsElementProto::value(int index) const {
+  // @@protoc_insertion_point(field_get:ColorsElementProto.value)
+  return value_.Get(index);
+}
+inline ::ColorElementProto* ColorsElementProto::mutable_value(int index) {
+  // @@protoc_insertion_point(field_mutable:ColorsElementProto.value)
+  return value_.Mutable(index);
+}
+inline ::ColorElementProto* ColorsElementProto::add_value() {
+  // @@protoc_insertion_point(field_add:ColorsElementProto.value)
+  return value_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::ColorElementProto >&
+ColorsElementProto::value() const {
+  // @@protoc_insertion_point(field_list:ColorsElementProto.value)
+  return value_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::ColorElementProto >*
+ColorsElementProto::mutable_value() {
+  // @@protoc_insertion_point(field_mutable_list:ColorsElementProto.value)
+  return &value_;
+}
+
+// -------------------------------------------------------------------
+
 // ContainerProto
 
 // repeated .ClassifElementProto cont = 1;
@@ -3935,6 +4423,51 @@ inline ::google::protobuf::RepeatedPtrField< ::ClassifElementProto >*
 ContainerProto::mutable_cont() {
   // @@protoc_insertion_point(field_mutable_list:ContainerProto.cont)
   return &cont_;
+}
+
+// optional .ColorsElementProto colors = 2;
+inline bool ContainerProto::has_colors() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void ContainerProto::set_has_colors() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void ContainerProto::clear_has_colors() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void ContainerProto::clear_colors() {
+  if (colors_ != NULL) colors_->::ColorsElementProto::Clear();
+  clear_has_colors();
+}
+inline const ::ColorsElementProto& ContainerProto::colors() const {
+  // @@protoc_insertion_point(field_get:ContainerProto.colors)
+#ifdef GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
+  return colors_ != NULL ? *colors_ : *default_instance().colors_;
+#else
+  return colors_ != NULL ? *colors_ : *default_instance_->colors_;
+#endif
+}
+inline ::ColorsElementProto* ContainerProto::mutable_colors() {
+  set_has_colors();
+  if (colors_ == NULL) colors_ = new ::ColorsElementProto;
+  // @@protoc_insertion_point(field_mutable:ContainerProto.colors)
+  return colors_;
+}
+inline ::ColorsElementProto* ContainerProto::release_colors() {
+  clear_has_colors();
+  ::ColorsElementProto* temp = colors_;
+  colors_ = NULL;
+  return temp;
+}
+inline void ContainerProto::set_allocated_colors(::ColorsElementProto* colors) {
+  delete colors_;
+  colors_ = colors;
+  if (colors) {
+    set_has_colors();
+  } else {
+    clear_has_colors();
+  }
+  // @@protoc_insertion_point(field_set_allocated:ContainerProto.colors)
 }
 
 

@@ -388,6 +388,8 @@
 	<string name="follow_on_twitter">在Twitter 上关注</string>
 	<!-- Text in menu -->
 	<string name="contact_us">联系我们</string>
+	<!-- Settings: Send feedback button and dialog title -->
+	<string name="feedback">反馈</string>
 	<!-- Text in menu -->
 	<string name="subscribe_to_news">订阅我们的新闻</string>
 	<!-- Text in menu -->
@@ -953,4 +955,121 @@
 	<string name="whats_new_route_profile_message">对于行人和自行车路线，我们现在显示纵剖面。</string>
 	<string name="whats_new_booking_improve_title">优惠预订酒店</string>
 	<string name="whats_new_booking_improve_message">酒店的搜索结果现在包含价格类别。\n我们还添加了超过 110,000 家酒店。</string>
+	<!-- For place page hotel facilities block -->
+	<string name="placepage_hotel_facilities">设施</string>
+	<!-- For place page hotel nearby block -->
+	<string name="placepage_hotel_nearby">附近</string>
+	<!-- For ordering a taxi (as opposed to hotels or other things) -->
+	<string name="taxi_order">预订出租车</string>
+	<!-- How long it is until the taxi arrives -->
+	<string name="taxi_wait">预计 %s后到达</string>
+	<!-- When there are no available taxis nearby -->
+	<string name="taxi_not_found">无法在附近找到出租车</string>
+	<string name="install_app">安装</string>
+	<!-- `Filter` is a noun here -->
+	<string name="booking_filters">筛选器</string>
+	<string name="booking_filters_reset">重置</string>
+	<string name="booking_filters_rating">评分</string>
+	<string name="booking_filters_rating_any">任意</string>
+	<string name="booking_filters_ragting_good">好</string>
+	<string name="booking_filters_rating_very_good">很好</string>
+	<string name="booking_filters_rating_excellent">极好</string>
+	<string name="booking_filters_price_category">价格类别</string>
+	<string name="search_no_results_title">未找到任何结果</string>
+	<string name="search_no_results_message">尝试一个更普通的搜索词、缩小显示或重置筛选器。</string>
+	<string name="search_no_results_expand_area_button">缩小</string>
+	<string name="search_no_results_reset_button">重置筛选器</string>
+	<!-- noun -->
+	<string name="search_in_table">列表</string>
+	<string name="booking_based_on_reviews">根据 %d 条酒店点评</string>
+	<string name="booking_show_more">显示更多</string>
+	<string name="booking_reviews">点评</string>
+	<string name="booking_hotel">酒店</string>
+	<!-- hotel room -->
+	<string name="booking_hotel_room">客房</string>
+	<!-- A neologism for a chat based on geographical proximity -->
+	<string name="chat">Geochat</string>
+	<!-- Verb. Text on a button that opens the chat. -->
+	<string name="chat_open">开放</string>
+	<string name="whatsnew_uber_header">优步和MAPS.ME</string>
+	<string name="whatsnew_uber_message">从应用直接叫优步出租车！</string>
+	<string name="dialog_taxi_offline">叫出租车服务在离线模式下无法使用。</string>
+	<string name="dialog_taxi_error">叫出租车服务暂时无法使用。</string>
+	<string name="advertisement">广告</string>
+	<string name="mobile_data_dialog">使用移动网络显示详细信息？</string>
+	<string name="mobile_data_option_always">始终使用</string>
+	<string name="mobile_data_option_today">仅在今天</string>
+	<string name="mobile_data_option_not_today">今天不使用</string>
+	<string name="mobile_data">移动网络</string>
+	<string name="mobile_data_description">要显示地点的详细信息（例如照片、价格和评价），需要使用移动网络。</string>
+	<string name="mobile_data_option_never">从不使用</string>
+	<string name="mobile_data_option_ask">总是询问</string>
+	<string name="traffic_update_maps_text">要显示交通数据，必须更新地图。</string>
+	<string name="traffic_outdated">交通数据已过时。</string>
+	<string name="big_font">增大地图上的字体大小</string>
+	<string name="traffic_update_app">请更新 MAPS.ME</string>
+	<!-- "traffic" as in road congestion -->
+	<string name="traffic_update_app_message">要显示交通数据，必须更新应用。</string>
+	<!-- "traffic" as in "road congestion" -->
+	<string name="traffic_data_unavailable">交通数据不可用</string>
+	<string name="banner_deliveryclub_title">送餐</string>
+	<string name="banner_deliveryclub_message">4,000 家餐厅的快速送餐。从 Delivery Club 订餐。</string>
+	<string name="banner_lamoda_title">在线服装和鞋店</string>
+	<string name="banner_lamoda_message">超过 1,000 个品牌。最低三折起。全国免费派送。</string>
+	<string name="banner_tutu_title">在线火车票</string>
+	<string name="banner_tutu_message">在线购买前往任何城市的火车票 - 价格、搜索和预订。</string>
+	<string name="banner_geerbest_title">在线电子产品商店</string>
+	<string name="banner_geerbest_message">立即搜索价格超低的 50,000 余种商品。</string>
+	<string name="banner_rentalcars_title">在线租车</string>
+	<string name="banner_rentalcars_message">800 家租车公司，超过 49,000 个租车网点。</string>
+	<string name="banner_viator_title">在线导游搜索</string>
+	<string name="banner_viator_message">搜索全世界范围内的 50,000 多位导游。</string>
+	<!-- december -->
+	<string name="whatsnew_traffic">36 个国家/地区的交通数据</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_text">最快的驾驶路线离不开最新的交通信息！</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming">交通信息漫游</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming_text">每次旅行需要的移动带宽小于 1 MB。</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi">预订出租车</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi_text">大多数地点页面现在都包含一个用于预订出租车的按钮。</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search">改进了搜索</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search_text">即使查询存在拼写错误也能得到准确的搜索结果。</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search">搜索筛选器</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search_text">基于价格和评分搜索酒店。</string>
+	<!-- january -->
+	<string name="whatsnew_font_size">字体大小</string>
+	<!-- january -->
+	<string name="whatsnew_font_size_text">可以增大地图上的标签。</string>
+	<!-- Seven points and higher -->
+	<string name="booking_filter_rating_num_good">7.0+</string>
+	<!-- Eight points and higher -->
+	<string name="booking_filter_rating_num_very_good">8.0+</string>
+	<!-- Nine points and higher -->
+	<string name="booking_filter_rating_num_excellent">9.0+</string>
+	<!-- Simplified colour scheme for traffic information, fewer colours are used to display traffic jams on the map. The string should be kept as short as possible -->
+	<string name="pref_traffic_simplified_colors_title">简化的交通状况颜色</string>
+	<string name="enable_logging">启用记录</string>
+	<string name="whatsnew_more_info_on_hotels_title">了解酒店的更多信息</string>
+	<string name="whatsnew_more_info_on_hotels_message">全新的酒店页面：在线查看照片、用户评论和其他信息。</string>
+	<string name="whatsnew_better_routing_title">改进的路线规划</string>
+	<string name="whatsnew_better_routing_message">• 更准确地估计到达时间。\n• 应用已经考虑到限制性区域和道路标志。</string>
+	<string name="whatsnew_smaller_mwm_title">地图变小</string>
+	<string name="whatsnew_smaller_mwm_message">地图需要的存储空间减少 20%。</string>
+	<string name="whatsnew_waypoints_title">在路线中添加路径点</string>
+	<string name="whatsnew_waypoints_message">点按地点即可向您的路线添加路径点。</string>
+	<string name="whatsnew_driving_style_title">新的驾驶地图样式</string>
+	<string name="whatsnew_driving_style_message">汽车导航模式更加易用。</string>
+	<string name="more_on_bookingcom">Booking.com 上的更多信息</string>
+	<string name="details_on_bookingcom">Booking.com 上的详细信息</string>
+	<string name="reviews_on_bookingcom">Booking.com 上的更多评价</string>
+	<string name="offline_place_page_more_information">连接到互联网来获取关于地点的更多信息。</string>
+	<string name="failed_load_information">无法加载信息。</string>
 </resources>

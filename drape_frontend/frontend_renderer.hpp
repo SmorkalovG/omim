@@ -2,12 +2,6 @@
 
 #include "base/thread.hpp"
 
-#ifdef DRAW_INFO
-  #include "base/timer.hpp"
-  #include "std/vector.hpp"
-  #include "std/numeric.hpp"
-#endif
-
 #include "drape_frontend/gui/layer_render.hpp"
 
 #include "drape_frontend/backend_renderer.hpp"
@@ -54,6 +48,7 @@ class SelectionShape;
 class Framebuffer;
 class TransparentLayer;
 class SelectObjectMessage;
+class ScenarioManager;
 
 struct TapInfo
 {
@@ -86,6 +81,7 @@ public:
            ref_ptr<RequestedTiles> requestedTiles,
            double timeInBackground,
            bool allow3dBuildings,
+           bool trafficEnabled,
            bool blockTapEvents,
            bool firstLaunch,
            bool isRoutingActive,
@@ -100,6 +96,7 @@ public:
       , m_requestedTiles(requestedTiles)
       , m_timeInBackground(timeInBackground)
       , m_allow3dBuildings(allow3dBuildings)
+      , m_trafficEnabled(trafficEnabled)
       , m_blockTapEvents(blockTapEvents)
       , m_firstLaunch(firstLaunch)
       , m_isRoutingActive(isRoutingActive)
@@ -115,6 +112,7 @@ public:
     ref_ptr<RequestedTiles> m_requestedTiles;
     double m_timeInBackground;
     bool m_allow3dBuildings;
+    bool m_trafficEnabled;
     bool m_blockTapEvents;
     bool m_firstLaunch;
     bool m_isRoutingActive;
@@ -125,19 +123,6 @@ public:
   ~FrontendRenderer() override;
 
   void Teardown();
-
-#ifdef DRAW_INFO
-  double m_tpf;
-  double m_fps;
-
-  my::Timer m_timer;
-  double m_frameStartTime;
-  vector<double> m_tpfs;
-  int m_drawedFrames;
-
-  void BeforeDrawFrame();
-  void AfterDrawFrame();
-#endif
 
   void AddUserEvent(drape_ptr<UserEvent> && event);
 
@@ -150,6 +135,8 @@ public:
                        int preferredZoomLevel, TAnimationCreator const & parallelAnimCreator) override;
   void ChangeModelView(double autoScale, m2::PointD const & userPos, double azimuth, m2::PointD const & pxZero,
                        TAnimationCreator const & parallelAnimCreator) override;
+
+  drape_ptr<ScenarioManager> const & GetScenarioManager() const;
 
 protected:
   void AcceptMessage(ref_ptr<Message> message) override;
@@ -171,9 +158,10 @@ private:
   //////
   /// Render part of scene
   void Render2dLayer(ScreenBase const & modelView);
-  void Render3dLayer(ScreenBase const & modelView);
+  void Render3dLayer(ScreenBase const & modelView, bool useFramebuffer);
   void RenderOverlayLayer(ScreenBase const & modelView);
   void RenderUserMarksLayer(ScreenBase const & modelView);
+  void RenderTrafficAndRouteLayer(ScreenBase const & modelView);
   //////
   ScreenBase const & ProcessEvents(bool & modelViewChanged, bool & viewportChanged);
   void PrepareScene(ScreenBase const & modelView);
@@ -245,7 +233,7 @@ private:
 
   bool IsPerspective() const;
 
-  void PrepareGpsTrackPoints(size_t pointsCount);
+  void PrepareGpsTrackPoints(uint32_t pointsCount);
 
   void PullToBoundArea(bool randomPlace, bool applyZoom);
 
@@ -338,6 +326,11 @@ private:
   drape_ptr<SelectObjectMessage> m_selectObjectMessage;
 
   bool m_needRestoreSize;
+
+  bool m_needRegenerateTraffic;
+  bool m_trafficEnabled;
+
+  drape_ptr<ScenarioManager> m_scenarioManager;
 
 #ifdef DEBUG
   bool m_isTeardowned;

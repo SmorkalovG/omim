@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3DBC1C511E4B14810016897F /* facebook_tests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DBC1C501E4B14810016897F /* facebook_tests.cpp */; };
+		3DBC1C541E4B14920016897F /* facebook_ads.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DBC1C521E4B14920016897F /* facebook_ads.cpp */; };
+		3DBC1C551E4B14920016897F /* facebook_ads.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 3DBC1C531E4B14920016897F /* facebook_ads.hpp */; };
 		F67E75251DB8F06F00D6741F /* opentable_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F67E75231DB8F06F00D6741F /* opentable_api.cpp */; };
 		F67E75261DB8F06F00D6741F /* opentable_api.hpp in Headers */ = {isa = PBXBuildFile; fileRef = F67E75241DB8F06F00D6741F /* opentable_api.hpp */; };
 		F6B536401DA520E40067EEA5 /* booking_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F6B5363C1DA520E40067EEA5 /* booking_api.cpp */; };
@@ -26,7 +29,6 @@
 		F6B536761DA523D60067EEA5 /* libplatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B536731DA523D60067EEA5 /* libplatform.a */; };
 		F6B536781DA523EF0067EEA5 /* libindexer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B536771DA523EF0067EEA5 /* libindexer.a */; };
 		F6B5367B1DA524030067EEA5 /* libalohalitics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B536791DA524030067EEA5 /* libalohalitics.a */; };
-		F6B5367C1DA524030067EEA5 /* libtomcrypt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B5367A1DA524030067EEA5 /* libtomcrypt.a */; };
 		F6B5367E1DA5242A0067EEA5 /* libcoding.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B5367D1DA5242A0067EEA5 /* libcoding.a */; };
 		F6B536801DA5243B0067EEA5 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F6B5367F1DA5243B0067EEA5 /* libz.tbd */; };
 /* End PBXBuildFile section */
@@ -34,6 +36,9 @@
 /* Begin PBXFileReference section */
 		3475E0E11DBF581B004C7E69 /* common-debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "common-debug.xcconfig"; path = "../common-debug.xcconfig"; sourceTree = "<group>"; };
 		3475E0E21DBF581B004C7E69 /* common-release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "common-release.xcconfig"; path = "../common-release.xcconfig"; sourceTree = "<group>"; };
+		3DBC1C501E4B14810016897F /* facebook_tests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = facebook_tests.cpp; sourceTree = "<group>"; };
+		3DBC1C521E4B14920016897F /* facebook_ads.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = facebook_ads.cpp; sourceTree = "<group>"; };
+		3DBC1C531E4B14920016897F /* facebook_ads.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = facebook_ads.hpp; sourceTree = "<group>"; };
 		F67E75231DB8F06F00D6741F /* opentable_api.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = opentable_api.cpp; sourceTree = "<group>"; };
 		F67E75241DB8F06F00D6741F /* opentable_api.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = opentable_api.hpp; sourceTree = "<group>"; };
 		F6B536341DA5209F0067EEA5 /* libpartners_api.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpartners_api.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -51,7 +56,6 @@
 		F6B536731DA523D60067EEA5 /* libplatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libplatform.a; path = "../../../omim-xcode-build/Debug/libplatform.a"; sourceTree = "<group>"; };
 		F6B536771DA523EF0067EEA5 /* libindexer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libindexer.a; path = "../../../omim-xcode-build/Debug/libindexer.a"; sourceTree = "<group>"; };
 		F6B536791DA524030067EEA5 /* libalohalitics.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libalohalitics.a; path = "../../../omim-xcode-build/Debug/libalohalitics.a"; sourceTree = "<group>"; };
-		F6B5367A1DA524030067EEA5 /* libtomcrypt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtomcrypt.a; path = "../../../omim-xcode-build/Debug/libtomcrypt.a"; sourceTree = "<group>"; };
 		F6B5367D1DA5242A0067EEA5 /* libcoding.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcoding.a; path = "../../../omim-xcode-build/Debug/libcoding.a"; sourceTree = "<group>"; };
 		F6B5367F1DA5243B0067EEA5 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.0.sdk/usr/lib/libz.tbd; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
@@ -71,7 +75,6 @@
 				F6B536801DA5243B0067EEA5 /* libz.tbd in Frameworks */,
 				F6B5367E1DA5242A0067EEA5 /* libcoding.a in Frameworks */,
 				F6B5367B1DA524030067EEA5 /* libalohalitics.a in Frameworks */,
-				F6B5367C1DA524030067EEA5 /* libtomcrypt.a in Frameworks */,
 				F6B536781DA523EF0067EEA5 /* libindexer.a in Frameworks */,
 				F6B536741DA523D60067EEA5 /* libbase.a in Frameworks */,
 				F6B536751DA523D60067EEA5 /* libjansson.a in Frameworks */,
@@ -108,6 +111,8 @@
 		F6B5363B1DA520B20067EEA5 /* partners_api */ = {
 			isa = PBXGroup;
 			children = (
+				3DBC1C521E4B14920016897F /* facebook_ads.cpp */,
+				3DBC1C531E4B14920016897F /* facebook_ads.hpp */,
 				F67E75231DB8F06F00D6741F /* opentable_api.cpp */,
 				F67E75241DB8F06F00D6741F /* opentable_api.hpp */,
 				F6B5363C1DA520E40067EEA5 /* booking_api.cpp */,
@@ -122,6 +127,7 @@
 		F6B536441DA521060067EEA5 /* partners_api_tests */ = {
 			isa = PBXGroup;
 			children = (
+				3DBC1C501E4B14810016897F /* facebook_tests.cpp */,
 				F6B536691DA523060067EEA5 /* testingmain.cpp */,
 				F6B536451DA5213D0067EEA5 /* booking_tests.cpp */,
 				F6B536461DA5213D0067EEA5 /* uber_tests.cpp */,
@@ -145,7 +151,6 @@
 				F6B5367F1DA5243B0067EEA5 /* libz.tbd */,
 				F6B5367D1DA5242A0067EEA5 /* libcoding.a */,
 				F6B536791DA524030067EEA5 /* libalohalitics.a */,
-				F6B5367A1DA524030067EEA5 /* libtomcrypt.a */,
 				F6B536771DA523EF0067EEA5 /* libindexer.a */,
 				F6B536711DA523D60067EEA5 /* libbase.a */,
 				F6B536721DA523D60067EEA5 /* libjansson.a */,
@@ -164,6 +169,7 @@
 				F67E75261DB8F06F00D6741F /* opentable_api.hpp in Headers */,
 				F6B536411DA520E40067EEA5 /* booking_api.hpp in Headers */,
 				F6B536431DA520E40067EEA5 /* uber_api.hpp in Headers */,
+				3DBC1C551E4B14920016897F /* facebook_ads.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -258,7 +264,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3DBC1C511E4B14810016897F /* facebook_tests.cpp in Sources */,
 				F6B536421DA520E40067EEA5 /* uber_api.cpp in Sources */,
+				3DBC1C541E4B14920016897F /* facebook_ads.cpp in Sources */,
 				F6B536471DA5213D0067EEA5 /* booking_tests.cpp in Sources */,
 				F6B5366A1DA523060067EEA5 /* testingmain.cpp in Sources */,
 				F67E75251DB8F06F00D6741F /* opentable_api.cpp in Sources */,

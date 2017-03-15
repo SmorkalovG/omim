@@ -1,9 +1,8 @@
-#include "router.hpp"
+#include "routing/router.hpp"
 
 namespace routing
 {
-
-string ToString(RouterType type)
+std::string ToString(RouterType type)
 {
   switch(type)
   {
@@ -16,7 +15,7 @@ string ToString(RouterType type)
   return "Error";
 }
 
-RouterType FromString(string const & str)
+RouterType FromString(std::string const & str)
 {
   if (str == "vehicle")
     return RouterType::Vehicle;

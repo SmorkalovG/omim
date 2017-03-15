@@ -3,8 +3,10 @@ package com.mapswithme.maps.downloader;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.view.WindowManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +16,7 @@ import com.mapswithme.maps.base.BaseMwmRecyclerFragment;
 import com.mapswithme.maps.base.OnBackPressListener;
 import com.mapswithme.maps.search.NativeMapSearchListener;
 import com.mapswithme.maps.search.SearchEngine;
+import com.mapswithme.maps.widget.PlaceholderView;
 import com.mapswithme.util.UiUtils;
 
 public class DownloaderFragment extends BaseMwmRecyclerFragment
@@ -40,28 +43,24 @@ public class DownloaderFragment extends BaseMwmRecyclerFragment
 
   private final NativeMapSearchListener mSearchListener = new NativeMapSearchListener()
   {
-    private final List<CountryItem> mResults = new ArrayList<>();
-
     @Override
     public void onMapSearchResults(Result[] results, long timestamp, boolean isLast)
     {
       if (!mSearchRunning || timestamp != mCurrentSearch)
         return;
 
+      List<CountryItem> rs = new ArrayList<>();
       for (Result result : results)
       {
         CountryItem item = CountryItem.fill(result.countryId);
         item.searchResultName = result.matchedString;
-        mResults.add(item);
+        rs.add(item);
       }
+
+      mAdapter.setSearchResultsMode(rs, mToolbarController.getQuery());
 
       if (isLast)
-      {
-        mAdapter.setSearchResultsMode(mResults, mToolbarController.getQuery());
-        mResults.clear();
-
         onSearchEnd();
-      }
     }
   };
 
@@ -76,6 +75,7 @@ public class DownloaderFragment extends BaseMwmRecyclerFragment
     mCurrentSearch = System.nanoTime();
     SearchEngine.searchMaps(mToolbarController.getQuery(), mCurrentSearch);
     mToolbarController.showProgress(true);
+    mAdapter.clearAdsAndCancelMyTarget();
   }
 
   void clearSearchQuery()
@@ -103,6 +103,13 @@ public class DownloaderFragment extends BaseMwmRecyclerFragment
   {
     mToolbarController.update();
     mBottomPanel.update();
+  }
+
+  @Override
+  public void onCreate(@Nullable Bundle savedInstanceState)
+  {
+    super.onCreate(savedInstanceState);
+    getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
   }
 
   @Override
@@ -204,13 +211,13 @@ public class DownloaderFragment extends BaseMwmRecyclerFragment
   }
 
   @Override
-  protected void setupPlaceholder(View placeholder)
+  protected void setupPlaceholder(@NonNull PlaceholderView placeholder)
   {
     if (mAdapter.isSearchResultsMode())
-      UiUtils.setupPlaceholder(placeholder, R.drawable.img_search_nothing_found_light,
-                               R.string.search_not_found, R.string.search_not_found_query);
+      placeholder.setContent(R.drawable.img_search_nothing_found_light,
+                             R.string.search_not_found, R.string.search_not_found_query);
     else
-      UiUtils.setupPlaceholder(placeholder, R.drawable.img_search_no_maps,
-                               R.string.downloader_no_downloaded_maps_title, R.string.downloader_no_downloaded_maps_message);
+      placeholder.setContent(R.drawable.img_search_no_maps,
+                             R.string.downloader_no_downloaded_maps_title, R.string.downloader_no_downloaded_maps_message);
   }
 }

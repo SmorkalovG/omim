@@ -3,7 +3,9 @@
 #include "base/base.hpp"
 
 #include "std/algorithm.hpp"
+#include "std/array.hpp"
 #include "std/initializer_list.hpp"
+#include "std/limits.hpp"
 #include "std/string.hpp"
 #include "std/utility.hpp"
 #include "std/vector.hpp"
@@ -160,11 +162,34 @@ public:
 
 class IsHotelChecker : public BaseChecker
 {
+public:
+  enum class Type
+  {
+    Hotel,
+    Apartment,
+    CampSite,
+    Chalet,
+    GuestHouse,
+    Hostel,
+    Motel,
+    Resort,
+
+    Count
+  };
+
+  static_assert(static_cast<size_t>(Type::Count) <= CHAR_BIT * sizeof(unsigned),
+                "Too many types of hotels");
+
+  static IsHotelChecker const & Instance();
+
+  static char const * const GetHotelTypeTag(Type type);
+
+  unsigned GetHotelTypesMask(FeatureType const & ft) const;
+
+private:
   IsHotelChecker();
 
-public:
-  static IsHotelChecker const & Instance();
-  static vector<string> const & GetHotelTags();
+  array<pair<uint32_t, Type>, static_cast<size_t>(Type::Count)> m_sortedTypes;
 };
 
 // WiFi is a type in classificator.txt,
@@ -192,6 +217,15 @@ public:
   static IsOpentableChecker const & Instance();
 };
 
+// Checks for types that are not drawable, but searchable.
+class IsInvisibleIndexedChecker : public BaseChecker
+{
+  IsInvisibleIndexedChecker();
+
+public:
+  static IsInvisibleIndexedChecker const & Instance();
+};
+
 /// Type of locality (do not change values and order - they have detalization order)
 /// COUNTRY < STATE < CITY < ...
 enum Type { NONE = -1, COUNTRY = 0, STATE, CITY, TOWN, VILLAGE, LOCALITY_COUNT };
@@ -210,7 +244,7 @@ public:
 /// @name Get city radius and population.
 /// @param r Radius in meters.
 //@{
-uint32_t GetPopulation(FeatureType const & ft);
+uint64_t GetPopulation(FeatureType const & ft);
 double GetRadiusByPopulation(uint32_t p);
 uint32_t GetPopulationByRadius(double r);
 //@}

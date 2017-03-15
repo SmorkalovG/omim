@@ -151,28 +151,41 @@ pair<int, int> GetMinMax(int level, vector<uint32_t> const & types, drule::rule_
   return res;
 }
 
+string CombineArrT(StringIL const & arrT)
+{
+  string result;
+  for (auto it = arrT.begin(); it != arrT.end(); ++it)
+  {
+    if (it != arrT.begin())
+      result.append("-");
+    result.append(*it);
+  }
+  return result;
+}
+
 void CheckPriority(vector<StringIL> const & arrT, vector<size_t> const & arrI, drule::rule_type_t ruleType)
 {
   Classificator const & c = classif();
   vector<vector<uint32_t> > types;
+  vector<vector<string> > typesInfo;
 
   styles::RunForEveryMapStyle([&](MapStyle style)
   {
-    // Not testing priorities in the legacy style, since it is not maintained anymore.
-    if (style == MapStyleLight)
-      return;
-
     types.clear();
+    typesInfo.clear();
 
     size_t ind = 0;
     for (size_t i = 0; i < arrI.size(); ++i)
     {
       types.push_back(vector<uint32_t>());
       types.back().reserve(arrI[i]);
+      typesInfo.push_back(vector<string>());
+      typesInfo.back().reserve(arrI[i]);
 
       for (size_t j = 0; j < arrI[i]; ++j)
       {
         types.back().push_back(c.GetTypeByPath(arrT[ind]));
+        typesInfo.back().push_back(CombineArrT(arrT[ind]));
         ++ind;
       }
     }
@@ -182,11 +195,15 @@ void CheckPriority(vector<StringIL> const & arrT, vector<size_t> const & arrI, d
     for (int level = scales::GetUpperWorldScale() + 1; level <= scales::GetUpperStyleScale(); ++level)
     {
       pair<int, int> minmax(numeric_limits<int>::max(), numeric_limits<int>::min());
+      vector<string> minmaxInfo;
       for (size_t i = 0; i < types.size(); ++i)
       {
         pair<int, int> const mm = GetMinMax(level, types[i], ruleType);
-        TEST_LESS(minmax.second, mm.first, ("Priority bug on zoom", level, "group", i, ":", minmax.first, minmax.second, "vs", mm.first, mm.second));
+        TEST_LESS(minmax.second, mm.first, ("Priority bug on zoom", level, "group", i, ":",
+                                            minmaxInfo, minmax.first, minmax.second, "vs",
+                                            typesInfo[i], mm.first, mm.second));
         minmax = mm;
+        minmaxInfo = typesInfo[i];
       }
     }
   });
@@ -208,19 +225,17 @@ UNIT_TEST(Classificator_AreaPriority)
     // 0
     {"natural", "coastline"},
     // 1
-    //{"waterway", "riverbank"}, - it's not a good idea to place it here
-    // 2
     {"place", "island"}, {"natural", "land"},
-    // 3
+    // 2
     {"natural", "wood"}, {"natural", "scrub"}, {"natural", "heath"}, {"natural", "grassland"},
     {"landuse", "grass"}, {"landuse", "farm"}, {"landuse", "farmland"}, {"landuse", "forest"},
-    // 4
+    // ?
     //{"leisure", "park"}, {"leisure", "garden"}, - maybe next time (too tricky to do it now)
-    // 5
-    {"natural", "water"}, {"natural", "lake"}, {"landuse", "basin"}
+    // 3
+    {"natural", "water"}, {"natural", "lake"}, {"landuse", "basin"}, {"waterway", "riverbank"}
   };
 
-  CheckPriority(types, {1, 2, 8, 3}, drule::area);
+  CheckPriority(types, {1, 2, 8, 4}, drule::area);
 }
 
 UNIT_TEST(Classificator_PoiPriority)

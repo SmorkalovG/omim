@@ -15,9 +15,9 @@
 
 namespace df
 {
-
 namespace
 {
+df::ColorConstant const kMyPositionAccuracyColor = "MyPositionAccuracy";
 
 struct Vertex
 {
@@ -51,8 +51,7 @@ dp::BindingInfo GetBindingInfo()
 
   return info;
 }
-
-} // namespace
+} //  namespace
 
 MyPosition::MyPosition(ref_ptr<dp::TextureManager> mng)
   : m_position(m2::PointF::Zero())
@@ -125,7 +124,7 @@ void MyPosition::RenderMyPosition(ScreenBase const & screen, int zoomLevel,
   {
     m_arrow3d.SetPosition(m_position);
     m_arrow3d.SetAzimuth(m_azimuth);
-    m_arrow3d.Render(screen, zoomLevel, mng);
+    m_arrow3d.Render(screen, mng, m_isRoutingMode);
   }
   else
   {
@@ -149,7 +148,7 @@ void MyPosition::CacheAccuracySector(ref_ptr<dp::TextureManager> mng)
   float const etalonSector = math::twicePi / static_cast<double>(TriangleCount);
 
   dp::TextureManager::ColorRegion color;
-  mng->GetColorRegion(df::GetColorConstant(GetStyleReader().GetCurrentStyle(), df::MyPositionAccuracy), color);
+  mng->GetColorRegion(df::GetColorConstant(df::kMyPositionAccuracyColor), color);
   glsl::vec2 colorCoord = glsl::ToVec2(color.GetTexRect().Center());
 
   buffer_vector<Vertex, TriangleCount> buffer;
@@ -192,7 +191,7 @@ void MyPosition::CacheSymbol(dp::TextureManager::SymbolRegion const & symbol,
                              EMyPositionPart part)
 {
   m2::RectF const & texRect = symbol.GetTexRect();
-  m2::PointF const halfSize = m2::PointF(symbol.GetPixelSize()) * 0.5f;
+  m2::PointF const halfSize = symbol.GetPixelSize() * 0.5f;
 
   Vertex data[4] =
   {
@@ -231,7 +230,7 @@ void MyPosition::CachePointPosition(ref_ptr<dp::TextureManager> mng)
       m_nodes.emplace_back(state, bucket->MoveBuffer());
     });
 
-    int const partIndex = m_nodes.size();
+    int const partIndex = static_cast<int>(m_nodes.size());
     for (int i = 0; i < kSymbolsCount; i++)
     {
       m_parts[partIndices[i]].second = partIndex;

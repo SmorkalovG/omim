@@ -1,7 +1,8 @@
 #include "routing/features_road_graph.hpp"
 #include "routing/nearest_edge_finder.hpp"
 #include "routing/route.hpp"
-#include "routing/vehicle_model.hpp"
+
+#include "routing_common/vehicle_model.hpp"
 
 #include "indexer/classificator.hpp"
 #include "indexer/ftypes_matcher.hpp"
@@ -47,8 +48,8 @@ FeaturesRoadGraph::Value::Value(MwmSet::MwmHandle handle) : m_mwmHandle(move(han
 }
 
 FeaturesRoadGraph::CrossCountryVehicleModel::CrossCountryVehicleModel(
-    unique_ptr<VehicleModelFactory> vehicleModelFactory)
-  : m_vehicleModelFactory(move(vehicleModelFactory))
+    shared_ptr<VehicleModelFactory> vehicleModelFactory)
+  : m_vehicleModelFactory(vehicleModelFactory)
   , m_maxSpeedKMPH(m_vehicleModelFactory->GetVehicleModel()->GetMaxSpeed())
 {
 }
@@ -108,8 +109,8 @@ void FeaturesRoadGraph::RoadInfoCache::Clear()
   m_cache.clear();
 }
 FeaturesRoadGraph::FeaturesRoadGraph(Index const & index, IRoadGraph::Mode mode,
-                                     unique_ptr<VehicleModelFactory> vehicleModelFactory)
-  : m_index(index), m_mode(mode), m_vehicleModel(move(vehicleModelFactory))
+                                     shared_ptr<VehicleModelFactory> vehicleModelFactory)
+  : m_index(index), m_mode(mode), m_vehicleModel(vehicleModelFactory)
 {
 }
 

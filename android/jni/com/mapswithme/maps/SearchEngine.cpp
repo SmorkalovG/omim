@@ -272,7 +272,8 @@ jobject ToJavaResult(Result & result, bool hasPosition, double lat, double lon)
                                                 static_cast<jint>(result.IsOpenNow())));
 
   jni::TScopedLocalRef name(env, jni::ToJavaString(env, result.GetString()));
-  jobject ret = env->NewObject(g_resultClass, g_resultConstructor, name.get(), desc.get(), ll.lat, ll.lon, ranges.get());
+  jobject ret = env->NewObject(g_resultClass, g_resultConstructor, name.get(), desc.get(), ll.lat,
+                               ll.lon, ranges.get(), result.IsHotel());
   ASSERT(ret, ());
 
   return ret;
@@ -303,16 +304,20 @@ void OnResults(Results const & results, long long timestamp, bool isMapAndTable,
 
   JNIEnv * env = jni::GetEnv();
 
+  if (!results.IsEndMarker() || results.IsEndedNormal())
+  {
+    jni::TScopedLocalObjectArrayRef jResults(env, BuildJavaResults(results, hasPosition, lat, lon));
+    env->CallVoidMethod(g_javaListener, g_updateResultsId, jResults.get(),
+                        static_cast<jlong>(timestamp),
+                        search::HotelsClassifier::IsHotelResults(results));
+  }
+
   if (results.IsEndMarker())
   {
     env->CallVoidMethod(g_javaListener, g_endResultsId, static_cast<jlong>(timestamp));
     if (isMapAndTable && results.IsEndedNormal())
       g_framework->NativeFramework()->UpdateUserViewportChanged();
-    return;
   }
-
-  jni::TScopedLocalObjectArrayRef jResults(env, BuildJavaResults(results, hasPosition, lat, lon));
-  env->CallVoidMethod(g_javaListener, g_updateResultsId, jResults.get(), static_cast<jlong>(timestamp));
 }
 
 jobjectArray BuildJavaMapResults(vector<storage::DownloaderSearchResult> const & results)
@@ -351,10 +356,13 @@ extern "C"
   Java_com_mapswithme_maps_search_SearchEngine_nativeInit(JNIEnv * env, jobject thiz)
   {
     g_javaListener = env->NewGlobalRef(thiz);
-    g_updateResultsId = jni::GetMethodID(env, g_javaListener, "onResultsUpdate", "([Lcom/mapswithme/maps/search/SearchResult;J)V");
+    g_updateResultsId = jni::GetMethodID(env, g_javaListener, "onResultsUpdate",
+                                         "([Lcom/mapswithme/maps/search/SearchResult;JZ)V");
     g_endResultsId = jni::GetMethodID(env, g_javaListener, "onResultsEnd", "(J)V");
     g_resultClass = jni::GetGlobalClassRef(env, "com/mapswithme/maps/search/SearchResult");
-    g_resultConstructor = jni::GetConstructorID(env, g_resultClass, "(Ljava/lang/String;Lcom/mapswithme/maps/search/SearchResult$Description;DD[I)V");
+    g_resultConstructor = jni::GetConstructorID(
+        env, g_resultClass,
+        "(Ljava/lang/String;Lcom/mapswithme/maps/search/SearchResult$Description;DD[IZ)V");
     g_suggestConstructor = jni::GetConstructorID(env, g_resultClass, "(Ljava/lang/String;Ljava/lang/String;DD[I)V");
     g_descriptionClass = jni::GetGlobalClassRef(env, "com/mapswithme/maps/search/SearchResult$Description");
     g_descriptionConstructor = jni::GetConstructorID(env, g_descriptionClass, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V");

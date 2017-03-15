@@ -23,9 +23,10 @@ import java.lang.annotation.RetentionPolicy;
  */
 public class Framework
 {
-  public static final int MAP_STYLE_LIGHT = 0;
+  public static final int MAP_STYLE_CLEAR = 0;
   public static final int MAP_STYLE_DARK = 1;
-  public static final int MAP_STYLE_CLEAR = 2;
+  public static final int MAP_STYLE_VEHICLE_CLEAR = 3;
+  public static final int MAP_STYLE_VEHICLE_DARK = 4;
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({ROUTER_TYPE_VEHICLE, ROUTER_TYPE_PEDESTRIAN, ROUTER_TYPE_BICYCLE, ROUTER_TYPE_TAXI})
@@ -85,13 +86,14 @@ public class Framework
    * @return Bitmap if there's pedestrian or bicycle route and null otherwise.
    */
   @Nullable
-  public static Bitmap GenerateRouteAltitudeChart(int width, int height)
+  public static Bitmap generateRouteAltitudeChart(int width, int height,
+                                                  @NonNull RouteAltitudeLimits limits)
   {
     if (width <= 0 || height <= 0)
       return null;
 
-    RouteAltitudeLimits routeAltitudeLimits = new RouteAltitudeLimits();
-    final int[] altitudeChartBits = Framework.nativeGenerateRouteAltitudeChartBits(width, height, routeAltitudeLimits);
+    final int[] altitudeChartBits = Framework.nativeGenerateRouteAltitudeChartBits(width, height,
+                                                                                   limits);
     if (altitudeChartBits == null)
       return null;
 
@@ -194,8 +196,6 @@ public class Framework
 
   public static native void nativeShowCountry(String countryId, boolean zoomToDownloadButton);
 
-  public static native double[] nativePredictLocation(double lat, double lon, double accuracy, double bearing, double speed, double elapsedSeconds);
-
   public static native void nativeSetMapStyle(int mapStyle);
 
   /**
@@ -241,6 +241,10 @@ public class Framework
 
   public static native void nativeSetAutoZoomEnabled(boolean enabled);
 
+  public static native boolean nativeGetSimplifiedTrafficColorsEnabled();
+
+  public static native void nativeSetSimplifiedTrafficColorsEnabled(boolean enabled);
+
   @NonNull
   public static native MapObject nativeDeleteBookmarkFromMapObject();
 
@@ -260,4 +264,7 @@ public class Framework
   public static native String nativeGetActiveObjectFormattedCuisine();
 
   public static native void nativeSetVisibleRect(int left, int top, int right, int bottom);
+
+  // Navigation.
+  public static native boolean nativeIsRouteFinished();
 }

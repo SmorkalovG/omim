@@ -1,6 +1,11 @@
+#import "MWMTaxiPreviewDataSource.h"
+#import "MWMCommon.h"
+#import "MWMNetworkPolicy.h"
 #import "MWMRoutePoint.h"
 #import "MWMTaxiPreviewCell.h"
-#import "MWMTaxiPreviewDataSource.h"
+#import "SwiftBridge.h"
+
+#include "Framework.h"
 
 #include "geometry/mercator.hpp"
 
@@ -56,7 +61,6 @@ using namespace uber;
 
 @interface MWMTaxiPreviewDataSource() <UICollectionViewDataSource, UICollectionViewDelegate>
 {
-  Api m_api;
   vector<Product> m_products;
   ms::LatLon m_from;
   ms::LatLon m_to;
@@ -80,69 +84,81 @@ using namespace uber;
     collectionView.delegate = self;
     collectionView.showsVerticalScrollIndicator = NO;
     collectionView.showsHorizontalScrollIndicator = NO;
-    auto name = [MWMTaxiPreviewCell className];
-    [collectionView registerNib:[UINib nibWithNibName:name bundle:nil] forCellWithReuseIdentifier:name];
+    [collectionView registerWithCellClass:[MWMTaxiPreviewCell class]];
   }
   return self;
 }
 
-- (void)requestTaxiFrom:(MWMRoutePoint const &)from
-                                  to:(MWMRoutePoint const &)to
-                          completion:(TMWMVoidBlock)completion
-                             failure:(MWMStringBlock)failure
+- (void)dealloc
+{
+  MWMTaxiCollectionView * cv = self.collectionView;
+  cv.dataSource = nil;
+  cv.delegate = nil;
+  self.collectionView = nil;
+}
+
+- (void)requestTaxiFrom:(MWMRoutePoint *)from
+                     to:(MWMRoutePoint *)to
+             completion:(MWMVoidBlock)completion
+                failure:(MWMStringBlock)failure
 {
   NSAssert(completion && failure, @"Completion and failure blocks must be not nil!");
   m_products.clear();
-  m_from = MercatorBounds::ToLatLon(from.Point());
-  m_to = MercatorBounds::ToLatLon(to.Point());
+  m_from = routePointLatLon(from);
+  m_to = routePointLatLon(to);
   auto cv = self.collectionView;
   cv.hidden = YES;
   cv.pageControl.hidden = YES;
 
-  m_requestId = m_api.GetAvailableProducts(m_from, m_to, [self, completion](vector<Product> const & products,
-                                                                  uint64_t const requestId)
-  {
-    dispatch_async(dispatch_get_main_queue(), [products, requestId, self, completion]
-    {
-      if (self->m_requestId != requestId)
-        return;
+  network_policy::CallPartnersApi(
+      [self, completion, failure](platform::NetworkPolicy const & canUseNetwork) {
+        auto const api = GetFramework().GetUberApi(canUseNetwork);
+        if (!api)
+        {
+          failure(L(@"dialog_taxi_error"));
+          return;
+        }
 
-      self->m_products = products;
-      auto cv = self.collectionView;
-      cv.hidden = NO;
-      cv.pageControl.hidden = NO;
-      cv.numberOfPages = self->m_products.size();
-      [cv reloadData];
-      cv.contentOffset = {};
-      cv.currentPage = 0;
-      completion();
-    });
-  },
-  [self, failure](uber::ErrorCode const code, uint64_t const requestId)
-  {
-    dispatch_async(dispatch_get_main_queue(), ^
-    {
-      if (self->m_requestId != requestId)
-        return;
+        auto success = [self, completion](vector<Product> const & products,
+                                          uint64_t const requestId) {
+          if (self->m_requestId != requestId)
+            return;
+          runAsyncOnMainQueue([self, completion, products] {
 
-      switch (code)
-      {
-      case uber::ErrorCode::NoProducts:
-        failure(L(@"taxi_not_found"));
-        break;
-      case uber::ErrorCode::RemoteError:
-        failure(L(@"dialog_taxi_error"));
-        break;
-      }
-    });
-  });
+            self->m_products = products;
+            auto cv = self.collectionView;
+            cv.hidden = NO;
+            cv.pageControl.hidden = NO;
+            cv.numberOfPages = self->m_products.size();
+            [cv reloadData];
+            cv.contentOffset = {};
+            cv.currentPage = 0;
+            completion();
+          });
+
+        };
+        auto error = [self, failure](uber::ErrorCode const code, uint64_t const requestId) {
+          if (self->m_requestId != requestId)
+            return;
+          runAsyncOnMainQueue(^{
+            switch (code)
+            {
+            case uber::ErrorCode::NoProducts: failure(L(@"taxi_not_found")); break;
+            case uber::ErrorCode::RemoteError: failure(L(@"dialog_taxi_error")); break;
+            }
+          });
+        };
+        m_requestId = api->GetAvailableProducts(m_from, m_to, success, error);
+      },
+      true /* force */);
 }
 
 - (BOOL)isTaxiInstalled
 {
   // TODO(Vlad): Not the best solution, need to store url's scheme of product in the uber::Product
   // instead of just "uber://".
-  return [[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"uber://"]];
+  NSURL * url = [NSURL URLWithString:@"uber://"];
+  return [[UIApplication sharedApplication] canOpenURL:url];
 }
 
 - (NSURL *)taxiURL;
@@ -167,8 +183,9 @@ using namespace uber;
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-  MWMTaxiPreviewCell * cell = [collectionView dequeueReusableCellWithReuseIdentifier:[MWMTaxiPreviewCell className]
-                                                                        forIndexPath:indexPath];
+  Class cls = [MWMTaxiPreviewCell class];
+  auto cell = static_cast<MWMTaxiPreviewCell *>(
+      [collectionView dequeueReusableCellWithCellClass:cls indexPath:indexPath]);
   [cell configWithProduct:m_products[indexPath.row]];
 
   return cell;

@@ -1,4 +1,5 @@
 #include "routing/osrm_path_segment_factory.hpp"
+
 #include "routing/road_graph.hpp"
 #include "routing/routing_mapping.hpp"
 
@@ -102,7 +103,7 @@ void OsrmPathSegmentFactory(RoutingMapping & mapping, Index const & index,
   buffer_vector<TSeg, 8> buffer;
   mapping.m_segMapping.ForEachFtSeg(osrmPathSegment.node, MakeBackInsertFunctor(buffer));
   loadedPathSegment.m_weight = osrmPathSegment.segmentWeight * kOSRMWeightToSecondsMultiplier;
-  loadedPathSegment.m_nodeId = osrmPathSegment.node;
+  loadedPathSegment.m_nodeId = UniNodeId(osrmPathSegment.node);
   if (buffer.empty())
   {
     LOG(LERROR, ("Can't unpack geometry for map:", mapping.GetCountryName(), " node: ",
@@ -125,7 +126,7 @@ void OsrmPathSegmentFactory(RoutingMapping & mapping, Index const & index, RawPa
   ASSERT(isStartNode || isEndNode, ("This function process only corner cases."));
   loadedPathSegment.Clear();
 
-  loadedPathSegment.m_nodeId = osrmPathSegment.node;
+  loadedPathSegment.m_nodeId = UniNodeId(osrmPathSegment.node);
   if (!startGraphNode.segment.IsValid() || !endGraphNode.segment.IsValid())
     return;
   buffer_vector<TSeg, 8> buffer;

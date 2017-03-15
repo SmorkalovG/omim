@@ -14,11 +14,13 @@
 #include "std/algorithm.hpp"
 #include "std/bind.hpp"
 #include "std/map.hpp"
+#include "std/set.hpp"
 #include "std/sstream.hpp"
 #include "std/vector.hpp"
 #include "std/transform_iterator.hpp"
 
 #include "base/stl_helpers.hpp"
+#include "base/string_utils.hpp"
 
 using namespace indexer;
 
@@ -219,6 +221,48 @@ UNIT_TEST(CategoriesHolder_DisplayedName)
       TEST(false, ("Unexpected group name:", readableTypeName));
     }
   });
+}
+
+UNIT_TEST(CategoriesHolder_ForEach)
+{
+  char const kCategories[] =
+      "amenity-bar\n"
+      "en:abc|ddd-eee\n"
+      "\n"
+      "amenity-pub\n"
+      "en:ddd\n"
+      "\n"
+      "amenity-cafe\n"
+      "en:abc eee\n"
+      "\n"
+      "amenity-restaurant\n"
+      "en:ddd|eee\n"
+      "\n"
+      "";
+
+  classificator::Load();
+  CategoriesHolder holder(make_unique<MemReader>(kCategories, ARRAY_SIZE(kCategories) - 1));
+
+  {
+    uint32_t counter = 0;
+    holder.ForEachTypeByName(CategoriesHolder::kEnglishCode, strings::MakeUniString("abc"),
+                             [&](uint32_t /* type */) { ++counter; });
+    TEST_EQUAL(counter, 2, ());
+  }
+
+  {
+    uint32_t counter = 0;
+    holder.ForEachTypeByName(CategoriesHolder::kEnglishCode, strings::MakeUniString("ddd"),
+                             [&](uint32_t /* type */) { ++counter; });
+    TEST_EQUAL(counter, 3, ());
+  }
+
+  {
+    uint32_t counter = 0;
+    holder.ForEachTypeByName(CategoriesHolder::kEnglishCode, strings::MakeUniString("eee"),
+                             [&](uint32_t /* type */) { ++counter; });
+    TEST_EQUAL(counter, 3, ());
+  }
 }
 
 UNIT_TEST(CategoriesIndex_Smoke)

@@ -1,16 +1,17 @@
 #import "BookmarksVC.h"
 #import "CircleView.h"
 #import "ColorPickerView.h"
-#import "Common.h"
 #import "MWMBookmarkNameCell.h"
+#import "MWMCommon.h"
 #import "MWMLocationHelpers.h"
 #import "MWMLocationManager.h"
+#import "MWMLocationObserver.h"
 #import "MWMMailViewController.h"
 #import "MWMMapViewControlsManager.h"
 #import "MapViewController.h"
 #import "MapsAppDelegate.h"
 #import "Statistics.h"
-#import "UIColor+MapsMeColor.h"
+#import "SwiftBridge.h"
 
 #include "Framework.h"
 
@@ -53,8 +54,7 @@ extern NSString * const kBookmarksChangedNotification = @"BookmarksChangedNotifi
 - (void)viewDidLoad
 {
   [super viewDidLoad];
-  [self.tableView registerNib:[UINib nibWithNibName:[MWMBookmarkNameCell className] bundle:nil]
-       forCellReuseIdentifier:[MWMBookmarkNameCell className]];
+  [self.tableView registerWithCellClass:[MWMBookmarkNameCell class]];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
@@ -110,7 +110,8 @@ extern NSString * const kBookmarksChangedNotification = @"BookmarksChangedNotifi
   {
     if (indexPath.row == 0)
     {
-      cell = [tableView dequeueReusableCellWithIdentifier:[MWMBookmarkNameCell className]];
+      cell = [tableView dequeueReusableCellWithCellClass:[MWMBookmarkNameCell class]
+                                               indexPath:indexPath];
       [static_cast<MWMBookmarkNameCell *>(cell) configWithName:@(cat->GetName().c_str()) delegate:self];
     }
     else
@@ -140,7 +141,7 @@ extern NSString * const kBookmarksChangedNotification = @"BookmarksChangedNotifi
     string dist;
     if (measurement_utils::FormatDistance(tr->GetLengthMeters(), dist))
       //Change Length before release!!!
-      cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ %@", L(@"length"), [NSString  stringWithUTF8String:dist.c_str()]];
+      cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ %@", L(@"length"), @(dist.c_str())];
     else
       cell.detailTextLabel.text = nil;
     const dp::Color c = tr->GetColor(0);
@@ -247,9 +248,9 @@ extern NSString * const kBookmarksChangedNotification = @"BookmarksChangedNotifi
     if (cat)
     {
       [Statistics logEvent:kStatEventName(kStatBookmarks, kStatExport)];
-      NSMutableString * catName = [NSMutableString stringWithUTF8String:cat->GetName().c_str()];
+      NSString * catName = @(cat->GetName().c_str());
       if (![catName length])
-        [catName setString:@"MapsMe"];
+        catName = @"MapsMe";
 
       NSString * filePath = @(cat->GetFileName().c_str());
       NSMutableString * kmzFile = [NSMutableString stringWithString:filePath];
@@ -309,7 +310,7 @@ extern NSString * const kBookmarksChangedNotification = @"BookmarksChangedNotifi
       [self calculateSections];
       //We can delete the row with animation, if number of sections stay the same.
       if (previousNumberOfSections == m_numberOfSections)
-        [self.tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
+        [self.tableView deleteRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationFade];
       else
         [self.tableView reloadData];
       if (cat->GetUserMarkCount() + cat->GetTracksCount() == 0)

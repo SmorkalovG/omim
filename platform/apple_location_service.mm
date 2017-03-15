@@ -86,13 +86,11 @@ public:
 }
 
 - (void)locationManager:(CLLocationManager *)manager
-    didUpdateToLocation:(CLLocation *)newLocation
-           fromLocation:(CLLocation *)oldLocation
+     didUpdateLocations:(NSArray<CLLocation *> *)locations
 {
   UNUSED_VALUE(manager);
-  UNUSED_VALUE(oldLocation);
   GpsInfo newInfo;
-  [LocationManagerWrapper location:newLocation toGpsInfo:newInfo];
+  [LocationManagerWrapper location:locations.firstObject toGpsInfo:newInfo];
   m_service->OnLocationUpdate(newInfo);
 }
 

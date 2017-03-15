@@ -25,8 +25,8 @@ define add_prebuild_static_lib
   include $(PREBUILT_STATIC_LIBRARY)
 endef
 
-prebuild_static_libs := map tracking drape_frontend routing search storage indexer drape platform editor partners_api geometry coding base opening_hours
-prebuild_static_libs += pugixml oauthcpp expat freetype fribidi minizip jansson tomcrypt protobuf osrm stats_client succinct
+prebuild_static_libs := map tracking routing traffic routing_common drape_frontend search storage indexer drape platform editor partners_api geometry coding base opening_hours
+prebuild_static_libs += pugixml oauthcpp expat freetype fribidi minizip jansson protobuf osrm stats_client succinct stb_image sdf_image
 
 $(foreach item,$(prebuild_static_libs),$(eval $(call add_prebuild_static_lib,$(item))))
 
@@ -95,6 +95,7 @@ LOCAL_SRC_FILES := \
 	com/mapswithme/maps/Sponsored.cpp \
 	com/mapswithme/maps/uber/Uber.cpp \
 	com/mapswithme/maps/TrackRecorder.cpp \
+	com/mapswithme/maps/TrafficState.cpp \
 	com/mapswithme/maps/UserMarkHelper.cpp \
 	com/mapswithme/opengl/android_gl_utils.cpp \
 	com/mapswithme/opengl/androidoglcontext.cpp \
@@ -109,6 +110,8 @@ LOCAL_SRC_FILES := \
 	com/mapswithme/util/HttpClient.cpp \
 	com/mapswithme/util/StringUtils.cpp \
 	com/mapswithme/util/statistics/PushwooshHelper.cpp \
+	com/mapswithme/util/LoggerFactory.cpp \
+	com/mapswithme/util/NetworkPolicy.cpp \
 
 
 LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv2 -latomic -lz

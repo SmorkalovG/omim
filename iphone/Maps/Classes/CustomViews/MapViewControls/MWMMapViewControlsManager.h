@@ -2,14 +2,12 @@
 #import "MWMNavigationDashboardManager.h"
 #import "MWMSearchManager.h"
 
-#include "MWMRoutePoint.h"
-
 #include "map/user_mark.hpp"
 #include "platform/location.hpp"
 
 @class MapViewController;
-@class MWMPlacePageEntity;
 @protocol MWMFeatureHolder;
+@protocol MWMBookingInfoHolder;
 
 @interface MWMMapViewControlsManager : NSObject
 
@@ -18,6 +16,7 @@
 @property(nonatomic) BOOL hidden;
 @property(nonatomic) BOOL zoomHidden;
 @property(nonatomic) BOOL sideButtonsHidden;
+@property(nonatomic) BOOL trafficButtonHidden;
 @property(nonatomic) MWMBottomMenuState menuState;
 @property(nonatomic) MWMBottomMenuState menuRestoreState;
 @property(nonatomic, readonly) MWMNavigationDashboardState navigationState;
@@ -31,11 +30,8 @@
 
 #pragma mark - Layout
 
-- (void)refreshLayout;
 - (void)mwm_refreshUI;
 
-- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
-                                duration:(NSTimeInterval)duration;
 - (void)viewWillTransitionToSize:(CGSize)size
        withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator;
 
@@ -43,9 +39,7 @@
 
 - (void)dismissPlacePage;
 - (void)showPlacePage:(place_page::Info const &)info;
-- (void)addPlacePageViews:(NSArray *)views;
 - (void)addPlace:(BOOL)isBusiness hasPoint:(BOOL)hasPoint point:(m2::PointD const &)point;
-- (void)dragPlacePage:(CGRect)frame;
 
 #pragma mark - MWMNavigationDashboardManager
 
@@ -70,5 +64,9 @@
 #pragma mark - MWMFeatureHolder
 
 - (id<MWMFeatureHolder>)featureHolder;
+
+#pragma mark - MWMBookingInfoHolder
+
+- (id<MWMBookingInfoHolder>)bookingInfoHolder;
 
 @end

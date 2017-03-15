@@ -1,6 +1,7 @@
 #pragma once
 
 #include "search/query_params.hpp"
+#include "search/token_range.hpp"
 
 #include "indexer/string_slice.hpp"
 
@@ -15,12 +16,12 @@ namespace search
 class TokenSlice
 {
 public:
-  TokenSlice(QueryParams const & params, size_t startToken, size_t endToken);
+  TokenSlice(QueryParams const & params, TokenRange const & range);
 
-  inline QueryParams::TSynonymsVector const & Get(size_t i) const
+  inline QueryParams::Token const & Get(size_t i) const
   {
     ASSERT_LESS(i, Size(), ());
-    return m_params.GetTokens(m_offset + i);
+    return m_params.GetToken(m_offset + i);
   }
 
   inline size_t Size() const { return m_size; }
@@ -31,10 +32,6 @@ public:
   // (prefix) token.
   bool IsPrefix(size_t i) const;
 
-  // Returns true if the |i|-th token in the slice is the last
-  // (regardless - full or not) token in the query.
-  bool IsLast(size_t i) const;
-
 private:
   QueryParams const & m_params;
   size_t const m_offset;
@@ -44,23 +41,18 @@ private:
 class TokenSliceNoCategories
 {
 public:
-  TokenSliceNoCategories(QueryParams const & params, size_t startToken, size_t endToken);
+  TokenSliceNoCategories(QueryParams const & params, TokenRange const & range);
 
-  inline QueryParams::TSynonymsVector const & Get(size_t i) const
+  inline QueryParams::Token const & Get(size_t i) const
   {
     ASSERT_LESS(i, Size(), ());
-    return m_params.GetTokens(m_indexes[i]);
+    return m_params.GetToken(m_indexes[i]);
   }
 
   inline size_t Size() const { return m_indexes.size(); }
 
   inline bool Empty() const { return Size() == 0; }
-
-  inline bool IsPrefix(size_t i) const
-  {
-    ASSERT_LESS(i, Size(), ());
-    return m_indexes[i] == m_params.m_tokens.size();
-  }
+  inline bool IsPrefix(size_t i) const { return m_params.IsPrefixToken(m_indexes[i]); }
 
 private:
   QueryParams const & m_params;
@@ -73,24 +65,24 @@ public:
   QuerySlice(TokenSlice const & slice) : m_slice(slice) {}
 
   // QuerySlice overrides:
-  QueryParams::TString const & Get(size_t i) const override { return m_slice.Get(i).front(); }
+  QueryParams::String const & Get(size_t i) const override { return m_slice.Get(i).m_original; }
   size_t Size() const override { return m_slice.Size(); }
 
 private:
   TokenSlice const m_slice;
 };
 
-template <typename TCont>
+template <typename Cont>
 class QuerySliceOnRawStrings : public StringSliceBase
 {
 public:
-  QuerySliceOnRawStrings(TCont const & tokens, TString const & prefix)
+  QuerySliceOnRawStrings(Cont const & tokens, TString const & prefix)
     : m_tokens(tokens), m_prefix(prefix)
   {
   }
 
   // QuerySlice overrides:
-  QueryParams::TString const & Get(size_t i) const override
+  QueryParams::String const & Get(size_t i) const override
   {
     ASSERT_LESS(i, Size(), ());
     return i == m_tokens.size() ? m_prefix : m_tokens[i];
@@ -99,8 +91,8 @@ public:
   size_t Size() const override { return m_tokens.size() + (m_prefix.empty() ? 0 : 1); }
 
 private:
-  TCont const & m_tokens;
-  TString const & m_prefix;
+  Cont const & m_tokens;
+  QueryParams::String const & m_prefix;
 };
 
 string DebugPrint(TokenSlice const & slice);

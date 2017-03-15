@@ -2,6 +2,7 @@
 #include "qt/draw_widget.hpp"
 
 #include "map/bookmark_manager.hpp"
+#include "map/framework.hpp"
 #include "map/user_mark_container.hpp"
 
 #include "drape/constants.hpp"
@@ -151,28 +152,6 @@ void SearchPanel::OnSearchResult(ResultsT * results)
 }
 
 // TODO: This code only for demonstration purposes and will be removed soon
-bool SearchPanel::TryChangeMapStyleCmd(QString const & str)
-{
-  // Hook for shell command on change map style
-  bool const isDark = (str == "mapstyle:dark") || (str == "?dark");
-  bool const isLight = isDark ? false : (str == "mapstyle:light") || (str == "?light");
-  bool const isOld = isDark || isLight ? false : (str == "?oldstyle");
-
-  if (!isDark && !isLight && !isOld)
-    return false;
-
-  // close Search panel
-  m_pEditor->setText("");
-  parentWidget()->hide();
-
-  // change color scheme for the Map activity
-  MapStyle const mapStyle = isOld ? MapStyleLight : (isDark ? MapStyleDark : MapStyleClear);
-  m_pDrawWidget->SetMapStyle(mapStyle);
-
-  return true;
-}
-
-// TODO: This code only for demonstration purposes and will be removed soon
 bool SearchPanel::TryChangeRouterCmd(QString const & str)
 {
   routing::RouterType routerType;
@@ -244,7 +223,7 @@ bool SearchPanel::TryDisplacementModeCmd(QString const & str)
 {
   bool const isDefaultDisplacementMode = (str == "?dm:default");
   bool const isHotelDisplacementMode = (str == "?dm:hotel");
-  
+
   if (!isDefaultDisplacementMode && !isHotelDisplacementMode)
     return false;
 
@@ -262,13 +241,26 @@ bool SearchPanel::TryDisplacementModeCmd(QString const & str)
   return true;
 }
 
+bool SearchPanel::TryTrafficSimplifiedColorsCmd(QString const & str)
+{
+  bool const simplifiedMode = (str == "?tc:simp");
+  bool const normalMode = (str == "?tc:norm");
+
+  if (!simplifiedMode && !normalMode)
+    return false;
+
+  bool const isSimplified = simplifiedMode;
+  m_pDrawWidget->GetFramework().GetTrafficManager().SetSimplifiedColorScheme(isSimplified);
+  m_pDrawWidget->GetFramework().SaveTrafficSimplifiedColors(isSimplified);
+
+  return true;
+}
+
 void SearchPanel::OnSearchTextChanged(QString const & str)
 {
   QString const normalized = str.normalized(QString::NormalizationForm_KC);
 
   // TODO: This code only for demonstration purposes and will be removed soon
-  if (TryChangeMapStyleCmd(normalized))
-    return;
   if (TryChangeRouterCmd(normalized))
     return;
   if (Try3dModeCmd(normalized))
@@ -276,6 +268,8 @@ void SearchPanel::OnSearchTextChanged(QString const & str)
   if (TryMigrate(normalized))
     return;
   if (TryDisplacementModeCmd(normalized))
+    return;
+  if (TryTrafficSimplifiedColorsCmd(normalized))
     return;
 
   // search even with empty query

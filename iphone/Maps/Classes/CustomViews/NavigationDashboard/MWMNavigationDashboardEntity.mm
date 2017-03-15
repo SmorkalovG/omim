@@ -1,11 +1,10 @@
 #import "MWMNavigationDashboardEntity.h"
-#import "Common.h"
+#import "MWMCommon.h"
+#import "MWMCoreUnits.h"
 #import "MWMLocationManager.h"
 #import "MWMSettings.h"
 #import "MapsAppDelegate.h"
-#import "TimeUtils.h"
-#import "UIColor+MapsMeColor.h"
-#import "UIFont+MapsMeFonts.h"
+#import "SwiftBridge.h"
 
 #include "Framework.h"
 #include "geometry/distance_on_sphere.hpp"
@@ -58,12 +57,12 @@ using namespace routing::turns;
     NSForegroundColorAttributeName : UIColor.blackPrimaryText,
     NSFontAttributeName : UIFont.medium17
   };
-  NSString * eta = [NSDateFormatter estimatedArrivalTimeWithSeconds:_timeToTarget];
+  NSString * eta = [NSDateComponentsFormatter etaStringFrom:_timeToTarget];
   NSString * resultString =
       [NSString stringWithFormat:@"%@ • %@ %@", eta, _targetDistance, _targetUnits];
   NSMutableAttributedString * result =
       [[NSMutableAttributedString alloc] initWithString:resultString];
-  [result addAttributes:etaAttributes range:NSMakeRange(0, eta.length)];
+  [result addAttributes:etaAttributes range:NSMakeRange(0, resultString.length)];
   _estimate = [result copy];
 
   TurnDirection const turn = info.m_turn;
@@ -113,13 +112,13 @@ UIImage * image(routing::turns::TurnDirection t, bool isNextTurn)
   CLLocation * lastLocation = [MWMLocationManager lastLocation];
   if (!lastLocation || lastLocation.speed < 0)
     return nil;
-  auto const units = [MWMSettings measurementUnits];
+  auto const units = coreUnits([MWMSettings measurementUnits]);
   return @(measurement_utils::FormatSpeed(lastLocation.speed, units).c_str());
 }
 
 - (NSString *)speedUnits
 {
-  auto const units = [MWMSettings measurementUnits];
+  auto const units = coreUnits([MWMSettings measurementUnits]);
   return @(measurement_utils::FormatSpeedUnits(units).c_str());
 }
 

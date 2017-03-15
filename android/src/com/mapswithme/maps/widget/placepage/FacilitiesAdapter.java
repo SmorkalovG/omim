@@ -1,19 +1,20 @@
 package com.mapswithme.maps.widget.placepage;
 
 import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mapswithme.maps.R;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class FacilitiesAdapter extends BaseAdapter
+class FacilitiesAdapter extends RecyclerView.Adapter<FacilitiesAdapter.ViewHolder>
 {
   static final int MAX_COUNT = 6;
 
@@ -22,19 +23,16 @@ class FacilitiesAdapter extends BaseAdapter
   private boolean isShowAll = false;
 
   @Override
-  public int getCount()
+  public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
   {
-    if (mItems.size() > MAX_COUNT && !isShowAll)
-    {
-      return MAX_COUNT;
-    }
-    return mItems.size();
+    return new ViewHolder(LayoutInflater.from(parent.getContext())
+                                        .inflate(R.layout.item_facility, parent, false));
   }
 
   @Override
-  public Object getItem(int position)
+  public void onBindViewHolder(ViewHolder holder, int position)
   {
-    return mItems.get(position);
+    holder.bind(mItems.get(position));
   }
 
   @Override
@@ -44,24 +42,13 @@ class FacilitiesAdapter extends BaseAdapter
   }
 
   @Override
-  public View getView(int position, View convertView, ViewGroup parent)
+  public int getItemCount()
   {
-    ViewHolder holder;
-    if (convertView == null)
+    if (mItems.size() > MAX_COUNT && !isShowAll)
     {
-      convertView = LayoutInflater.from(parent.getContext())
-                                  .inflate(R.layout.item_facility, parent, false);
-      holder = new ViewHolder(convertView);
-      convertView.setTag(holder);
+      return MAX_COUNT;
     }
-    else
-    {
-      holder = (ViewHolder) convertView.getTag();
-    }
-
-    holder.bind(mItems.get(position));
-
-    return convertView;
+    return mItems.size();
   }
 
   public void setItems(@NonNull List<Sponsored.FacilityType> items)
@@ -76,21 +63,30 @@ class FacilitiesAdapter extends BaseAdapter
     notifyDataSetChanged();
   }
 
-  private static class ViewHolder
+  static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener
   {
-    ImageView mIcon;
+//    ImageView mIcon;
     TextView mName;
 
     public ViewHolder(View view)
     {
-      mIcon = (ImageView) view.findViewById(R.id.iv__icon);
+      super(view);
+//      TODO we need icons from designer
+//      mIcon = (ImageView) view.findViewById(R.id.iv__icon);
       mName = (TextView) view.findViewById(R.id.tv__facility);
+      view.setOnClickListener(this);
+    }
+
+    @Override
+    public void onClick(View v)
+    {
+      Toast.makeText(mName.getContext(), mName.getText(), Toast.LENGTH_LONG).show();
     }
 
     public void bind(Sponsored.FacilityType facility)
     {
-//    TODO map facility key to image resource id
-      mIcon.setImageResource(R.drawable.ic_entrance);
+//      TODO map facility key to image resource id
+//      mIcon.setImageResource(R.drawable.ic_entrance);
       mName.setText(facility.getName());
     }
   }

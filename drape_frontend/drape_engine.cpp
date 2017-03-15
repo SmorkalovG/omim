@@ -20,17 +20,17 @@ namespace
 {
   char const kFontScale[] = "FontScale";
 }
+#include "std/utility.hpp"
 
 namespace df
 {
 DrapeEngine::DrapeEngine(Params && params)
-  : m_viewport(params.m_viewport)
+  : m_myPositionModeChanged(move(params.m_myPositionModeChanged))
+  , m_viewport(move(params.m_viewport))
 {
   VisualParams::Init(params.m_vs, df::CalculateTileSize(m_viewport.GetWidth(), m_viewport.GetHeight()));
 
-  double scaleFactor = 1.0;
-  if (settings::Get(kFontScale, scaleFactor))
-    df::VisualParams::Instance().SetFontScale(scaleFactor);
+  df::VisualParams::Instance().SetFontScale(params.m_fontsScaleFactor);
 
   gui::DrapeGui & guiSubsystem = gui::DrapeGui::Instance();
   guiSubsystem.SetLocalizator(bind(&StringsBundle::GetString, params.m_stringsBundle.get(), _1));
@@ -66,16 +66,17 @@ DrapeEngine::DrapeEngine(Params && params)
                                     bind(&DrapeEngine::UserPositionChanged, this, _1),
                                     bind(&DrapeEngine::MyPositionModeChanged, this, _1, _2),
                                     mode, make_ref(m_requestedTiles), timeInBackground,
-                                    params.m_allow3dBuildings, params.m_blockTapEvents,
-                                    params.m_isFirstLaunch, params.m_isRoutingActive,
-                                    params.m_isAutozoomEnabled);
+                                    params.m_allow3dBuildings, params.m_trafficEnabled,
+                                    params.m_blockTapEvents, params.m_isFirstLaunch,
+                                    params.m_isRoutingActive, params.m_isAutozoomEnabled);
 
   m_frontend = make_unique_dp<FrontendRenderer>(frParams);
 
   BackendRenderer::Params brParams(frParams.m_commutator, frParams.m_oglContextFactory,
                                    frParams.m_texMng, params.m_model,
                                    params.m_model.UpdateCurrentCountryFn(),
-                                   make_ref(m_requestedTiles), params.m_allow3dBuildings);
+                                   make_ref(m_requestedTiles), params.m_allow3dBuildings,
+                                   params.m_trafficEnabled, params.m_simplifiedTrafficColors);
   m_backend = make_unique_dp<BackendRenderer>(brParams);
 
   m_widgetsInfo = move(params.m_info);
@@ -127,7 +128,10 @@ void DrapeEngine::Update(int w, int h)
 
 void DrapeEngine::Resize(int w, int h)
 {
-  if (m_viewport.GetHeight() != h || m_viewport.GetWidth() != w)
+  ASSERT_GREATER(w, 0, ());
+  ASSERT_GREATER(h, 0, ());
+  if (m_viewport.GetHeight() != static_cast<uint32_t>(h) ||
+      m_viewport.GetWidth() != static_cast<uint32_t>(w))
     ResizeImpl(w, h);
 }
 
@@ -327,11 +331,6 @@ void DrapeEngine::SetModelViewListener(TModelViewListenerFn && fn)
   m_modelViewChanged = move(fn);
 }
 
-void DrapeEngine::SetMyPositionModeListener(location::TMyPositionModeChanged && fn)
-{
-  m_myPositionModeChanged = move(fn);
-}
-
 void DrapeEngine::SetTapEventInfoListener(TTapEventInfoFn && fn)
 {
   m_tapListener = move(fn);
@@ -393,10 +392,11 @@ bool DrapeEngine::GetMyPosition(m2::PointD & myPosition)
 }
 
 void DrapeEngine::AddRoute(m2::PolylineD const & routePolyline, vector<double> const & turns,
-                           df::ColorConstant color, df::RoutePattern pattern)
+                           df::ColorConstant color, vector<traffic::SpeedGroup> const & traffic,
+                           df::RoutePattern pattern)
 {
   m_threadCommutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
-                                  make_unique_dp<AddRouteMessage>(routePolyline, turns, color, pattern),
+                                  make_unique_dp<AddRouteMessage>(routePolyline, turns, color, traffic, pattern),
                                   MessagePriority::Normal);
 }
 
@@ -537,17 +537,42 @@ void DrapeEngine::RequestSymbolsSize(vector<string> const & symbols,
                                   MessagePriority::Normal);
 }
 
-void DrapeEngine::AddTrafficSegments(vector<pair<uint64_t, m2::PolylineD>> const & segments)
+void DrapeEngine::EnableTraffic(bool trafficEnabled)
 {
   m_threadCommutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
-                                  make_unique_dp<AddTrafficSegmentsMessage>(segments),
+                                  make_unique_dp<EnableTrafficMessage>(trafficEnabled),
                                   MessagePriority::Normal);
 }
 
-void DrapeEngine::UpdateTraffic(vector<TrafficSegmentData> const & segmentsData)
+void DrapeEngine::UpdateTraffic(traffic::TrafficInfo const & info)
+{
+  if (info.GetColoring().empty())
+    return;
+
+#ifdef DEBUG
+  for (auto const & segmentPair : info.GetColoring())
+    ASSERT_NOT_EQUAL(segmentPair.second, traffic::SpeedGroup::Unknown, ());
+#endif
+
+  df::TrafficSegmentsColoring segmentsColoring;
+  segmentsColoring.emplace(info.GetMwmId(), info.GetColoring());
+
+  m_threadCommutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
+                                  make_unique_dp<UpdateTrafficMessage>(move(segmentsColoring)),
+                                  MessagePriority::Normal);
+}
+
+void DrapeEngine::ClearTrafficCache(MwmSet::MwmId const & mwmId)
 {
   m_threadCommutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
-                                  make_unique_dp<UpdateTrafficMessage>(segmentsData),
+                                  make_unique_dp<ClearTrafficDataMessage>(mwmId),
+                                  MessagePriority::Normal);
+}
+
+void DrapeEngine::SetSimplifiedTrafficColors(bool simplified)
+{
+  m_threadCommutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
+                                  make_unique_dp<SetSimplifiedTrafficColorsMessage>(simplified),
                                   MessagePriority::Normal);
 }
 
@@ -558,8 +583,16 @@ void DrapeEngine::SetFontScaleFactor(double scaleFactor)
 
   scaleFactor = my::clamp(scaleFactor, kMinScaleFactor, kMaxScaleFactor);
 
-  settings::Set(kFontScale, scaleFactor);
   VisualParams::Instance().SetFontScale(scaleFactor);
+}
+
+void DrapeEngine::RunScenario(ScenarioManager::ScenarioData && scenarioData,
+                              ScenarioManager::ScenarioCallback const & onStartFn,
+                              ScenarioManager::ScenarioCallback const & onFinishFn)
+{
+  auto const & manager = m_frontend->GetScenarioManager();
+  if (manager != nullptr)
+    manager->RunScenario(move(scenarioData), onStartFn, onFinishFn);
 }
 
 } // namespace df

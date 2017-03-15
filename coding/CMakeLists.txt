@@ -1,7 +1,14 @@
-include_directories(${OMIM_ROOT}/3party/tomcrypt/src/headers  ${OMIM_ROOT}/coding)
+project(coding)
+
+include_directories(
+  ${OMIM_ROOT}/coding
+  ${OMIM_ROOT}/3party/expat
+)
 
 set(
   SRC
+   ${OMIM_ROOT}/3party/expat/expat_impl.h
+
   base64.cpp
   base64.hpp
   bit_streams.hpp
@@ -42,8 +49,6 @@ set(
   multilang_utf8_string.cpp
   multilang_utf8_string.hpp
   parse_xml.hpp
-  png_memory_encoder.cpp
-  png_memory_encoder.hpp
   polymorph_reader.hpp
   read_write_utils.hpp
   reader.cpp
@@ -54,8 +59,6 @@ set(
   reader_wrapper.hpp
   reader_writer_ops.cpp
   reader_writer_ops.hpp
-  sha2.cpp
-  sha2.hpp
   simple_dense_coding.cpp
   simple_dense_coding.hpp
   streams.hpp
@@ -80,8 +83,10 @@ set(
   zip_creator.hpp
   zip_reader.cpp
   zip_reader.hpp
+  zlib.cpp
+  zlib.hpp
 )
 
-add_library(coding ${SRC})
+add_library(${PROJECT_NAME} ${SRC})
 
 omim_add_test_subdirectory(coding_tests)

@@ -57,6 +57,7 @@ public:
   typedef function<void (GLState const &, drape_ptr<RenderBucket> &&)> TFlushFn;
   void StartSession(TFlushFn const & flusher);
   void EndSession();
+  void ResetSession();
 
   void SetFeatureMinZoom(int minZoom);
 
@@ -87,7 +88,16 @@ private:
 class BatcherFactory
 {
 public:
+  BatcherFactory(uint32_t indexBufferSize, uint32_t vertexBufferSize)
+    : m_indexBufferSize(indexBufferSize)
+    , m_vertexBufferSize(vertexBufferSize)
+  {}
+
   Batcher * GetNew() const;
+
+private:
+  uint32_t const m_indexBufferSize;
+  uint32_t const m_vertexBufferSize;
 };
 
 class SessionGuard

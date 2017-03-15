@@ -4,8 +4,8 @@
 #include "routing/loaded_path_segment.hpp"
 #include "routing/turn_candidate.hpp"
 
-#include "std/map.hpp"
-#include "std/unique_ptr.hpp"
+#include <map>
+#include <memory>
 
 class Index;
 
@@ -22,23 +22,24 @@ public:
     size_t m_ingoingTurnsCount;
   };
 
-  using TAdjacentEdgesMap = map<TNodeId, AdjacentEdges>;
+  using AdjacentEdgesMap = std::map<UniNodeId, AdjacentEdges>;
 
-  BicycleDirectionsEngine(Index const & index);
+  BicycleDirectionsEngine(Index const & index, std::shared_ptr<NumMwmIds> numMwmIds);
 
   // IDirectionsEngine override:
-  void Generate(IRoadGraph const & graph, vector<Junction> const & path, Route::TTimes & times,
-                Route::TTurns & turns, vector<Junction> & routeGeometry,
-                my::Cancellable const & cancellable) override;
+  void Generate(RoadGraphBase const & graph, vector<Junction> const & path,
+                my::Cancellable const & cancellable, Route::TTimes & times, Route::TTurns & turns,
+                vector<Junction> & routeGeometry, vector<Segment> & trafficSegs) override;
 
 private:
   Index::FeaturesLoaderGuard & GetLoader(MwmSet::MwmId const & id);
-  void LoadPathGeometry(FeatureID const & featureId, vector<Junction> const & path,
+  void LoadPathGeometry(UniNodeId const & uniNodeId, vector<Junction> const & path,
                         LoadedPathSegment & pathSegment);
 
-  TAdjacentEdgesMap m_adjacentEdges;
+  AdjacentEdgesMap m_adjacentEdges;
   TUnpackedPathSegments m_pathSegments;
   Index const & m_index;
-  unique_ptr<Index::FeaturesLoaderGuard> m_loader;
+  std::shared_ptr<NumMwmIds> m_numMwmIds;
+  std::unique_ptr<Index::FeaturesLoaderGuard> m_loader;
 };
 }  // namespace routing

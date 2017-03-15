@@ -1,6 +1,8 @@
 #import "MWMMapWidgets.h"
-#import "Common.h"
+#import "MWMCommon.h"
+#import "EAGLView.h"
 #import "MWMNavigationDashboardManager.h"
+#import "MapViewController.h"
 
 #include "drape_frontend/gui/skin.hpp"
 #include "std/unique_ptr.hpp"
@@ -14,6 +16,11 @@
 @implementation MWMMapWidgets
 {
   unique_ptr<gui::Skin> m_skin;
+}
+
++ (MWMMapWidgets *)widgetsManager
+{
+  return ((EAGLView *)[MapViewController controller].view).widgetsManager;
 }
 
 - (void)setupWidgets:(Framework::DrapeCreationParams &)p
@@ -52,15 +59,10 @@
       {
       case gui::WIDGET_RULER:
       case gui::WIDGET_COPYRIGHT:
-        pivot -= m2::PointF(0.0, self.bottomBound * self.visualScale);
+        pivot -= m2::PointF(0.0, ([MapViewController controller].view.height - self.bottomBound) *
+                                     self.visualScale);
         break;
       case gui::WIDGET_COMPASS:
-      {
-        CGFloat const compassBottomBound =
-            self.bottomBound + [MWMNavigationDashboardManager manager].extraCompassBottomOffset;
-        pivot += m2::PointF(self.leftBound, -compassBottomBound) * self.visualScale;
-        break;
-      }
       case gui::WIDGET_SCALE_LABEL:
       case gui::WIDGET_CHOOSE_POSITION_MARK: break;
       }

@@ -1,8 +1,11 @@
 #include "search/geocoder_context.hpp"
 
+#include "search/token_range.hpp"
+
+#include "base/assert.hpp"
 #include "base/stl_add.hpp"
 
-#include "std/algorithm.hpp"
+#include <algorithm>
 
 namespace search
 {
@@ -15,12 +18,14 @@ size_t BaseContext::SkipUsedTokens(size_t curToken) const
 
 bool BaseContext::AllTokensUsed() const
 {
-  return all_of(m_usedTokens.begin(), m_usedTokens.end(), IdFunctor());
+  return std::all_of(m_usedTokens.begin(), m_usedTokens.end(), IdFunctor());
 }
 
-bool BaseContext::HasUsedTokensInRange(size_t from, size_t to) const
+bool BaseContext::HasUsedTokensInRange(TokenRange const & range) const
 {
-  return any_of(m_usedTokens.begin() + from, m_usedTokens.begin() + to, IdFunctor());
+  ASSERT(range.IsValid(), (range));
+  return std::any_of(m_usedTokens.begin() + range.Begin(), m_usedTokens.begin() + range.End(),
+                     IdFunctor());
 }
 
 size_t BaseContext::NumUnusedTokenGroups() const

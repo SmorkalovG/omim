@@ -1,5 +1,6 @@
 #import "MWMMapDownloaderTypes.h"
 #import "MWMViewController.h"
+#import "SwiftBridge.h"
 
 #include "geometry/point2d.hpp"
 #include "geometry/rect2d.hpp"
@@ -32,11 +33,14 @@ struct AddressInfo;
 - (void)openBookmarks;
 - (void)openMapsDownloader:(mwm::DownloaderMode)mode;
 - (void)openEditor;
+- (void)openHotelFacilities;
 - (void)openBookmarkEditorWithData:(MWMPlacePageData *)data;
 
 - (void)initialize;
 
 @property(nonatomic, readonly) MWMMapViewControlsManager * controlsManager;
 @property(nonatomic) MWMAPIBar * apiBar;
+@property(nonatomic) MWMWelcomePageController * welcomePageController;
+@property(nonatomic) CGFloat visibleAreaBottomOffset;
 
 @end

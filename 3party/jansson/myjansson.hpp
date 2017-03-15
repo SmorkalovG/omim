@@ -7,6 +7,7 @@
 
 #include "3party/jansson/src/jansson.h"
 
+#include "std/string.hpp"
 #include "std/vector.hpp"
 
 namespace my
@@ -52,6 +53,7 @@ void FromJSONObject(json_t * root, string const & field, vector<T> & result)
 
 void FromJSONObjectOptionalField(json_t * root, string const & field, string & result);
 void FromJSONObjectOptionalField(json_t * root, string const & field, json_int_t & result);
+void FromJSONObjectOptionalField(json_t * root, string const & field, double & result);
 void FromJSONObjectOptionalField(json_t * root, string const & field, bool & result, bool def = false);
 void FromJSONObjectOptionalField(json_t * root, string const & field, json_t *& result);
 

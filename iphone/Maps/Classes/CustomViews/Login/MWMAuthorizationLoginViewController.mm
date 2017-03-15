@@ -1,11 +1,10 @@
-#import "Common.h"
+#import "MWMCommon.h"
 #import "MapsAppDelegate.h"
 #import "MWMAlertViewController.h"
 #import "MWMAuthorizationCommon.h"
 #import "MWMAuthorizationLoginViewController.h"
 #import "MWMAuthorizationWebViewLoginViewController.h"
 #import "Statistics.h"
-#import "UIColor+MapsMeColor.h"
 
 #include "Framework.h"
 
@@ -106,7 +105,7 @@ using namespace osm_auth_ios;
 
 #pragma mark - Actions
 
-- (void)performOnlineAction:(TMWMVoidBlock)block
+- (void)performOnlineAction:(MWMVoidBlock)block
 {
   if (Platform::IsConnected())
     block();

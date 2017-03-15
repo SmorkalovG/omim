@@ -1,6 +1,6 @@
 #include "generator/srtm_parser.hpp"
 
-#include "routing/bicycle_model.hpp"
+#include "routing_common/bicycle_model.hpp"
 
 #include "coding/file_name_utils.hpp"
 
@@ -15,6 +15,7 @@
 
 #include "platform/platform.hpp"
 
+#include "base/checked_cast.hpp"
 #include "base/logging.hpp"
 #include "base/math.hpp"
 
@@ -166,7 +167,7 @@ public:
     }
 
     f.ParseGeometry(FeatureType::BEST_GEOMETRY);
-    uint32_t const numPoints = f.GetPointsCount();
+    uint32_t const numPoints = base::asserted_cast<uint32_t>(f.GetPointsCount());
     if (numPoints == 0)
     {
       ++m_emptyRoadCount;

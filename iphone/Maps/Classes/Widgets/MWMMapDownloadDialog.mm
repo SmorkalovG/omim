@@ -1,7 +1,8 @@
 #import "MWMMapDownloadDialog.h"
-#import "Common.h"
+#import "CLLocation+Mercator.h"
 #import "MWMAlertViewController.h"
 #import "MWMCircularProgress.h"
+#import "MWMCommon.h"
 #import "MWMFrameworkListener.h"
 #import "MWMFrameworkObservers.h"
 #import "MWMLocationManager.h"
@@ -10,7 +11,6 @@
 #import "MapViewController.h"
 #import "MapsAppDelegate.h"
 #import "Statistics.h"
-#import "UIColor+MapsMeColor.h"
 
 #include "Framework.h"
 
@@ -107,8 +107,12 @@ using namespace storage;
     self.nodeTopOffset.priority =
         hideParent ? UILayoutPriorityDefaultHigh : UILayoutPriorityDefaultLow;
     if (!hideParent)
+    {
       self.parentNode.text = @(nodeAttrs.m_topmostParentInfo[0].m_localName.c_str());
+      self.parentNode.textColor = [UIColor blackSecondaryText];
+    }
     self.node.text = @(nodeAttrs.m_nodeLocalName.c_str());
+    self.node.textColor = [UIColor blackPrimaryText];
     self.nodeSize.hidden = platform::migrate::NeedMigrate();
     self.nodeSize.textColor = [UIColor blackSecondaryText];
     self.nodeSize.text = formattedSize(nodeAttrs.m_mwmSize);
@@ -132,7 +136,6 @@ using namespace storage;
               }];
         m_autoDownloadCountryId = m_countryId;
         [MWMStorage downloadNode:m_countryId
-                 alertController:controller.alertController
                        onSuccess:^{
                          [self showInQueue];
                        }];
@@ -323,7 +326,6 @@ using namespace storage;
             kStatScenario : kStatDownload
           }];
     [MWMStorage downloadNode:m_countryId
-             alertController:controller.alertController
                    onSuccess:^{
                      [self showInQueue];
                    }];

@@ -386,6 +386,8 @@
 	<string name="follow_on_twitter">Twitter\&#39;da takip et</string>
 	<!-- Text in menu -->
 	<string name="contact_us">İletişim</string>
+	<!-- Settings: Send feedback button and dialog title -->
+	<string name="feedback">Geri Bildirim</string>
 	<!-- Text in menu -->
 	<string name="subscribe_to_news">Haberlerimize abone ol</string>
 	<!-- Text in menu -->
@@ -721,9 +723,9 @@
 	<!-- title above languages list cells in the editor, below editable name text field. -->
 	<string name="other_languages">Diğer Diller</string>
 	<!-- small button to open list with names in different languages -->
-	<string name="show_more">Daha fazla göster</string>
+	<string name="show_more">Daha fazlasını göster</string>
 	<!-- small button to close list with names in different languages -->
-	<string name="show_less">Daha az göster</string>
+	<string name="show_less">Daha azını göster</string>
 	<string name="add_language">Bir dil ekle</string>
 	<string name="street">Sokak</string>
 	<!-- Editable House Number text field (in address block). -->
@@ -953,4 +955,121 @@
 	<string name="whats_new_route_profile_message">Yürüyüş ve bisiklet yolları şimdi yükseklik profilli olarak görüntüleniyor.</string>
 	<string name="whats_new_booking_improve_title">Otel rezervasyonlarınızdan tasarruf edin</string>
 	<string name="whats_new_booking_improve_message">Artık otel arama sonuçlarında fiyat kategorisi de gösteriliyor.\nVe 110,000\&#39;den fazla oteli sistemimize ekledik.</string>
+	<!-- For place page hotel facilities block -->
+	<string name="placepage_hotel_facilities">Tesisler</string>
+	<!-- For place page hotel nearby block -->
+	<string name="placepage_hotel_nearby">Yakınlarda</string>
+	<!-- For ordering a taxi (as opposed to hotels or other things) -->
+	<string name="taxi_order">Taksi çağır</string>
+	<!-- How long it is until the taxi arrives -->
+	<string name="taxi_wait">%s içinde bekleniyor</string>
+	<!-- When there are no available taxis nearby -->
+	<string name="taxi_not_found">Yakın hiç taksi bulunamadı</string>
+	<string name="install_app">Kur</string>
+	<!-- `Filter` is a noun here -->
+	<string name="booking_filters">Filtre</string>
+	<string name="booking_filters_reset">Sıfırla</string>
+	<string name="booking_filters_rating">Oy Verin</string>
+	<string name="booking_filters_rating_any">Herhangi biri</string>
+	<string name="booking_filters_ragting_good">İyi</string>
+	<string name="booking_filters_rating_very_good">Çok iyi</string>
+	<string name="booking_filters_rating_excellent">Mükemmel</string>
+	<string name="booking_filters_price_category">Fiyat Kategorisi</string>
+	<string name="search_no_results_title">Hiçbir Sonuç Bulunamadı</string>
+	<string name="search_no_results_message">Daha genel bir terimi aramayı deneyin, uzaklaşın veya filtreyi Sıfırlayın.</string>
+	<string name="search_no_results_expand_area_button">Uzaklaş</string>
+	<string name="search_no_results_reset_button">Filtreyi Sıfırla</string>
+	<!-- noun -->
+	<string name="search_in_table">Liste</string>
+	<string name="booking_based_on_reviews">%d otel değerlendirmesine göre</string>
+	<string name="booking_show_more">Daha fazla göster</string>
+	<string name="booking_reviews">Değerlendirmeler</string>
+	<string name="booking_hotel">Otel</string>
+	<!-- hotel room -->
+	<string name="booking_hotel_room">Oda</string>
+	<!-- A neologism for a chat based on geographical proximity -->
+	<string name="chat">GeoChat</string>
+	<!-- Verb. Text on a button that opens the chat. -->
+	<string name="chat_open">Aç</string>
+	<string name="whatsnew_uber_header">MAPS.ME ve Uber</string>
+	<string name="whatsnew_uber_message">Doğrudan uygulamadan Uber taksi isteyin!</string>
+	<string name="dialog_taxi_offline">Taksi çağırma çevrimdışı modda kullanılamıyor.</string>
+	<string name="dialog_taxi_error">Taksi çağırma geçici olarak kullanılamıyor.</string>
+	<string name="advertisement">Reklam</string>
+	<string name="mobile_data_dialog">Ayrıntılı bilgileri görüntülemek için mobil internet kullanılsın mı?</string>
+	<string name="mobile_data_option_always">Her zaman kullan</string>
+	<string name="mobile_data_option_today">Sadece Bugün</string>
+	<string name="mobile_data_option_not_today">Bugün Kullanma</string>
+	<string name="mobile_data">Mobil İnternet</string>
+	<string name="mobile_data_description">Mobil internet, fotoğraflar, fiyatlar ve yorumlar gibi mekanlarla ilgili ayrıntılı bilgileri görüntülemek için gereklidir.</string>
+	<string name="mobile_data_option_never">Asla Kullanma</string>
+	<string name="mobile_data_option_ask">Her Zaman Sor</string>
+	<string name="traffic_update_maps_text">Trafik verilerini görüntülemek için haritaların güncellenmesi gerekiyor.</string>
+	<string name="traffic_outdated">Trafik verileri güncel değil.</string>
+	<string name="big_font">Harita üzerindeki yazı tipi boyutunu artır</string>
+	<string name="traffic_update_app">Lütfen MAPS.ME uygulamasını güncelleyin</string>
+	<!-- "traffic" as in road congestion -->
+	<string name="traffic_update_app_message">Trafik verilerini görüntülemek için uygulamanın güncellenmesi gerekiyor.</string>
+	<!-- "traffic" as in "road congestion" -->
+	<string name="traffic_data_unavailable">Trafik verileri kullanılamıyor</string>
+	<string name="banner_deliveryclub_title">Gıda teslimatı</string>
+	<string name="banner_deliveryclub_message">4.000\&#39;den fazla restorandan hızlı teslimat. Siparişinizi Delivery Club ile verin.</string>
+	<string name="banner_lamoda_title">Çevrimiçi giyim ve ayakkabı mağazası</string>
+	<string name="banner_lamoda_message">1.000\&#39;den fazla marka. %70\&#39;e varan indirimler. Ülkenin her yerine ücretsiz teslimat.</string>
+	<string name="banner_tutu_title">Çevrimiçi tren biletleri</string>
+	<string name="banner_tutu_message">Tüm şehirler için çevrimiçi tren biletleri - fiyat bilgileri, arama yapma ve rezervasyon.</string>
+	<string name="banner_geerbest_title">Çevrimiçi elektronik mağazası</string>
+	<string name="banner_geerbest_message">En uygun fiyatlarla 50.000\&#39;den fazla ürün için hızlı arama yapın.</string>
+	<string name="banner_rentalcars_title">Çevrimiçi araba kiralama</string>
+	<string name="banner_rentalcars_message">49.000\&#39;den fazla araç kiralama bölgesinde yer alan 800 araç kiralama şirketi.</string>
+	<string name="banner_viator_title">Çevrimiçi tur arama</string>
+	<string name="banner_viator_message">Dünyanın her yerinden 50.000\&#39;den fazla tur içinden arama yapın.</string>
+	<!-- december -->
+	<string name="whatsnew_traffic">36 Ülkeden Trafik Verileri</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_text">En güncel trafik verileri ve en hızlı sürüş güzergâhları!</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming">Roaming (Dolaşım) esnasında trafik bilgileri</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming_text">Her yolculuk için en az 1 MB mobil bant genişliği gereklidir.</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi">Taksi Çağırma</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi_text">Artık çoğu konum sayfalarında taksi çağırmak için bir düğme bulunuyor.</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search">Gelişmiş Arama</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search_text">Hatalı yazılan sorguları bile doğru getiren arama sonuçları.</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search">Arama Filtreleri</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search_text">Ücret ve puana göre otel arama.</string>
+	<!-- january -->
+	<string name="whatsnew_font_size">Yazı Tipi Boyutu</string>
+	<!-- january -->
+	<string name="whatsnew_font_size_text">Harita üzerindeki etiketler daha büyük hale getirilebilir.</string>
+	<!-- Seven points and higher -->
+	<string name="booking_filter_rating_num_good">7.0+</string>
+	<!-- Eight points and higher -->
+	<string name="booking_filter_rating_num_very_good">8.0+</string>
+	<!-- Nine points and higher -->
+	<string name="booking_filter_rating_num_excellent">9.0+</string>
+	<!-- Simplified colour scheme for traffic information, fewer colours are used to display traffic jams on the map. The string should be kept as short as possible -->
+	<string name="pref_traffic_simplified_colors_title">Sadeleştirilmiş trafik renkleri</string>
+	<string name="enable_logging">Günlüğü etkinleştir</string>
+	<string name="whatsnew_more_info_on_hotels_title">Oteller hakkında daha fazla bilgi</string>
+	<string name="whatsnew_more_info_on_hotels_message">Otel sayfalarına yeni bir bakış: fotoğraflara, kullanıcı yorumlarına ve diğer bilgilere çevrimiçi olarak gözatın.</string>
+	<string name="whatsnew_better_routing_title">Geliştirilmiş Güzergâh Planlama</string>
+	<string name="whatsnew_better_routing_message">• Daha doğru varış zamanı tahmini.\n• Uygulama, sınırlı alanları ve yol işaretlerini dikkate alır.</string>
+	<string name="whatsnew_smaller_mwm_title">Haritalar Küçültüldü</string>
+	<string name="whatsnew_smaller_mwm_message">Artık haritalar %20\&#39;ye kadar daha az depolama alanı gerektiriyor.</string>
+	<string name="whatsnew_waypoints_title">Güzergâhtaki Yol Noktaları</string>
+	<string name="whatsnew_waypoints_message">Güzergâhınıza yol noktası olarak eklemek istediğiniz yerlere dokunun.</string>
+	<string name="whatsnew_driving_style_title">Sürüş İçin Yeni Harita Stili</string>
+	<string name="whatsnew_driving_style_message">Araç navigasyon modunu kullanmak şimdi çok daha kolay.</string>
+	<string name="more_on_bookingcom">Booking.com hakkında daha fazla</string>
+	<string name="details_on_bookingcom">Booking.com hakkında detaylar</string>
+	<string name="reviews_on_bookingcom">Booking.com hakkında daha fazla değerlendirme</string>
+	<string name="offline_place_page_more_information">Yerle ilgili daha fazla bilgi almak için internete bağlanın.</string>
+	<string name="failed_load_information">Bilgiler yüklenemedi.</string>
 </resources>

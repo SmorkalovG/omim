@@ -1,8 +1,9 @@
 package com.mapswithme.maps.widget.menu;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import com.mapswithme.maps.MwmActivity;
@@ -11,9 +12,9 @@ import com.mapswithme.maps.R;
 import com.mapswithme.maps.downloader.MapManager;
 import com.mapswithme.maps.downloader.UpdateInfo;
 import com.mapswithme.maps.routing.RoutingController;
+import com.mapswithme.util.Animations;
 import com.mapswithme.util.Graphics;
 import com.mapswithme.util.UiUtils;
-import ru.mail.android.mytarget.core.models.Stat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -222,7 +223,7 @@ public class MainMenu extends BaseMenu
     mapItem(Item.SETTINGS);
 
     adjustCollapsedItems();
-    setState(State.MENU, false);
+    setState(State.MENU, false, false);
   }
 
   public MainMenu(View frame, ItemClickListener<Item> itemClickListener)
@@ -250,7 +251,7 @@ public class MainMenu extends BaseMenu
     return R.dimen.menu_line_height;
   }
 
-  public void setState(State state, boolean animateToggle)
+  public void setState(State state, boolean animateToggle, boolean isFullScreen)
   {
     if (state != State.NAVIGATION)
     {
@@ -263,9 +264,9 @@ public class MainMenu extends BaseMenu
       {
         UiUtils.show(mButtonsFrame);
         expandContent = false;
-      } else
+      }
+      else
       {
-
         UiUtils.showIf(state == State.MENU, mButtonsFrame);
         UiUtils.showIf(isRouting, mRoutePlanFrame);
         if (isRouting)
@@ -281,7 +282,9 @@ public class MainMenu extends BaseMenu
 
     if (mLayoutMeasured)
     {
-      show(state != State.NAVIGATION);
+      show(state != State.NAVIGATION && !isFullScreen);
+      UiUtils.showIf(state == State.MENU, mButtonsFrame);
+      UiUtils.showIf(state == State.ROUTE_PREPARE, mRoutePlanFrame);
       mContentFrame.measure(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
       mContentHeight = mContentFrame.getMeasuredHeight();
@@ -298,7 +301,7 @@ public class MainMenu extends BaseMenu
     button.setEnabled(enable);
   }
 
-  public void setVisible(Item item, boolean show)
+  private void setVisible(@NonNull Item item, boolean show)
   {
     final View itemInButtonsFrame = mButtonsFrame.findViewById(item.mViewId);
     if (itemInButtonsFrame != null)
@@ -313,8 +316,17 @@ public class MainMenu extends BaseMenu
     return mAnimationTrackListener;
   }
 
-  public void showLineFrame(boolean show)
+  public void showLineFrame(boolean show, @Nullable Runnable completion)
   {
-    UiUtils.showIf(show, mLineFrame);
+    if (show)
+    {
+      UiUtils.hide(mFrame);
+      Animations.appearSliding(mFrame, Animations.BOTTOM, completion);
+    }
+    else
+    {
+      UiUtils.show(mFrame);
+      Animations.disappearSliding(mFrame, Animations.BOTTOM, completion);
+    }
   }
 }

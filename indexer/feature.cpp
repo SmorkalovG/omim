@@ -8,6 +8,8 @@
 #include "indexer/feature_visibility.hpp"
 #include "indexer/osm_editor.hpp"
 
+#include "platform/preferred_languages.hpp"
+
 #include "geometry/distance.hpp"
 #include "geometry/robust_orientation.hpp"
 
@@ -170,6 +172,8 @@ editor::XMLFeature FeatureType::ToXML(bool serializeType) const
 
   for (auto const type : m_metadata.GetPresentTypes())
   {
+    if (m_metadata.IsSponsoredType(static_cast<Metadata::EType>(type)))
+      continue;
     auto const attributeName = DebugPrint(static_cast<Metadata::EType>(type));
     feature.SetTagValue(attributeName, m_metadata.Get(type));
   }
@@ -487,13 +491,19 @@ FeatureType::geom_stat_t FeatureType::GetTrianglesSize(int scale) const
   return geom_stat_t(sz, m_triangles.size());
 }
 
-void FeatureType::GetPreferredNames(string & defaultName, string & intName) const
+void FeatureType::GetPreferredNames(string & primary, string & secondary) const
 {
   if (!HasName())
     return;
 
+  auto const mwmInfo = GetID().m_mwmId.GetInfo();
+
+  if (!mwmInfo)
+    return;
+
   ParseCommon();
-  ::GetPreferredNames(GetID(), GetNames(), defaultName, intName);
+  auto const deviceLang = StringUtf8Multilang::GetLangIndex(languages::GetCurrentNorm());
+  ::GetPreferredNames(mwmInfo->GetRegionData(), GetNames(), deviceLang, primary, secondary);
 }
 
 void FeatureType::GetReadableName(string & name) const
@@ -501,8 +511,14 @@ void FeatureType::GetReadableName(string & name) const
   if (!HasName())
     return;
 
+  auto const mwmInfo = GetID().m_mwmId.GetInfo();
+
+  if (!mwmInfo)
+    return;
+
   ParseCommon();
-  ::GetReadableName(GetID(), GetNames(), name);
+  auto const deviceLang = StringUtf8Multilang::GetLangIndex(languages::GetCurrentNorm());
+  ::GetReadableName(mwmInfo->GetRegionData(), GetNames(), deviceLang, name);
 }
 
 string FeatureType::GetHouseNumber() const
@@ -534,7 +550,7 @@ uint8_t FeatureType::GetRank() const
   return m_params.rank;
 }
 
-uint32_t FeatureType::GetPopulation() const
+uint64_t FeatureType::GetPopulation() const
 {
   return feature::RankToPopulation(GetRank());
 }

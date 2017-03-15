@@ -1,15 +1,15 @@
 #import "UIKitCategories.h"
-#import "Common.h"
+#import "MWMCommon.h"
 #import "UIButton+RuntimeAttributes.h"
-#import "UIColor+MapsMeColor.h"
 #import "UIImageView+Coloring.h"
 
+#import <Crashlytics/Crashlytics.h>
 #import <SafariServices/SafariServices.h>
 
 @implementation NSObject (Optimized)
 
 + (NSString *)className { return NSStringFromClass(self); }
-- (void)performAfterDelay:(NSTimeInterval)delayInSec block:(TMWMVoidBlock)block
+- (void)performAfterDelay:(NSTimeInterval)delayInSec block:(MWMVoidBlock)block
 {
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSec * NSEC_PER_SEC)),
                  dispatch_get_main_queue(), ^{
@@ -80,7 +80,7 @@
                     damping:(double)dampingRatio
             initialVelocity:(double)springVelocity
                     options:(UIViewAnimationOptions)options
-                 animations:(TMWMVoidBlock)animations
+                 animations:(MWMVoidBlock)animations
                  completion:(void (^)(BOOL))completion
 {
   [UIView animateWithDuration:duration
@@ -108,7 +108,8 @@
       @"itms-apps://itunes.apple.com/WebObjects/MZStore.woa/wa/"
       @"viewContentsUserReviews?id=510623322&onlyLatestVersion=true&pageNumber=0&"
       @"sortOrdering=1&type=Purple+Software";
-  [self openURL:[NSURL URLWithString:urlString]];
+  NSURL * url = [NSURL URLWithString:urlString];
+  [self openURL:url];
 }
 
 @end
@@ -290,7 +291,7 @@
 
 - (void)safariViewControllerDidFinish:(SFSafariViewController *)controller
 {
-  [self.navigationController popViewControllerAnimated:YES];
+  [self.navigationController dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end
@@ -299,14 +300,20 @@
 
 - (void)openUrl:(NSURL *)url
 {
-  UIApplication * app = [UIApplication sharedApplication];
-  if ([app canOpenURL:url])
-    [app openURL:url];
-  // TODO(Vlad): Correct implementation of navigation controller's buttons.
-  /*
   NSString * scheme = url.scheme;
-  NSAssert(([scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"]), @"Incorrect
-  url's scheme!");
+  if (!([scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"]))
+  {
+    NSAssert(false, @"Incorrect url's scheme!");
+    NSString * urlString = url.absoluteString;
+    NSError * err = [[NSError alloc] initWithDomain:kMapsmeErrorDomain
+                                               code:0
+                                           userInfo:@{
+                                             @"Trying to open incorrect url" : urlString
+                                           }];
+    [[Crashlytics sharedInstance] recordError:err];
+    return;
+  }
+
   if (isIOS8)
   {
     UIApplication * app = [UIApplication sharedApplication];
@@ -314,10 +321,10 @@
       [app openURL:url];
     return;
   }
+
   SFSafariViewController * svc = [[SFSafariViewController alloc] initWithURL:url];
   svc.delegate = self;
-  [self.navigationController pushViewController:svc animated:YES];
-   */
+  [self.navigationController presentViewController:svc animated:YES completion:nil];
 }
 
 @end

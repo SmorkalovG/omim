@@ -57,7 +57,6 @@
 		678338DC1C72460700FD6263 /* countries.txt in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FC1C63884300DC9603 /* countries.txt */; };
 		678338DD1C72460700FD6263 /* drules_proto_clear.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FD1C63884300DC9603 /* drules_proto_clear.bin */; };
 		678338DE1C72460700FD6263 /* drules_proto_dark.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FE1C63884300DC9603 /* drules_proto_dark.bin */; };
-		678338DF1C72460700FD6263 /* drules_proto_legacy.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FF1C63884300DC9603 /* drules_proto_legacy.bin */; };
 		678338E01C72460700FD6263 /* drules_proto-bw.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C84001C63884300DC9603 /* drules_proto-bw.bin */; };
 		678338E11C72460700FD6263 /* drules_proto.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C84011C63884300DC9603 /* drules_proto.bin */; };
 		678338E21C72460700FD6263 /* patterns.txt in Resources */ = {isa = PBXBuildFile; fileRef = 676C84021C63884300DC9603 /* patterns.txt */; };
@@ -69,7 +68,6 @@
 		67AF4A011BC579DD0048B1ED /* country_info_getter.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67AF49FF1BC579DD0048B1ED /* country_info_getter.hpp */; };
 		67BE1DC51CD2180D00572709 /* downloading_policy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67BE1DC31CD2180D00572709 /* downloading_policy.cpp */; };
 		67BE1DC61CD2180D00572709 /* downloading_policy.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67BE1DC41CD2180D00572709 /* downloading_policy.hpp */; };
-		67CCFA911CBD1628007FC750 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 67CCFA901CBD1628007FC750 /* Images.xcassets */; };
 		67F90B6F1C6A277900CD458E /* testingmain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67247FD71C60BA9900EDE56A /* testingmain.cpp */; };
 		67F90B701C6A277900CD458E /* country_info_getter_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67247FC31C60BA8A00EDE56A /* country_info_getter_test.cpp */; };
 		67F90B711C6A277900CD458E /* fake_map_files_downloader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67247FC41C60BA8A00EDE56A /* fake_map_files_downloader.cpp */; };
@@ -83,7 +81,6 @@
 		67F90B791C6A278800CD458E /* libeditor.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B11C6215690093DD1B /* libeditor.a */; };
 		67F90B7A1C6A278800CD458E /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B21C6215690093DD1B /* libfreetype.a */; };
 		67F90B7B1C6A278800CD458E /* libfribidi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B31C6215690093DD1B /* libfribidi.a */; };
-		67F90B7C1C6A278800CD458E /* liblodepng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B41C6215690093DD1B /* liblodepng.a */; };
 		67F90B7D1C6A278800CD458E /* libminizip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B51C6215690093DD1B /* libminizip.a */; };
 		67F90B7E1C6A278800CD458E /* liboauthcpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B61C6215690093DD1B /* liboauthcpp.a */; };
 		67F90B7F1C6A278800CD458E /* libopening_hours.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B71C6215690093DD1B /* libopening_hours.a */; };
@@ -100,7 +97,6 @@
 		67F90B8A1C6A278800CD458E /* libpugixml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709A91C6215000093DD1B /* libpugixml.a */; };
 		67F90B8B1C6A278800CD458E /* libmap.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709A51C6213F10093DD1B /* libmap.a */; };
 		67F90B8C1C6A278800CD458E /* libalohalitics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF71C60BD5900EDE56A /* libalohalitics.a */; };
-		67F90B8D1C6A278800CD458E /* libtomcrypt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF81C60BD5900EDE56A /* libtomcrypt.a */; };
 		67F90B8E1C6A278800CD458E /* libcoding.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF31C60BD4000EDE56A /* libcoding.a */; };
 		67F90B8F1C6A278800CD458E /* libjansson.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF41C60BD4000EDE56A /* libjansson.a */; };
 		67F90B901C6A278800CD458E /* libindexer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF11C60BD1400EDE56A /* libindexer.a */; };
@@ -121,7 +117,6 @@
 		67F90BD51C6A2A3000CD458E /* libeditor.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B11C6215690093DD1B /* libeditor.a */; };
 		67F90BD61C6A2A3000CD458E /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B21C6215690093DD1B /* libfreetype.a */; };
 		67F90BD71C6A2A3000CD458E /* libfribidi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B31C6215690093DD1B /* libfribidi.a */; };
-		67F90BD81C6A2A3000CD458E /* liblodepng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B41C6215690093DD1B /* liblodepng.a */; };
 		67F90BD91C6A2A3000CD458E /* libminizip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B51C6215690093DD1B /* libminizip.a */; };
 		67F90BDA1C6A2A3000CD458E /* liboauthcpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B61C6215690093DD1B /* liboauthcpp.a */; };
 		67F90BDB1C6A2A3000CD458E /* libopening_hours.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709B71C6215690093DD1B /* libopening_hours.a */; };
@@ -138,7 +133,6 @@
 		67F90BE61C6A2A3000CD458E /* libpugixml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709A91C6215000093DD1B /* libpugixml.a */; };
 		67F90BE71C6A2A3000CD458E /* libmap.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674709A51C6213F10093DD1B /* libmap.a */; };
 		67F90BE81C6A2A3000CD458E /* libalohalitics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF71C60BD5900EDE56A /* libalohalitics.a */; };
-		67F90BE91C6A2A3000CD458E /* libtomcrypt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF81C60BD5900EDE56A /* libtomcrypt.a */; };
 		67F90BEA1C6A2A3000CD458E /* libcoding.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF31C60BD4000EDE56A /* libcoding.a */; };
 		67F90BEB1C6A2A3000CD458E /* libjansson.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF41C60BD4000EDE56A /* libjansson.a */; };
 		67F90BEC1C6A2A3000CD458E /* libindexer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67247FF11C60BD1400EDE56A /* libindexer.a */; };
@@ -154,7 +148,6 @@
 		67F90BF81C6A2B3100CD458E /* countries.txt in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FC1C63884300DC9603 /* countries.txt */; };
 		67F90BF91C6A2B3100CD458E /* drules_proto_clear.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FD1C63884300DC9603 /* drules_proto_clear.bin */; };
 		67F90BFA1C6A2B3100CD458E /* drules_proto_dark.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FE1C63884300DC9603 /* drules_proto_dark.bin */; };
-		67F90BFB1C6A2B3100CD458E /* drules_proto_legacy.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C83FF1C63884300DC9603 /* drules_proto_legacy.bin */; };
 		67F90BFC1C6A2B3100CD458E /* drules_proto-bw.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C84001C63884300DC9603 /* drules_proto-bw.bin */; };
 		67F90BFD1C6A2B3100CD458E /* drules_proto.bin in Resources */ = {isa = PBXBuildFile; fileRef = 676C84011C63884300DC9603 /* drules_proto.bin */; };
 		67F90BFE1C6A2B3100CD458E /* patterns.txt in Resources */ = {isa = PBXBuildFile; fileRef = 676C84021C63884300DC9603 /* patterns.txt */; };
@@ -202,7 +195,6 @@
 		67247FF31C60BD4000EDE56A /* libcoding.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcoding.a; path = "../../../omim-xcode-build/Debug/libcoding.a"; sourceTree = "<group>"; };
 		67247FF41C60BD4000EDE56A /* libjansson.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjansson.a; path = "../../../omim-xcode-build/Debug/libjansson.a"; sourceTree = "<group>"; };
 		67247FF71C60BD5900EDE56A /* libalohalitics.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libalohalitics.a; path = "../../../omim-xcode-build/Debug/libalohalitics.a"; sourceTree = "<group>"; };
-		67247FF81C60BD5900EDE56A /* libtomcrypt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtomcrypt.a; path = "../../../omim-xcode-build/Debug/libtomcrypt.a"; sourceTree = "<group>"; };
 		67247FFF1C60BD7E00EDE56A /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		6724800D1C60CE7300EDE56A /* migrate_tests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = migrate_tests.cpp; sourceTree = "<group>"; };
 		6724800E1C60CE7300EDE56A /* storage_group_download_tests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = storage_group_download_tests.cpp; sourceTree = "<group>"; };
@@ -223,7 +215,6 @@
 		674709B11C6215690093DD1B /* libeditor.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libeditor.a; path = "../../../omim-xcode-build/Debug/libeditor.a"; sourceTree = "<group>"; };
 		674709B21C6215690093DD1B /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype.a; path = "../../../omim-xcode-build/Debug/libfreetype.a"; sourceTree = "<group>"; };
 		674709B31C6215690093DD1B /* libfribidi.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfribidi.a; path = "../../../omim-xcode-build/Debug/libfribidi.a"; sourceTree = "<group>"; };
-		674709B41C6215690093DD1B /* liblodepng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblodepng.a; path = "../../../omim-xcode-build/Debug/liblodepng.a"; sourceTree = "<group>"; };
 		674709B51C6215690093DD1B /* libminizip.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libminizip.a; path = "../../../omim-xcode-build/Debug/libminizip.a"; sourceTree = "<group>"; };
 		674709B61C6215690093DD1B /* liboauthcpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liboauthcpp.a; path = "../../../omim-xcode-build/Debug/liboauthcpp.a"; sourceTree = "<group>"; };
 		674709B71C6215690093DD1B /* libopening_hours.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopening_hours.a; path = "../../../omim-xcode-build/Debug/libopening_hours.a"; sourceTree = "<group>"; };
@@ -269,7 +260,6 @@
 		67AF49FF1BC579DD0048B1ED /* country_info_getter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = country_info_getter.hpp; sourceTree = "<group>"; };
 		67BE1DC31CD2180D00572709 /* downloading_policy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = downloading_policy.cpp; sourceTree = "<group>"; };
 		67BE1DC41CD2180D00572709 /* downloading_policy.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = downloading_policy.hpp; sourceTree = "<group>"; };
-		67CCFA901CBD1628007FC750 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ../../iphone/Maps/Images.xcassets; sourceTree = SOURCE_ROOT; };
 		67F90B581C6A275B00CD458E /* storage_tests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = storage_tests.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		67F90BB61C6A29F700CD458E /* storage_integration_tests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = storage_integration_tests.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -298,7 +288,6 @@
 				67F90B791C6A278800CD458E /* libeditor.a in Frameworks */,
 				67F90B781C6A278800CD458E /* libapi.a in Frameworks */,
 				67F90B7F1C6A278800CD458E /* libopening_hours.a in Frameworks */,
-				67F90B7C1C6A278800CD458E /* liblodepng.a in Frameworks */,
 				67F90B8C1C6A278800CD458E /* libalohalitics.a in Frameworks */,
 				67F90B841C6A278800CD458E /* libsearch.a in Frameworks */,
 				67F90B831C6A278800CD458E /* libsdf_image.a in Frameworks */,
@@ -307,7 +296,6 @@
 				67F90B8F1C6A278800CD458E /* libjansson.a in Frameworks */,
 				67F90B851C6A278800CD458E /* libstb_image.a in Frameworks */,
 				67F90B881C6A278800CD458E /* libdrape.a in Frameworks */,
-				67F90B8D1C6A278800CD458E /* libtomcrypt.a in Frameworks */,
 				67F90B891C6A278800CD458E /* libexpat.a in Frameworks */,
 				67F90B8A1C6A278800CD458E /* libpugixml.a in Frameworks */,
 				67F90B921C6A278800CD458E /* libgeometry.a in Frameworks */,
@@ -338,7 +326,6 @@
 				67F90BD51C6A2A3000CD458E /* libeditor.a in Frameworks */,
 				67F90BD41C6A2A3000CD458E /* libapi.a in Frameworks */,
 				67F90BDB1C6A2A3000CD458E /* libopening_hours.a in Frameworks */,
-				67F90BD81C6A2A3000CD458E /* liblodepng.a in Frameworks */,
 				67F90BE81C6A2A3000CD458E /* libalohalitics.a in Frameworks */,
 				67F90BE01C6A2A3000CD458E /* libsearch.a in Frameworks */,
 				67F90BDF1C6A2A3000CD458E /* libsdf_image.a in Frameworks */,
@@ -347,7 +334,6 @@
 				67F90BEB1C6A2A3000CD458E /* libjansson.a in Frameworks */,
 				67F90BE11C6A2A3000CD458E /* libstb_image.a in Frameworks */,
 				67F90BE41C6A2A3000CD458E /* libdrape.a in Frameworks */,
-				67F90BE91C6A2A3000CD458E /* libtomcrypt.a in Frameworks */,
 				67F90BE51C6A2A3000CD458E /* libexpat.a in Frameworks */,
 				67F90BE61C6A2A3000CD458E /* libpugixml.a in Frameworks */,
 				67F90BEE1C6A2A3000CD458E /* libgeometry.a in Frameworks */,
@@ -397,7 +383,6 @@
 				67247FCA1C60BA8A00EDE56A /* task_runner.hpp */,
 				67247FCB1C60BA8A00EDE56A /* test_map_files_downloader.cpp */,
 				67247FCC1C60BA8A00EDE56A /* test_map_files_downloader.hpp */,
-				67CCFA901CBD1628007FC750 /* Images.xcassets */,
 			);
 			name = storage_tests;
 			path = ../../storage/storage_tests;
@@ -411,7 +396,6 @@
 				674709B11C6215690093DD1B /* libeditor.a */,
 				674709B21C6215690093DD1B /* libfreetype.a */,
 				674709B31C6215690093DD1B /* libfribidi.a */,
-				674709B41C6215690093DD1B /* liblodepng.a */,
 				674709B51C6215690093DD1B /* libminizip.a */,
 				674709B61C6215690093DD1B /* liboauthcpp.a */,
 				674709B71C6215690093DD1B /* libopening_hours.a */,
@@ -428,7 +412,6 @@
 				674709A91C6215000093DD1B /* libpugixml.a */,
 				674709A51C6213F10093DD1B /* libmap.a */,
 				67247FF71C60BD5900EDE56A /* libalohalitics.a */,
-				67247FF81C60BD5900EDE56A /* libtomcrypt.a */,
 				67247FF31C60BD4000EDE56A /* libcoding.a */,
 				67247FF41C60BD4000EDE56A /* libjansson.a */,
 				67247FF11C60BD1400EDE56A /* libindexer.a */,
@@ -677,9 +660,7 @@
 				671182D51C7F0D6500CB8177 /* packed_polygons_obsolete.bin in Resources */,
 				678338DA1C72460700FD6263 /* classificator.txt in Resources */,
 				671182D31C7F0D5D00CB8177 /* WorldCoasts_obsolete.mwm in Resources */,
-				678338DF1C72460700FD6263 /* drules_proto_legacy.bin in Resources */,
 				678338E01C72460700FD6263 /* drules_proto-bw.bin in Resources */,
-				67CCFA911CBD1628007FC750 /* Images.xcassets in Resources */,
 				678338DC1C72460700FD6263 /* countries.txt in Resources */,
 				678338D91C72460700FD6263 /* categories.txt in Resources */,
 				678338E21C72460700FD6263 /* patterns.txt in Resources */,
@@ -705,7 +686,6 @@
 				671182D21C7F0D5D00CB8177 /* WorldCoasts_obsolete.mwm in Resources */,
 				67F90BF91C6A2B3100CD458E /* drules_proto_clear.bin in Resources */,
 				67F90BFA1C6A2B3100CD458E /* drules_proto_dark.bin in Resources */,
-				67F90BFB1C6A2B3100CD458E /* drules_proto_legacy.bin in Resources */,
 				67F90BFC1C6A2B3100CD458E /* drules_proto-bw.bin in Resources */,
 				67F90BFD1C6A2B3100CD458E /* drules_proto.bin in Resources */,
 				67F90BFE1C6A2B3100CD458E /* patterns.txt in Resources */,
@@ -822,7 +802,7 @@
 					"OMIM_UNIT_TEST_WITH_QT_EVENT_LOOP=1",
 				);
 				INFOPLIST_FILE = "$(OMIM_ROOT)/iphone/Maps/MAPSME.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = storage_tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "storage-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -836,7 +816,7 @@
 					"OMIM_UNIT_TEST_WITH_QT_EVENT_LOOP=1",
 				);
 				INFOPLIST_FILE = "$(OMIM_ROOT)/iphone/Maps/MAPSME.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = storage_tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "storage-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

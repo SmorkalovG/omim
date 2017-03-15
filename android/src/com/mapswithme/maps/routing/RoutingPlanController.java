@@ -1,8 +1,11 @@
 package com.mapswithme.maps.routing;
 
+import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.DrawableRes;
@@ -10,6 +13,7 @@ import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.View;
@@ -36,12 +40,15 @@ import com.mapswithme.maps.widget.RotateDrawable;
 import com.mapswithme.maps.widget.RoutingToolbarButton;
 import com.mapswithme.maps.widget.ToolbarController;
 import com.mapswithme.maps.widget.WheelProgressView;
+import com.mapswithme.util.Graphics;
 import com.mapswithme.util.UiUtils;
 import com.mapswithme.util.Utils;
 import com.mapswithme.util.statistics.AlohaHelper;
 import com.mapswithme.util.statistics.Statistics;
 
-public class RoutingPlanController extends ToolbarController
+import java.util.Locale;
+
+public class RoutingPlanController extends ToolbarController implements SlotFrame.SlotClickListener
 {
   static final int ANIM_TOGGLE = MwmApplication.get().getResources().getInteger(R.integer.anim_slots_toggle);
   private static final String STATE_ALTITUDE_CHART_SHOWN = "altitude_chart_shown";
@@ -61,7 +68,7 @@ public class RoutingPlanController extends ToolbarController
   private final View mUberFrame;
 
   private final RotateDrawable mToggleImage = new RotateDrawable(R.drawable.ic_down);
-  private int mFrameHeight;
+  int mFrameHeight;
   private int mToolbarHeight;
   private boolean mOpen;
   @Nullable
@@ -69,6 +76,23 @@ public class RoutingPlanController extends ToolbarController
 
   @Nullable
   private UberInfo.Product mUberProduct;
+
+  @Nullable
+  private OnToggleListener mToggleListener;
+
+  @Nullable
+  private  SearchPoiTransitionListener mPoiTransitionListener;
+
+  public interface OnToggleListener
+  {
+    void onToggle(boolean state);
+  }
+
+  public interface SearchPoiTransitionListener
+  {
+    void animateSearchPoiTransition(@NonNull final Rect startRect,
+                                    @Nullable final Runnable runnable);
+  }
 
   private RadioButton setupRouterButton(@IdRes int buttonId, final @DrawableRes int iconRes, View.OnClickListener clickListener)
   {
@@ -100,6 +124,7 @@ public class RoutingPlanController extends ToolbarController
 
     mToggle = (ImageView) mToolbar.findViewById(R.id.toggle);
     mSlotFrame = (SlotFrame) root.findViewById(R.id.slots);
+    mSlotFrame.setSlotClickListener(this);
     mRouterTypes = (RadioGroup) mToolbar.findViewById(R.id.route_type);
 
     setupRouterButton(R.id.vehicle, R.drawable.ic_car, new View.OnClickListener()
@@ -174,10 +199,35 @@ public class RoutingPlanController extends ToolbarController
   {
     AlohaHelper.logClick(AlohaHelper.ROUTING_CANCEL);
     Statistics.INSTANCE.trackEvent(Statistics.EventName.ROUTING_CANCEL);
-    RoutingController.get().cancelPlanning();
+    RoutingController.get().cancel();
   }
 
-  private boolean checkFrameHeight()
+  @Override
+  public void onSlotClicked(final int order, @NonNull Rect rect)
+  {
+    if (mPoiTransitionListener != null)
+    {
+      mPoiTransitionListener.animateSearchPoiTransition(rect, new Runnable()
+      {
+        @Override
+        public void run()
+        {
+          RoutingController.get().searchPoi(order);
+        }
+      });
+    }
+    else
+    {
+      RoutingController.get().searchPoi(order);
+    }
+  }
+
+  public void setPoiTransitionListener(@Nullable SearchPoiTransitionListener poiTransitionListener)
+  {
+    mPoiTransitionListener = poiTransitionListener;
+  }
+
+  boolean checkFrameHeight()
   {
     if (mFrameHeight > 0)
       return true;
@@ -211,14 +261,14 @@ public class RoutingPlanController extends ToolbarController
       return;
     }
 
-    if (!isTaxiRouteChecked())
+    if (!isTaxiRouterType())
       setStartButton();
     showAltitudeChartAndRoutingDetails();
   }
 
   private void showAltitudeChartAndRoutingDetails()
   {
-    if (isTaxiRouteChecked())
+    if (isTaxiRouterType())
       return;
 
     UiUtils.hide(getViewById(R.id.error));
@@ -352,6 +402,14 @@ public class RoutingPlanController extends ToolbarController
           mToggleImage.setAngle((1.0f - fraction) * 180.0f);
         }
       });
+      animator.addListener(new UiUtils.SimpleAnimatorListener() {
+        @Override
+        public void onAnimationEnd(Animator animation)
+        {
+          if (mToggleListener != null)
+            mToggleListener.onToggle(mOpen);
+        }
+      });
 
       animator.setDuration(ANIM_TOGGLE);
       animator.start();
@@ -362,17 +420,26 @@ public class RoutingPlanController extends ToolbarController
       animateSlotFrame(mOpen ? 0 : mFrameHeight);
       mToggleImage.setAngle(mOpen ? 180.0f : 0.0f);
       mSlotFrame.unfadeSlots();
+      mSlotFrame.post(new Runnable()
+      {
+        @Override
+        public void run()
+        {
+          if (mToggleListener != null)
+            mToggleListener.onToggle(mOpen);
+        }
+      });
     }
   }
 
-  private boolean isVehicleRouteChecked()
+  private boolean isVehicleRouterType()
   {
-    return mRouterTypes.getCheckedRadioButtonId() == R.id.vehicle;
+    return RoutingController.get().isVehicleRouterType();
   }
 
-  private boolean isTaxiRouteChecked()
+  private boolean isTaxiRouterType()
   {
-    return mRouterTypes.getCheckedRadioButtonId() == R.id.taxi;
+    return RoutingController.get().isTaxiRouterType();
   }
 
   void disableToggle()
@@ -389,24 +456,40 @@ public class RoutingPlanController extends ToolbarController
   public void showRouteAltitudeChart()
   {
     ImageView altitudeChart = (ImageView) mFrame.findViewById(R.id.altitude_chart);
-    showRouteAltitudeChartInternal(altitudeChart);
+    TextView altitudeDifference = (TextView) mAltitudeChartFrame.findViewById(R.id.altitude_difference);
+    showRouteAltitudeChartInternal(altitudeChart, altitudeDifference);
   }
 
-  void showRouteAltitudeChartInternal(@NonNull ImageView altitudeChart)
+  void showRouteAltitudeChartInternal(@NonNull ImageView altitudeChart,
+                                      @NonNull TextView altitudeDifference)
   {
-    if (isVehicleRouteChecked())
+    if (isVehicleRouterType())
     {
       UiUtils.hide(altitudeChart);
+      UiUtils.hide(altitudeDifference);
       return;
     }
 
     int chartWidth = UiUtils.dimen(mActivity, R.dimen.altitude_chart_image_width);
     int chartHeight = UiUtils.dimen(mActivity, R.dimen.altitude_chart_image_height);
-    Bitmap bm = Framework.GenerateRouteAltitudeChart(chartWidth, chartHeight);
+    Framework.RouteAltitudeLimits limits = new Framework.RouteAltitudeLimits();
+    Bitmap bm = Framework.generateRouteAltitudeChart(chartWidth, chartHeight, limits);
     if (bm != null)
     {
       altitudeChart.setImageBitmap(bm);
       UiUtils.show(altitudeChart);
+      String meter = altitudeDifference.getResources().getString(R.string.meter);
+      String foot = altitudeDifference.getResources().getString(R.string.foot);
+      altitudeDifference.setText(String.format(Locale.getDefault(), "%d %s",
+                                               limits.maxRouteAltitude - limits.minRouteAltitude,
+                                               limits.isMetricUnits ? meter : foot));
+      Drawable icon = ContextCompat.getDrawable(altitudeDifference.getContext(),
+                                                R.drawable.ic_altitude_difference);
+      int colorAccent = ContextCompat.getColor(altitudeDifference.getContext(),
+                             UiUtils.getStyledResourceId(altitudeDifference.getContext(), R.attr.colorAccent));
+      altitudeDifference.setCompoundDrawablesWithIntrinsicBounds(Graphics.tint(icon,colorAccent),
+                                                                 null, null, null);
+      UiUtils.show(altitudeDifference);
     }
   }
 
@@ -442,7 +525,7 @@ public class RoutingPlanController extends ToolbarController
         showError(R.string.taxi_not_found);
         break;
       case RemoteError:
-        showError(R.string.uber_remote_error);
+        showError(R.string.dialog_taxi_error);
         break;
       default:
         throw new AssertionError("Unsupported uber error: " + code);
@@ -455,7 +538,7 @@ public class RoutingPlanController extends ToolbarController
     int checkedId = mRouterTypes.getCheckedRadioButtonId();
     RoutingToolbarButton rb = (RoutingToolbarButton) mRouterTypes.findViewById(checkedId);
     rb.error();
-    showError(R.string.uber_no_internet);
+    showError(R.string.dialog_taxi_offline);
   }
 
   private void showError(@StringRes int message)
@@ -496,7 +579,7 @@ public class RoutingPlanController extends ToolbarController
   {
     Button start = (Button) getViewById(R.id.start);
 
-    if (isTaxiRouteChecked())
+    if (isTaxiRouterType())
     {
       final boolean isUberInstalled = Utils.isUberInstalled(mActivity);
       start.setText(isUberInstalled ? R.string.taxi_order : R.string.install_app);
@@ -543,5 +626,15 @@ public class RoutingPlanController extends ToolbarController
     MapObject to = RoutingController.get().getEndPoint();
     Location location = LocationHelper.INSTANCE.getLastKnownLocation();
     Statistics.INSTANCE.trackUber(from, to, location, isUberInstalled);
+  }
+
+  public int getHeight()
+  {
+    return mFrame.getHeight();
+  }
+
+  public void setOnToggleListener(@Nullable OnToggleListener listener)
+  {
+    mToggleListener = listener;
   }
 }

@@ -5,12 +5,10 @@
 #include "search/geometry_utils.hpp"
 #include "search/intermediate_result.hpp"
 #include "search/latlon_match.hpp"
-#include "search/locality.hpp"
 #include "search/pre_ranking_info.hpp"
 #include "search/query_params.hpp"
 #include "search/ranking_info.hpp"
 #include "search/ranking_utils.hpp"
-#include "search/region.hpp"
 #include "search/search_index_values.hpp"
 #include "search/utils.hpp"
 
@@ -128,6 +126,42 @@ void SendStatistics(SearchParams const & params, m2::RectD const & viewport, Res
   };
   alohalytics::LogEvent("searchEmitResultsAndCoords", stats);
   GetPlatform().GetMarketingService().SendMarketingEvent(marketing::kSearchEmitResultsAndCoords, {});
+}
+
+// Removes all full-token stop words from |params|.
+// Does nothing if all tokens in |params| are non-prefix stop words.
+void RemoveStopWordsIfNeeded(QueryParams & params)
+{
+  size_t numStopWords = 0;
+  for (size_t i = 0; i < params.GetNumTokens(); ++i)
+  {
+    auto & token = params.GetToken(i);
+    if (!params.IsPrefixToken(i) && IsStopWord(token.m_original))
+      ++numStopWords;
+  }
+
+  if (numStopWords == params.GetNumTokens())
+    return;
+
+  for (size_t i = 0; i < params.GetNumTokens();)
+  {
+    if (params.IsPrefixToken(i))
+    {
+      ++i;
+      continue;
+    }
+
+    auto & token = params.GetToken(i);
+    if (IsStopWord(token.m_original))
+    {
+      params.RemoveToken(i);
+    }
+    else
+    {
+      my::EraseIf(token.m_synonyms, &IsStopWord);
+      ++i;
+    }
+  }
 }
 }  // namespace
 
@@ -297,6 +331,7 @@ int8_t Processor::GetLanguage(int id) const
 {
   return m_ranker.GetLanguage(GetLangIndex(id));
 }
+
 m2::PointD Processor::GetPivotPoint() const
 {
   bool const viewportSearch = m_mode == Mode::Viewport;
@@ -374,9 +409,16 @@ TLocales Processor::GetCategoryLocales() const
 }
 
 template <typename ToDo>
-void Processor::ForEachCategoryType(StringSliceBase const & slice, ToDo && todo) const
+void Processor::ForEachCategoryType(StringSliceBase const & slice, ToDo && toDo) const
 {
-  ::search::ForEachCategoryType(slice, GetCategoryLocales(), m_categories, forward<ToDo>(todo));
+  ::search::ForEachCategoryType(slice, GetCategoryLocales(), m_categories, forward<ToDo>(toDo));
+}
+
+template <typename ToDo>
+void Processor::ForEachCategoryTypeFuzzy(StringSliceBase const & slice, ToDo && toDo) const
+{
+  ::search::ForEachCategoryTypeFuzzy(slice, GetCategoryLocales(), m_categories,
+                                     forward<ToDo>(toDo));
 }
 
 void Processor::Search(SearchParams const & params, m2::RectD const & viewport)
@@ -409,7 +451,6 @@ void Processor::Search(SearchParams const & params, m2::RectD const & viewport)
 
   SetInputLocale(params.m_inputLocale);
 
-  ASSERT(!params.m_query.empty(), ());
   SetQuery(params.m_query);
   SetViewport(viewport, true /* forceUpdate */);
   SetOnResults(params.m_onResults);
@@ -614,32 +655,17 @@ int GetOldTypeFromIndex(size_t index)
 
 void Processor::InitParams(QueryParams & params)
 {
-  params.Clear();
-
-  if (!m_prefix.empty())
-    params.m_prefixTokens.push_back(m_prefix);
-
-  size_t const tokensCount = m_tokens.size();
-
-  // Add normal tokens.
-  params.m_tokens.resize(tokensCount);
-  for (size_t i = 0; i < tokensCount; ++i)
-    params.m_tokens[i].push_back(m_tokens[i]);
-
-  params.m_types.resize(tokensCount + (m_prefix.empty() ? 0 : 1));
-  for (auto & types : params.m_types)
-    types.clear();
+  if (m_prefix.empty())
+    params.InitNoPrefix(m_tokens.begin(), m_tokens.end());
+  else
+    params.InitWithPrefix(m_tokens.begin(), m_tokens.end(), m_prefix);
 
   // Add names of categories (and synonyms).
   Classificator const & c = classif();
   auto addSyms = [&](size_t i, uint32_t t)
   {
-    QueryParams::TSynonymsVector & v = params.GetTokens(i);
-
-    params.m_types[i].push_back(t);
-
     uint32_t const index = c.GetIndexForType(t);
-    v.push_back(FeatureTypeToString(index));
+    params.GetTypeIndices(i).push_back(index);
 
     // v2-version MWM has raw classificator types in search index prefix, so
     // do the hack: add synonyms for old convention if needed.
@@ -649,22 +675,30 @@ void Processor::InitParams(QueryParams & params)
       if (type >= 0)
       {
         ASSERT(type == 70 || type > 4000, (type));
-        v.push_back(FeatureTypeToString(static_cast<uint32_t>(type)));
+        params.GetTypeIndices(i).push_back(static_cast<uint32_t>(type));
       }
     }
   };
-  ForEachCategoryType(QuerySliceOnRawStrings<decltype(m_tokens)>(m_tokens, m_prefix), addSyms);
 
-  for (auto & tokens : params.m_tokens)
+  // todo(@m, @y). Shall we match prefix tokens for categories?
+  ForEachCategoryTypeFuzzy(QuerySliceOnRawStrings<decltype(m_tokens)>(m_tokens, m_prefix), addSyms);
+
+  RemoveStopWordsIfNeeded(params);
+
+  // Remove all type indices for streets, as they're considired
+  // individually.
+  for (size_t i = 0; i < params.GetNumTokens(); ++i)
   {
-    if (tokens.size() > 1 && IsHashtagged(tokens[0]))
-      tokens.erase(tokens.begin());
+    auto & token = params.GetToken(i);
+    if (IsStreetSynonym(token.m_original))
+      params.GetTypeIndices(i).clear();
   }
-  if (params.m_prefixTokens.size() > 1 && IsHashtagged(params.m_prefixTokens[0]))
-    params.m_prefixTokens.erase(params.m_prefixTokens.begin());
+
+  for (size_t i = 0; i < params.GetNumTokens(); ++i)
+    my::SortUnique(params.GetTypeIndices(i));
 
   for (int i = 0; i < LANG_COUNT; ++i)
-    params.m_langs.insert(GetLanguage(i));
+    params.GetLangs().Insert(GetLanguage(i));
 }
 
 void Processor::InitGeocoder(Geocoder::Params & params)
@@ -693,7 +727,7 @@ void Processor::InitPreRanker(Geocoder::Params const & geocoderParams)
     params.m_minDistanceOnMapBetweenResults = m_minDistanceOnMapBetweenResults;
   }
   params.m_accuratePivotCenter = GetPivotPoint();
-  params.m_scale = geocoderParams.m_scale;
+  params.m_scale = geocoderParams.GetScale();
 
   m_preRanker.Init(params);
 }

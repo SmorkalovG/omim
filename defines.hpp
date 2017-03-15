@@ -27,12 +27,14 @@
 #define METADATA_FILE_TAG "meta"
 #define METADATA_INDEX_FILE_TAG "metaidx"
 #define ALTITUDES_FILE_TAG "altitudes"
+#define RESTRICTIONS_FILE_TAG "restrictions"
 #define ROUTING_FILE_TAG "routing"
 #define FEATURE_OFFSETS_FILE_TAG "offs"
 #define RANKS_FILE_TAG "ranks"
 #define REGION_INFO_FILE_TAG "rgninfo"
 // Temporary addresses section that is used in search index generation.
 #define SEARCH_TOKENS_FILE_TAG "addrtags"
+#define TRAFFIC_KEYS_FILE_TAG "traffic"
 
 #define ROUTING_MATRIX_FILE_TAG "mercedes"
 #define ROUTING_EDGEDATA_FILE_TAG "daewoo"
@@ -73,6 +75,9 @@
 #define EXTERNAL_RESOURCES_FILE "external_resources.txt"
 
 #define GPS_TRACK_FILENAME "gps_track.dat"
+#define RESTRICTIONS_FILENAME "restrictions.csv"
+
+#define TRAFFIC_FILE_EXTENSION ".traffic"
 
 #define REPLACED_TAGS_FILE "replaced_tags.txt"
 #define MIXED_TAGS_FILE "mixed_tags.txt"

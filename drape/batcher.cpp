@@ -196,6 +196,12 @@ void Batcher::EndSession()
   m_flushInterface = TFlushFn();
 }
 
+void Batcher::ResetSession()
+{
+  m_flushInterface = TFlushFn();
+  m_buckets.clear();
+}
+
 void Batcher::SetFeatureMinZoom(int minZoom)
 {
   m_featureMinZoom = minZoom;
@@ -283,9 +289,7 @@ IndicesRange Batcher::InsertPrimitives(GLState const & state, ref_ptr<AttributeP
 
 Batcher * BatcherFactory::GetNew() const
 {
-  uint32_t const kIndexBufferSize = 5000;
-  uint32_t const kVertexBufferSize = 5000;
-  return new Batcher(kIndexBufferSize, kVertexBufferSize);
+  return new Batcher(m_indexBufferSize, m_vertexBufferSize);
 }
 
 SessionGuard::SessionGuard(Batcher & batcher, Batcher::TFlushFn const & flusher)

@@ -1,9 +1,7 @@
 #import "MWMRoutingDisclaimerAlert.h"
-#import "Common.h"
+#import "MWMCommon.h"
 #import "MWMAlertViewController.h"
 #import "Statistics.h"
-#import "UIColor+MapsMeColor.h"
-#import "UIFont+MapsMeFonts.h"
 
 static CGFloat const kMinimumOffset = 20.;
 static NSString * const kStatisticsEvent = @"Routing Disclaimer Alert";
@@ -12,18 +10,17 @@ static NSString * const kStatisticsEvent = @"Routing Disclaimer Alert";
 
 @property(weak, nonatomic) IBOutlet UITextView * textView;
 @property(weak, nonatomic) IBOutlet NSLayoutConstraint * textViewHeight;
-@property(copy, nonatomic) TMWMVoidBlock okBlock;
+@property(copy, nonatomic) MWMVoidBlock okBlock;
 
 @end
 
 @implementation MWMRoutingDisclaimerAlert
 
-+ (instancetype)alertWithInitialOrientation:(UIInterfaceOrientation)orientation
-                                    okBlock:(TMWMVoidBlock)block
++ (instancetype)alertWithOkBlock:(MWMVoidBlock)block
 {
   [Statistics logEvent:kStatisticsEvent withParameters:@{kStatAction : kStatOpen}];
   MWMRoutingDisclaimerAlert * alert =
-      [[[NSBundle mainBundle] loadNibNamed:[MWMRoutingDisclaimerAlert className]
+      [[[NSBundle mainBundle] loadNibNamed:[self className]
                                      owner:nil
                                    options:nil] firstObject];
   NSString * message = [NSString stringWithFormat:@"%@\n\n%@\n\n%@\n\n%@\n\n%@",
@@ -60,7 +57,7 @@ static NSString * const kStatisticsEvent = @"Routing Disclaimer Alert";
 
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)orientation
 {
-  UIView * superview = self.superview ? self.superview : UIApplication.sharedApplication.keyWindow;
+  UIView * superview = self.superview ?: UIApplication.sharedApplication.keyWindow;
   CGFloat const height = UIInterfaceOrientationIsLandscape(orientation)
                              ? MIN(superview.width, superview.height)
                              : MAX(superview.width, superview.height);

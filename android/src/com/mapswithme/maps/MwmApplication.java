@@ -7,6 +7,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 import android.text.TextUtils;
 import android.util.Log;
@@ -22,25 +23,29 @@ import com.mapswithme.maps.bookmarks.data.BookmarkManager;
 import com.mapswithme.maps.downloader.CountryItem;
 import com.mapswithme.maps.downloader.MapManager;
 import com.mapswithme.maps.editor.Editor;
+import com.mapswithme.maps.location.LocationHelper;
 import com.mapswithme.maps.location.TrackRecorder;
 import com.mapswithme.maps.routing.RoutingController;
 import com.mapswithme.maps.settings.StoragePathManager;
 import com.mapswithme.maps.sound.TtsPlayer;
+import com.mapswithme.maps.traffic.TrafficManager;
 import com.mapswithme.util.Config;
 import com.mapswithme.util.Constants;
 import com.mapswithme.util.ThemeSwitcher;
 import com.mapswithme.util.UiUtils;
 import com.mapswithme.util.Utils;
+import com.mapswithme.util.log.Logger;
+import com.mapswithme.util.log.LoggerFactory;
 import com.mapswithme.util.statistics.PushwooshHelper;
 import com.mapswithme.util.statistics.Statistics;
 import com.my.tracker.MyTracker;
 import com.my.tracker.MyTrackerParams;
 import com.pushwoosh.PushManager;
 import io.fabric.sdk.android.Fabric;
-import net.hockeyapp.android.CrashManager;
 
 public class MwmApplication extends Application
 {
+  private Logger mLogger;
   private final static String TAG = "MwmApplication";
 
   private static final String PW_EMPTY_APP_ID = "XXXXX";
@@ -79,6 +84,21 @@ public class MwmApplication extends Application
     public void onProgress(String countryId, long localSize, long remoteSize) {}
   };
 
+  @NonNull
+  private final AppBackgroundTracker.OnTransitionListener mBackgroundListener =
+      new AppBackgroundTracker.OnTransitionListener()
+      {
+        @Override
+        public void onTransit(boolean foreground)
+        {
+          if (!foreground && LoggerFactory.INSTANCE.isFileLoggingEnabled())
+          {
+            Log.i(TAG, "The app goes to background. All logs are going to be zipped.");
+            LoggerFactory.INSTANCE.zipLogs(null);
+          }
+        }
+      };
+
   public MwmApplication()
   {
     super();
@@ -95,12 +115,15 @@ public class MwmApplication extends Application
     return sSelf.mBackgroundTracker;
   }
 
-  public static SharedPreferences prefs()
+  public synchronized static SharedPreferences prefs()
   {
+    if (sSelf.mPrefs == null)
+      sSelf.mPrefs = sSelf.getSharedPreferences(sSelf.getString(R.string.pref_file_name), MODE_PRIVATE);
+
     return sSelf.mPrefs;
   }
 
-  private static boolean isCrashlyticsEnabled()
+  public static boolean isCrashlyticsEnabled()
   {
     return !BuildConfig.FABRIC_API_KEY.startsWith("0000");
   }
@@ -110,9 +133,9 @@ public class MwmApplication extends Application
   public void onCreate()
   {
     super.onCreate();
+    mLogger = LoggerFactory.INSTANCE.getLogger(LoggerFactory.Type.MISC);
+    mLogger.d(TAG, "Application is created");
     mMainLoopHandler = new Handler(getMainLooper());
-
-    initHockeyApp();
 
     initCrashlytics();
     final boolean isInstallationIdFound =
@@ -122,8 +145,11 @@ public class MwmApplication extends Application
     initTracker();
 
     String settingsPath = getSettingsPath();
+    mLogger.d(TAG, "onCreate(), setting path = " + settingsPath);
+    String tempPath = getTempPath();
+    mLogger.d(TAG, "onCreate(), temp path = " + tempPath);
     new File(settingsPath).mkdirs();
-    new File(getTempPath()).mkdirs();
+    new File(tempPath).mkdirs();
 
     // First we need initialize paths and platform to have access to settings and other components.
     nativePreparePlatform(settingsPath);
@@ -135,8 +161,8 @@ public class MwmApplication extends Application
     if (!isInstallationIdFound)
       setInstallationIdToCrashlytics();
 
-    mPrefs = getSharedPreferences(getString(R.string.pref_file_name), MODE_PRIVATE);
     mBackgroundTracker = new AppBackgroundTracker();
+    mBackgroundTracker.addListener(mBackgroundListener);
     TrackRecorder.init();
     Editor.init();
   }
@@ -154,7 +180,9 @@ public class MwmApplication extends Application
     BookmarkManager.nativeLoadBookmarks();
     TtsPlayer.INSTANCE.init(this);
     ThemeSwitcher.restart();
+    LocationHelper.INSTANCE.initialize();
     RoutingController.get().initialize();
+    TrafficManager.INSTANCE.initialize();
     mIsFrameworkInitialized = true;
   }
 
@@ -182,14 +210,6 @@ public class MwmApplication extends Application
     nativeAddLocalization("routing_failed_route_not_found", getString(R.string.routing_failed_route_not_found));
     nativeAddLocalization("routing_failed_internal_error", getString(R.string.routing_failed_internal_error));
     nativeAddLocalization("place_page_booking_rating", getString(R.string.place_page_booking_rating));
-  }
-
-  private void initHockeyApp()
-  {
-    String id = ("beta".equals(BuildConfig.BUILD_TYPE) ? PrivateVariables.hockeyAppBetaId()
-                                                       : PrivateVariables.hockeyAppId());
-    if (!TextUtils.isEmpty(id))
-      CrashManager.register(this, id);
   }
 
   private void initCrashlytics()
@@ -229,7 +249,7 @@ public class MwmApplication extends Application
       return getPackageManager().getApplicationInfo(BuildConfig.APPLICATION_ID, 0).sourceDir;
     } catch (final NameNotFoundException e)
     {
-      Log.e(TAG, "Can't get apk path from PackageManager");
+      mLogger.e(TAG, "Can't get apk path from PackageManager", e);
       return "";
     }
   }
@@ -294,7 +314,7 @@ public class MwmApplication extends Application
     }
     catch(Exception e)
     {
-      Log.e("Pushwoosh", e.getLocalizedMessage());
+      mLogger.e("Pushwoosh", "Failed to init Pushwoosh", e);
     }
   }
 
@@ -310,7 +330,7 @@ public class MwmApplication extends Application
     }
     catch(Exception e)
     {
-      Log.e("Pushwoosh", e.getLocalizedMessage());
+      mLogger.e("Pushwoosh", "Failed to send pushwoosh tags", e);
     }
   }
 

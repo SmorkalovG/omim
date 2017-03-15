@@ -1,12 +1,17 @@
 #include "indexer/ftypes_matcher.hpp"
 
+#include "indexer/classificator.hpp"
 #include "indexer/feature.hpp"
 #include "indexer/feature_data.hpp"
-#include "indexer/classificator.hpp"
 
-#include "std/map.hpp"
-#include "std/sstream.hpp"
-#include "std/utility.hpp"
+#include "base/assert.hpp"
+#include "base/buffer_vector.hpp"
+
+#include <algorithm>
+#include <map>
+#include <sstream>
+#include <unordered_map>
+#include <utility>
 
 namespace
 {
@@ -321,24 +326,6 @@ IsBuildingChecker const & IsBuildingChecker::Instance()
   return inst;
 }
 
-IsLocalityChecker::IsLocalityChecker()
-{
-  Classificator const & c = classif();
-
-  // Note! The order should be equal with constants in Type enum (add other villages to the end).
-  char const * arr[][2] = {
-    { "place", "country" },
-    { "place", "state" },
-    { "place", "city" },
-    { "place", "town" },
-    { "place", "village" },
-    { "place", "hamlet" }
-  };
-
-  for (size_t i = 0; i < ARRAY_SIZE(arr); ++i)
-    m_types.push_back(c.GetTypeByPath(vector<string>(arr[i], arr[i] + 2)));
-}
-
 IsBuildingPartChecker::IsBuildingPartChecker() : BaseChecker(1 /* level */)
 {
   m_types.push_back(classif().GetTypeByPath({"building:part"}));
@@ -374,45 +361,6 @@ bool IsTunnelChecker::IsMatched(uint32_t type) const
   return IsTypeConformed(type, {"highway", "*", "tunnel"});
 }
 
-Type IsLocalityChecker::GetType(uint32_t t) const
-{
-  ftype::TruncValue(t, 2);
-
-  size_t j = COUNTRY;
-  for (; j < LOCALITY_COUNT; ++j)
-    if (t == m_types[j])
-      return static_cast<Type>(j);
-
-  for (; j < m_types.size(); ++j)
-    if (t == m_types[j])
-      return VILLAGE;
-
-  return NONE;
-}
-
-Type IsLocalityChecker::GetType(feature::TypesHolder const & types) const
-{
-  for (uint32_t t : types)
-  {
-    Type const type = GetType(t);
-    if (type != NONE)
-      return type;
-  }
-  return NONE;
-}
-
-Type IsLocalityChecker::GetType(FeatureType const & f) const
-{
-  feature::TypesHolder types(f);
-  return GetType(types);
-}
-
-IsLocalityChecker const & IsLocalityChecker::Instance()
-{
-  static IsLocalityChecker const inst;
-  return inst;
-}
-
 IsBookingChecker::IsBookingChecker()
 {
   Classificator const & c = classif();
@@ -428,8 +376,19 @@ IsBookingChecker const & IsBookingChecker::Instance()
 IsHotelChecker::IsHotelChecker()
 {
   Classificator const & c = classif();
-  for (auto const & tag : GetHotelTags())
-    m_types.push_back(c.GetTypeByPath({"tourism", tag}));
+  for (size_t i = 0; i < static_cast<size_t>(Type::Count); ++i)
+  {
+    auto const hotelType = static_cast<Type>(i);
+    auto const * const tag = GetHotelTypeTag(hotelType);
+    auto const type = c.GetTypeByPath({"tourism", tag});
+
+    m_types.push_back(type);
+
+    m_sortedTypes[i].first = type;
+    m_sortedTypes[i].second = hotelType;
+  }
+
+  sort(m_sortedTypes.begin(), m_sortedTypes.end());
 }
 
 IsHotelChecker const & IsHotelChecker::Instance()
@@ -438,11 +397,51 @@ IsHotelChecker const & IsHotelChecker::Instance()
   return inst;
 }
 
-vector<string> const & IsHotelChecker::GetHotelTags()
+unsigned IsHotelChecker::GetHotelTypesMask(FeatureType const & ft) const
 {
-  static vector<string> hotelTags = {"hotel",       "apartment", "camp_site", "chalet",
-                                     "guest_house", "hostel",    "motel",     "resort"};
-  return hotelTags;
+  feature::TypesHolder types(ft);
+  buffer_vector<uint32_t, feature::kMaxTypesCount> sortedTypes(types.begin(), types.end());
+  sort(sortedTypes.begin(), sortedTypes.end());
+
+  unsigned mask = 0;
+  size_t i = 0;
+  size_t j = 0;
+  while (i < sortedTypes.size() && j < m_sortedTypes.size())
+  {
+    if (sortedTypes[i] < m_sortedTypes[j].first)
+    {
+      ++i;
+    }
+    else if (sortedTypes[i] > m_sortedTypes[j].first)
+    {
+      ++j;
+    }
+    else
+    {
+      mask |= 1U << static_cast<unsigned>(m_sortedTypes[j].second);
+      ++i;
+      ++j;
+    }
+  }
+
+  return mask;
+}
+
+// static
+char const * const IsHotelChecker::GetHotelTypeTag(Type type)
+{
+  switch (type)
+  {
+  case Type::Hotel: return "hotel";
+  case Type::Apartment: return "apartment";
+  case Type::CampSite: return "camp_site";
+  case Type::Chalet: return "chalet";
+  case Type::GuestHouse: return "guest_house";
+  case Type::Hostel: return "hostel";
+  case Type::Motel: return "motel";
+  case Type::Resort: return "resort";
+  case Type::Count: CHECK(false, ("Can't get hotel type tag")); return "";
+  }
 }
 
 IsWifiChecker::IsWifiChecker()
@@ -488,9 +487,78 @@ IsOpentableChecker const & IsOpentableChecker::Instance()
   return inst;
 }
 
-uint32_t GetPopulation(FeatureType const & ft)
+IsInvisibleIndexedChecker::IsInvisibleIndexedChecker() : BaseChecker(1 /* level */)
 {
-  uint32_t population = ft.GetPopulation();
+  m_types.push_back(classif().GetTypeByPath({"internet_access"}));
+  m_types.push_back(classif().GetTypeByPath({"wheelchair"}));
+}
+
+IsInvisibleIndexedChecker const & IsInvisibleIndexedChecker::Instance()
+{
+  static IsInvisibleIndexedChecker const instance;
+  return instance;
+}
+
+IsLocalityChecker::IsLocalityChecker()
+{
+  Classificator const & c = classif();
+
+  // Note! The order should be equal with constants in Type enum (add other villages to the end).
+  char const * arr[][2] = {
+    { "place", "country" },
+    { "place", "state" },
+    { "place", "city" },
+    { "place", "town" },
+    { "place", "village" },
+    { "place", "hamlet" }
+  };
+
+  for (size_t i = 0; i < ARRAY_SIZE(arr); ++i)
+    m_types.push_back(c.GetTypeByPath(vector<string>(arr[i], arr[i] + 2)));
+}
+
+Type IsLocalityChecker::GetType(uint32_t t) const
+{
+  ftype::TruncValue(t, 2);
+
+  size_t j = COUNTRY;
+  for (; j < LOCALITY_COUNT; ++j)
+    if (t == m_types[j])
+      return static_cast<Type>(j);
+
+  for (; j < m_types.size(); ++j)
+    if (t == m_types[j])
+      return VILLAGE;
+
+  return NONE;
+}
+
+Type IsLocalityChecker::GetType(feature::TypesHolder const & types) const
+{
+  for (uint32_t t : types)
+  {
+    Type const type = GetType(t);
+    if (type != NONE)
+      return type;
+  }
+  return NONE;
+}
+
+Type IsLocalityChecker::GetType(FeatureType const & f) const
+{
+  feature::TypesHolder types(f);
+  return GetType(types);
+}
+
+IsLocalityChecker const & IsLocalityChecker::Instance()
+{
+  static IsLocalityChecker const inst;
+  return inst;
+}
+
+uint64_t GetPopulation(FeatureType const & ft)
+{
+  uint64_t population = ft.GetPopulation();
 
   if (population < 10)
   {

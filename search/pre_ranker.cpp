@@ -9,6 +9,7 @@
 #include "indexer/rank_table.hpp"
 #include "indexer/scales.hpp"
 
+#include "base/random.hpp"
 #include "base/stl_helpers.hpp"
 
 #include "std/iterator.hpp"
@@ -42,25 +43,9 @@ struct ComparePreResult1
     auto const & rinfo = rhs.GetInfo();
     if (linfo.GetNumTokens() != rinfo.GetNumTokens())
       return linfo.GetNumTokens() > rinfo.GetNumTokens();
-    return linfo.m_startToken < rinfo.m_startToken;
+    return linfo.InnermostTokenRange().Begin() < rinfo.InnermostTokenRange().Begin();
   }
 };
-
-// Selects a fair random subset of size min(|n|, |k|) from [0, 1, 2, ..., n - 1].
-vector<size_t> RandomSample(size_t n, size_t k, minstd_rand & rng)
-{
-  vector<size_t> result(std::min(k, n));
-  iota(result.begin(), result.end(), 0);
-
-  for (size_t i = k; i < n; ++i)
-  {
-    size_t const j = rng() % (i + 1);
-    if (j < k)
-      result[j] = i;
-  }
-
-  return result;
-}
 
 void SweepNearbyResults(double eps, vector<PreResult1> & results)
 {
@@ -260,10 +245,10 @@ void PreRanker::FilterForViewportSearch()
   {
     auto const & p = m_results[i].GetInfo().m_center;
     int dx = static_cast<int>((p.x - viewport.minX()) / sizeX * kNumXSlots);
-    dx = my::clamp(dx, 0, kNumXSlots - 1);
+    dx = my::clamp(dx, 0, static_cast<int>(kNumXSlots) - 1);
 
     int dy = static_cast<int>((p.y - viewport.minY()) / sizeY * kNumYSlots);
-    dy = my::clamp(dy, 0, kNumYSlots - 1);
+    dy = my::clamp(dy, 0, static_cast<int>(kNumYSlots) - 1);
 
     buckets[dx * kNumYSlots + dy].push_back(i);
   }
@@ -281,7 +266,7 @@ void PreRanker::FilterForViewportSearch()
 
     if (m <= old)
     {
-      for (size_t i : RandomSample(old, m, m_rng))
+      for (size_t i : base::RandomSample(old, m, m_rng))
         results.push_back(m_results[bucket[i]]);
     }
     else
@@ -289,7 +274,7 @@ void PreRanker::FilterForViewportSearch()
       for (size_t i = 0; i < old; ++i)
         results.push_back(m_results[bucket[i]]);
 
-      for (size_t i : RandomSample(bucket.size() - old, m - old, m_rng))
+      for (size_t i : base::RandomSample(bucket.size() - old, m - old, m_rng))
         results.push_back(m_results[bucket[old + i]]);
     }
   }
@@ -301,7 +286,7 @@ void PreRanker::FilterForViewportSearch()
   else
   {
     m_results.clear();
-    for (size_t i : RandomSample(results.size(), BatchSize(), m_rng))
+    for (size_t i : base::RandomSample(results.size(), BatchSize(), m_rng))
       m_results.push_back(results[i]);
   }
 }

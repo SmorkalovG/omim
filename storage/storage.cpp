@@ -15,6 +15,7 @@
 #include "coding/reader.hpp"
 #include "coding/url_encode.hpp"
 
+#include "base/gmtime.hpp"
 #include "base/logging.hpp"
 #include "base/scope_guard.hpp"
 #include "base/stl_helpers.hpp"
@@ -701,6 +702,19 @@ void Storage::OnMapFileDownloadFinished(bool success,
   }
 
   OnMapDownloadFinished(countryId, success, queuedCountry.GetInitOptions());
+
+  // Send stastics to Push Woosh.
+  if (success)
+  {
+    GetPlatform().GetMarketingService().SendPushWooshTag(marketing::kMapLastDownloaded, countryId);
+    char nowStr[18]{};
+    auto const tp = std::chrono::system_clock::from_time_t(time(nullptr));
+    tm now = my::GmTime(std::chrono::system_clock::to_time_t(tp));
+    strftime(nowStr, sizeof(nowStr), "%Y-%m-%d %H:%M", &now);
+    GetPlatform().GetMarketingService().SendPushWooshTag(marketing::kMapLastDownloadedTimestamp,
+                                                         std::string(nowStr));
+  }
+
   CorrectJustDownloadedAndQueue(m_queue.begin());
   SaveDownloadQueue();
 

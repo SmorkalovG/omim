@@ -1,9 +1,10 @@
 #pragma once
 
-#include "std/algorithm.hpp"
-#include "std/functional.hpp"
-#include "std/utility.hpp"
-#include "std/vector.hpp"
+#include <algorithm>
+#include <functional>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace my
 {
@@ -93,14 +94,14 @@ void SortUnique(Cont & c)
 template <class Cont, typename Less, typename Equals>
 void SortUnique(Cont & c, Less && less, Equals && equals)
 {
-  sort(c.begin(), c.end(), forward<Less>(less));
-  c.erase(unique(c.begin(), c.end(), forward<Equals>(equals)), c.end());
+  sort(c.begin(), c.end(), std::forward<Less>(less));
+  c.erase(unique(c.begin(), c.end(), std::forward<Equals>(equals)), c.end());
 }
 
 template <class Cont, class Fn>
 void EraseIf(Cont & c, Fn && fn)
 {
-  c.erase(remove_if(c.begin(), c.end(), forward<Fn>(fn)), c.end());
+  c.erase(remove_if(c.begin(), c.end(), std::forward<Fn>(fn)), c.end());
 }
 
 // Creates a comparer being able to compare two instances of class C
@@ -130,5 +131,36 @@ template <typename T, typename C>
 impl::Equals<false, T, C> EqualsBy(T (C::*p)() const)
 {
   return impl::Equals<false, T, C>(p);
+}
+
+template <typename T>
+typename std::underlying_type<T>::type Key(T value)
+{
+  return static_cast<typename std::underlying_type<T>::type>(value);
+}
+
+// Use this if you want to make a functor whose first
+// argument is ignored and the rest are forwarded to |fn|.
+template <typename Fn>
+class IgnoreFirstArgument
+{
+public:
+  template <typename Gn>
+  IgnoreFirstArgument(Gn && gn) : m_fn(std::forward<Gn>(gn)) {}
+
+  template <typename Arg, typename... Args>
+  typename std::result_of<Fn(Args &&...)>::type operator()(Arg && arg, Args &&... args)
+  {
+    return m_fn(std::forward<Args>(args)...);
+  }
+
+private:
+  Fn m_fn;
+};
+
+template <typename Fn>
+IgnoreFirstArgument<Fn> MakeIgnoreFirstArgument(Fn && fn)
+{
+  return IgnoreFirstArgument<Fn>(std::forward<Fn>(fn));
 }
 }  // namespace my

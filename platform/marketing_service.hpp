@@ -12,6 +12,8 @@ namespace marketing
 extern char const * const kMapVersion;
 extern char const * const kMapListing;
 extern char const * const kMapDownloadDiscovered;
+extern char const * const kMapLastDownloaded;
+extern char const * const kMapLastDownloadedTimestamp;
 extern char const * const kRoutingP2PVehicleDiscovered;
 extern char const * const kRoutingP2PPedestrianDiscovered;
 extern char const * const kRoutingP2PBicycleDiscovered;
@@ -22,6 +24,7 @@ extern char const * const kRoutingBicycleDiscovered;
 extern char const * const kRoutingTaxiDiscovered;
 extern char const * const kEditorAddDiscovered;
 extern char const * const kEditorEditDiscovered;
+extern char const * const kTrafficDiscovered;
 
 // Events.
 extern char const * const kDownloaderMapActionFinished;

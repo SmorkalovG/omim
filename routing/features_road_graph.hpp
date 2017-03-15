@@ -1,6 +1,8 @@
 #pragma once
+
 #include "routing/road_graph.hpp"
-#include "routing/vehicle_model.hpp"
+
+#include "routing_common/vehicle_model.hpp"
 
 #include "indexer/altitude_loader.hpp"
 #include "indexer/feature_data.hpp"
@@ -26,7 +28,7 @@ private:
   class CrossCountryVehicleModel : public IVehicleModel
   {
   public:
-    CrossCountryVehicleModel(unique_ptr<VehicleModelFactory> vehicleModelFactory);
+    CrossCountryVehicleModel(shared_ptr<VehicleModelFactory> vehicleModelFactory);
 
     // IVehicleModel overrides:
     double GetSpeed(FeatureType const & f) const override;
@@ -39,7 +41,7 @@ private:
   private:
     IVehicleModel * GetVehicleModel(FeatureID const & featureId) const;
 
-    unique_ptr<VehicleModelFactory> const m_vehicleModelFactory;
+    shared_ptr<VehicleModelFactory> const m_vehicleModelFactory;
     double const m_maxSpeedKMPH;
 
     mutable map<MwmSet::MwmId, shared_ptr<IVehicleModel>> m_cache;
@@ -59,7 +61,7 @@ private:
 
 public:
   FeaturesRoadGraph(Index const & index, IRoadGraph::Mode mode,
-                    unique_ptr<VehicleModelFactory> vehicleModelFactory);
+                    shared_ptr<VehicleModelFactory> vehicleModelFactory);
 
   static uint32_t GetStreetReadScale();
 
@@ -76,6 +78,8 @@ public:
   IRoadGraph::Mode GetMode() const override;
   void ClearState() override;
 
+  bool IsRoad(FeatureType const & ft) const;
+
 private:
   friend class CrossFeaturesLoader;
 
@@ -90,7 +94,6 @@ private:
     unique_ptr<feature::AltitudeLoader> m_altitudeLoader;
   };
 
-  bool IsRoad(FeatureType const & ft) const;
   bool IsOneWay(FeatureType const & ft) const;
   double GetSpeedKMPHFromFt(FeatureType const & ft) const;
 

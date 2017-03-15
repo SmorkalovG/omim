@@ -1,8 +1,8 @@
-#import "MapsAppDelegate.h"
-#import "MapViewController.h"
-#import "MWMAlertViewController.h"
 #import "MWMDefaultAlert.h"
-#import "MWMPlacePageViewManager.h"
+#import "MWMAlertViewController.h"
+#import "MWMDefaultAlert_Protected.h"
+#import "MapViewController.h"
+#import "MapsAppDelegate.h"
 #import "Statistics.h"
 #import "UIButton+RuntimeAttributes.h"
 #import "UILabel+RuntimeAttributes.h"
@@ -10,18 +10,20 @@
 #include "Framework.h"
 
 static CGFloat const kDividerTopConstant = -8.;
-static NSString * kStatisticsEvent = @"Default Alert";
 
 @interface MWMDefaultAlert ()
 
-@property (weak, nonatomic) IBOutlet UILabel * messageLabel;
-@property (weak, nonatomic) IBOutlet UIButton * rightButton;
-@property (weak, nonatomic) IBOutlet UIButton * leftButton;
-@property (weak, nonatomic) IBOutlet UILabel * titleLabel;
-@property (weak, nonatomic) IBOutlet NSLayoutConstraint * rightButtonWidth;
-@property (copy, nonatomic) TMWMVoidBlock rightButtonAction;
-@property (copy, nonatomic) TMWMVoidBlock leftButtonAction;
-@property (weak, nonatomic) IBOutlet NSLayoutConstraint *dividerTop;
+@property(weak, nonatomic) IBOutlet UILabel * messageLabel;
+@property(weak, nonatomic) IBOutlet UIButton * rightButton;
+@property(weak, nonatomic) IBOutlet UIButton * leftButton;
+@property(weak, nonatomic) IBOutlet UILabel * titleLabel;
+@property(weak, nonatomic) IBOutlet NSLayoutConstraint * rightButtonWidth;
+@property(copy, nonatomic) MWMVoidBlock leftButtonAction;
+@property(copy, nonatomic, readwrite) MWMVoidBlock rightButtonAction;
+@property(weak, nonatomic) IBOutlet NSLayoutConstraint * dividerTop;
+@property(weak, nonatomic) IBOutlet UIView * vDivider;
+
+@property(copy, nonatomic) NSString * statisticsEvent;
 
 @end
 
@@ -31,108 +33,96 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
 
 + (instancetype)routeFileNotExistAlert
 {
-  kStatisticsEvent = @"Route File Not Exist Alert";
   return [self defaultAlertWithTitle:L(@"dialog_routing_download_files")
                              message:L(@"dialog_routing_download_and_update_all")
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Route File Not Exist Alert"];
 }
 
 + (instancetype)routeNotFoundAlert
 {
-  kStatisticsEvent = @"Route File Not Exist Alert";
-  NSString * message = L(@"dialog_routing_change_start_or_end");
   return [self defaultAlertWithTitle:L(@"dialog_routing_unable_locate_route")
-                             message:message
+                             message:L(@"dialog_routing_change_start_or_end")
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Route File Not Exist Alert"];
 }
 
 + (instancetype)locationServiceNotSupportedAlert
 {
-  kStatisticsEvent = @"Location Service Not Supported Alert";
   return [self defaultAlertWithTitle:L(@"current_location_unknown_error_title")
                              message:L(@"current_location_unknown_error_message")
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
-}
-
-+ (instancetype)locationNotFoundAlertWithOkBlock:(TMWMVoidBlock)okBlock
-{
-  kStatisticsEvent = @"Location Not Found Alert";
-  MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"current_location_unknown_title")
-                                                message:L(@"current_location_unknown_message")
-                                       rightButtonTitle:L(@"current_location_unknown_continue_button")
-                                        leftButtonTitle:L(@"current_location_unknown_stop_button")
-                                      rightButtonAction:okBlock];
-  [alert setNeedsCloseAlertAfterEnterBackground];
-  return alert;
+                   rightButtonAction:nil
+                     statisticsEvent:@"Location Service Not Supported Alert"];
 }
 
 + (instancetype)noConnectionAlert
 {
-  kStatisticsEvent = @"No Connection Alert";
-  MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"common_check_internet_connection_dialog")
-                                                message:nil
-                                       rightButtonTitle:L(@"ok")
-                                        leftButtonTitle:nil
-                                      rightButtonAction:nil];
+  MWMDefaultAlert * alert =
+      [self defaultAlertWithTitle:L(@"common_check_internet_connection_dialog")
+                          message:nil
+                 rightButtonTitle:L(@"ok")
+                  leftButtonTitle:nil
+                rightButtonAction:nil
+                  statisticsEvent:@"No Connection Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
 + (instancetype)migrationProhibitedAlert
 {
-  kStatisticsEvent = @"Migration Prohibited Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"no_migration_during_navigation")
                                                 message:nil
                                        rightButtonTitle:L(@"ok")
                                         leftButtonTitle:nil
-                                      rightButtonAction:nil];
+                                      rightButtonAction:nil
+                                        statisticsEvent:@"Migration Prohibited Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
 + (instancetype)deleteMapProhibitedAlert
 {
-  kStatisticsEvent = @"Delete Map Prohibited Alert";
-  MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"downloader_delete_map")
-                                                message:L(@"downloader_delete_map_while_routing_dialog")
-                                       rightButtonTitle:L(@"ok")
-                                        leftButtonTitle:nil
-                                      rightButtonAction:nil];
+  MWMDefaultAlert * alert =
+      [self defaultAlertWithTitle:L(@"downloader_delete_map")
+                          message:L(@"downloader_delete_map_while_routing_dialog")
+                 rightButtonTitle:L(@"ok")
+                  leftButtonTitle:nil
+                rightButtonAction:nil
+                  statisticsEvent:@"Delete Map Prohibited Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
-+ (instancetype)unsavedEditsAlertWithOkBlock:(TMWMVoidBlock)okBlock
++ (instancetype)unsavedEditsAlertWithOkBlock:(MWMVoidBlock)okBlock
 {
-  kStatisticsEvent = @"Editor unsaved changes on delete";
   return [self defaultAlertWithTitle:L(@"please_note")
                              message:L(@"downloader_delete_map_dialog")
                     rightButtonTitle:L(@"delete")
                      leftButtonTitle:L(@"cancel")
-                   rightButtonAction:okBlock];
+                   rightButtonAction:okBlock
+                     statisticsEvent:@"Editor unsaved changes on delete"];
 }
 
-+ (instancetype)noWiFiAlertWithOkBlock:(TMWMVoidBlock)okBlock
++ (instancetype)noWiFiAlertWithOkBlock:(MWMVoidBlock)okBlock
 {
-  kStatisticsEvent = @"No WiFi Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"download_over_mobile_header")
                                                 message:L(@"download_over_mobile_message")
                                        rightButtonTitle:L(@"use_cellular_data")
                                         leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:okBlock];
+                                      rightButtonAction:okBlock
+                                        statisticsEvent:@"No WiFi Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
 + (instancetype)endPointNotFoundAlert
 {
-  kStatisticsEvent = @"End Point Not Found Alert";
   NSString * message =
       [NSString stringWithFormat:@"%@\n\n%@", L(@"dialog_routing_end_not_determined"),
                                  L(@"dialog_routing_select_closer_end")];
@@ -140,12 +130,12 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
                              message:message
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"End Point Not Found Alert"];
 }
 
 + (instancetype)startPointNotFoundAlert
 {
-  kStatisticsEvent = @"Start Point Not Found Alert";
   NSString * message =
       [NSString stringWithFormat:@"%@\n\n%@", L(@"dialog_routing_start_not_determined"),
                                  L(@"dialog_routing_select_closer_start")];
@@ -153,12 +143,12 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
                              message:message
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Start Point Not Found Alert"];
 }
 
 + (instancetype)internalRoutingErrorAlert
 {
-  kStatisticsEvent = @"Internal Routing Error Alert";
   NSString * message =
       [NSString stringWithFormat:@"%@\n\n%@", L(@"dialog_routing_application_error"),
                                  L(@"dialog_routing_try_again")];
@@ -166,54 +156,54 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
                              message:message
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Internal Routing Error Alert"];
 }
 
 + (instancetype)incorrectFeauturePositionAlert
 {
-  kStatisticsEvent = @"Incorrect Feature Possition Alert";
   return [self defaultAlertWithTitle:L(@"dialog_incorrect_feature_position")
                              message:L(@"message_invalid_feature_position")
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Incorrect Feature Possition Alert"];
 }
 
 + (instancetype)internalErrorAlert
 {
-  kStatisticsEvent = @"Internal Error Alert";
   return [self defaultAlertWithTitle:L(@"dialog_routing_system_error")
                              message:nil
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Internal Error Alert"];
 }
 
 + (instancetype)notEnoughSpaceAlert
 {
-  kStatisticsEvent = @"Not Enough Space Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"migration_download_error_dialog")
                                                 message:L(@"migration_no_space_message")
                                        rightButtonTitle:L(@"ok")
                                         leftButtonTitle:nil
-                                      rightButtonAction:nil];
+                                      rightButtonAction:nil
+                                        statisticsEvent:@"Not Enough Space Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
 + (instancetype)invalidUserNameOrPasswordAlert
 {
-  kStatisticsEvent = @"Invalid User Name or Password Alert";
   return [self defaultAlertWithTitle:L(@"invalid_username_or_password")
                              message:nil
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Invalid User Name or Password Alert"];
 }
 
 + (instancetype)noCurrentPositionAlert
 {
-  kStatisticsEvent = @"No Current Position Alert";
   NSString * message =
       [NSString stringWithFormat:@"%@\n\n%@", L(@"common_current_location_unknown_dialog"),
                                  L(@"dialog_routing_location_turn_wifi")];
@@ -221,33 +211,34 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
                              message:message
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"No Current Position Alert"];
 }
 
 + (instancetype)disabledLocationAlert
 {
-  kStatisticsEvent = @"Disabled Location Alert";
-  TMWMVoidBlock action = ^{
+  MWMVoidBlock action = ^{
     GetFramework().SwitchMyPositionNextMode();
   };
-  return [MWMDefaultAlert defaultAlertWithTitle:L(@"dialog_routing_location_turn_on")
+  return [self defaultAlertWithTitle:L(@"dialog_routing_location_turn_on")
                                         message:L(@"dialog_routing_location_unknown_turn_on")
                                rightButtonTitle:L(@"turn_on")
                                 leftButtonTitle:L(@"later")
-                              rightButtonAction:action];
+                              rightButtonAction:action
+                                statisticsEvent:@"Disabled Location Alert"];
 }
 
 + (instancetype)pointsInDifferentMWMAlert
 {
-  kStatisticsEvent = @"Points In Different MWM Alert";
   return [self defaultAlertWithTitle:L(@"routing_failed_cross_mwm_building")
                              message:nil
                     rightButtonTitle:L(@"ok")
                      leftButtonTitle:nil
-                   rightButtonAction:nil];
+                   rightButtonAction:nil
+                     statisticsEvent:@"Points In Different MWM Alert"];
 }
 
-+ (instancetype)point2PointAlertWithOkBlock:(TMWMVoidBlock)okBlock needToRebuild:(BOOL)needToRebuild
++ (instancetype)point2PointAlertWithOkBlock:(MWMVoidBlock)okBlock needToRebuild:(BOOL)needToRebuild
 {
   if (needToRebuild)
   {
@@ -255,7 +246,8 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
                                message:L(@"p2p_reroute_from_current")
                       rightButtonTitle:L(@"ok")
                        leftButtonTitle:L(@"cancel")
-                     rightButtonAction:okBlock];
+                     rightButtonAction:okBlock
+                       statisticsEvent:@"Default Alert"];
   }
   else
   {
@@ -263,30 +255,33 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
                                message:nil
                       rightButtonTitle:L(@"ok")
                        leftButtonTitle:nil
-                     rightButtonAction:nil];
+                     rightButtonAction:nil
+                       statisticsEvent:@"Default Alert"];
   }
 }
 
-+ (instancetype)disableAutoDownloadAlertWithOkBlock:(TMWMVoidBlock)okBlock
++ (instancetype)disableAutoDownloadAlertWithOkBlock:(MWMVoidBlock)okBlock
 {
-  kStatisticsEvent = @"Disable Auto Download Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"disable_auto_download")
                                                 message:nil
                                        rightButtonTitle:L(@"_disable")
                                         leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:okBlock];
+                                      rightButtonAction:okBlock
+                                        statisticsEvent:@"Disable Auto Download Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
-+ (instancetype)downloaderNoConnectionAlertWithOkBlock:(TMWMVoidBlock)okBlock cancelBlock:(TMWMVoidBlock)cancelBlock
++ (instancetype)downloaderNoConnectionAlertWithOkBlock:(MWMVoidBlock)okBlock
+                                           cancelBlock:(MWMVoidBlock)cancelBlock
 {
-  kStatisticsEvent = @"Downloader No Connection Alert";
-  MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"downloader_status_failed")
-                                                message:L(@"common_check_internet_connection_dialog")
-                                       rightButtonTitle:L(@"downloader_retry")
-                                        leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:okBlock];
+  MWMDefaultAlert * alert =
+      [self defaultAlertWithTitle:L(@"downloader_status_failed")
+                          message:L(@"common_check_internet_connection_dialog")
+                 rightButtonTitle:L(@"downloader_retry")
+                  leftButtonTitle:L(@"cancel")
+                rightButtonAction:okBlock
+                  statisticsEvent:@"Downloader No Connection Alert"];
   alert.leftButtonAction = cancelBlock;
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
@@ -294,94 +289,95 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
 
 + (instancetype)downloaderNotEnoughSpaceAlert
 {
-  kStatisticsEvent = @"Downloader Not Enough Space Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"downloader_no_space_title")
                                                 message:L(@"downloader_no_space_message")
                                        rightButtonTitle:L(@"close")
                                         leftButtonTitle:nil
-                                      rightButtonAction:nil];
+                                      rightButtonAction:nil
+                                        statisticsEvent:@"Downloader Not Enough Space Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
-+ (instancetype)downloaderInternalErrorAlertWithOkBlock:(TMWMVoidBlock)okBlock cancelBlock:(TMWMVoidBlock)cancelBlock
++ (instancetype)downloaderInternalErrorAlertWithOkBlock:(MWMVoidBlock)okBlock
+                                            cancelBlock:(MWMVoidBlock)cancelBlock
 {
-  kStatisticsEvent = @"Downloader Internal Error Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"migration_download_error_dialog")
                                                 message:nil
                                        rightButtonTitle:L(@"downloader_retry")
                                         leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:okBlock];
+                                      rightButtonAction:okBlock
+                                        statisticsEvent:@"Downloader Internal Error Alert"];
   alert.leftButtonAction = cancelBlock;
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
-+ (instancetype)downloaderNeedUpdateAlertWithOkBlock:(TMWMVoidBlock)okBlock
++ (instancetype)downloaderNeedUpdateAlertWithOkBlock:(MWMVoidBlock)okBlock
 {
-  kStatisticsEvent = @"Downloader Need Update Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"downloader_need_update_title")
                                                 message:L(@"downloader_need_update_message")
                                        rightButtonTitle:L(@"downloader_status_outdated")
                                         leftButtonTitle:L(@"not_now")
-                                      rightButtonAction:okBlock];
+                                      rightButtonAction:okBlock
+                                        statisticsEvent:@"Downloader Need Update Alert"];
   [alert setNeedsCloseAlertAfterEnterBackground];
   return alert;
 }
 
-+ (instancetype)routingMigrationAlertWithOkBlock:(TMWMVoidBlock)okBlock
++ (instancetype)routingMigrationAlertWithOkBlock:(MWMVoidBlock)okBlock
 {
-  kStatisticsEvent = @"Routing Need Migration Alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"downloader_update_maps")
                                                 message:L(@"downloader_mwm_migration_dialog")
                                        rightButtonTitle:L(@"ok")
                                         leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:okBlock];
+                                      rightButtonAction:okBlock
+                                        statisticsEvent:@"Routing Need Migration Alert"];
   return alert;
 }
 
-+ (instancetype)resetChangesAlertWithBlock:(TMWMVoidBlock)block
++ (instancetype)resetChangesAlertWithBlock:(MWMVoidBlock)block
 {
-  kStatisticsEvent = @"Reset changes alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"editor_reset_edits_message")
                                                 message:nil
                                        rightButtonTitle:L(@"editor_reset_edits_button")
                                         leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:block];
+                                      rightButtonAction:block
+                                        statisticsEvent:@"Reset changes alert"];
   return alert;
 }
 
-+ (instancetype)deleteFeatureAlertWithBlock:(TMWMVoidBlock)block
++ (instancetype)deleteFeatureAlertWithBlock:(MWMVoidBlock)block
 {
-  kStatisticsEvent = @"Delete feature alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"editor_remove_place_message")
                                                 message:nil
                                        rightButtonTitle:L(@"editor_remove_place_button")
                                         leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:block];
+                                      rightButtonAction:block
+                                        statisticsEvent:@"Delete feature alert"];
   return alert;
 }
 
-+ (instancetype)personalInfoWarningAlertWithBlock:(TMWMVoidBlock)block
++ (instancetype)personalInfoWarningAlertWithBlock:(MWMVoidBlock)block
 {
-  kStatisticsEvent = @"Personal info warning alert";
   NSString * message = [NSString stringWithFormat:@"%@\n%@", L(@"editor_share_to_all_dialog_message_1"), L(@"editor_share_to_all_dialog_message_2")];
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"editor_share_to_all_dialog_title")
                                                 message:message
                                        rightButtonTitle:L(@"editor_report_problem_send_button")
                                         leftButtonTitle:L(@"cancel")
-                                      rightButtonAction:block];
+                                      rightButtonAction:block
+                                        statisticsEvent:@"Personal info warning alert"];
   return alert;
 }
 
-+ (instancetype)trackWarningAlertWithCancelBlock:(TMWMVoidBlock)block
++ (instancetype)trackWarningAlertWithCancelBlock:(MWMVoidBlock)block
 {
-  kStatisticsEvent = @"Track warning alert";
   MWMDefaultAlert * alert = [self defaultAlertWithTitle:L(@"recent_track_background_dialog_title")
                                                 message:L(@"recent_track_background_dialog_message")
                                        rightButtonTitle:L(@"off_recent_track_background_button")
                                         leftButtonTitle:L(@"continue_download")
-                                      rightButtonAction:block];
+                                      rightButtonAction:block
+                                        statisticsEvent:@"Track warning alert"];
   return alert;
 }
 
@@ -389,9 +385,10 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
                               message:(nullable NSString *)message
                      rightButtonTitle:(nonnull NSString *)rightButtonTitle
                       leftButtonTitle:(nullable NSString *)leftButtonTitle
-                    rightButtonAction:(nullable TMWMVoidBlock)action
+                    rightButtonAction:(nullable MWMVoidBlock)action
+                      statisticsEvent:(nonnull NSString *)statisticsEvent
 {
-  [Statistics logEvent:kStatisticsEvent withParameters:@{kStatAction : kStatOpen}];
+  [Statistics logEvent:statisticsEvent withParameters:@{kStatAction : kStatOpen}];
   MWMDefaultAlert * alert = [
       [[NSBundle mainBundle] loadNibNamed:kDefaultAlertNibName owner:self options:nil] firstObject];
   alert.titleLabel.text = title;
@@ -413,9 +410,11 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
   }
   else
   {
+    alert.vDivider.hidden = YES;
     alert.leftButton.hidden = YES;
     alert.rightButtonWidth.constant = [alert.subviews.firstObject width];
   }
+  alert.statisticsEvent = statisticsEvent;
   return alert;
 }
 
@@ -423,13 +422,13 @@ static NSString * const kDefaultAlertNibName = @"MWMDefaultAlert";
 
 - (IBAction)rightButtonTap
 {
-  [Statistics logEvent:kStatisticsEvent withParameters:@{kStatAction : kStatApply}];
+  [Statistics logEvent:self.statisticsEvent withParameters:@{kStatAction : kStatApply}];
   [self close:self.rightButtonAction];
 }
 
 - (IBAction)leftButtonTap
 {
-  [Statistics logEvent:kStatisticsEvent withParameters:@{kStatAction : kStatClose}];
+  [Statistics logEvent:self.statisticsEvent withParameters:@{kStatAction : kStatClose}];
   [self close:self.leftButtonAction];
 }
 

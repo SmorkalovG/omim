@@ -1,6 +1,6 @@
 #import "MWMTextToSpeech.h"
 #import <AVFoundation/AVFoundation.h>
-#import "Common.h"
+#import "MWMCommon.h"
 #import "Statistics.h"
 
 #include "LocaleTranslator.h"
@@ -19,7 +19,7 @@ NSString * const kDefaultLanguage = @"en-US";
 vector<pair<string, string>> availableLanguages()
 {
   NSArray<AVSpeechSynthesisVoice *> * voices = [AVSpeechSynthesisVoice speechVoices];
-  vector<pair<string, string>> native(voices.count);
+  vector<pair<string, string>> native;
   for (AVSpeechSynthesisVoice * v in voices)
     native.emplace_back(make_pair(bcp47ToTwineLanguage(v.language), [v.language UTF8String]));
 
@@ -72,7 +72,7 @@ vector<pair<string, string>> availableLanguages()
   {
     _availableLanguages = availableLanguages();
 
-    NSString * saved = [MWMTextToSpeech savedLanguage];
+    NSString * saved = [[self class] savedLanguage];
     NSString * preferedLanguageBcp47;
     if (saved.length)
       preferedLanguageBcp47 = saved;
@@ -100,7 +100,8 @@ vector<pair<string, string>> availableLanguages()
     NSError * err = nil;
     _audioSession = [AVAudioSession sharedInstance];
     if (![_audioSession setCategory:AVAudioSessionCategoryPlayback
-                        withOptions:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+                        withOptions:AVAudioSessionCategoryOptionMixWithOthers |
+                                    AVAudioSessionCategoryOptionDuckOthers
                               error:&err])
     {
       LOG(LWARNING, ("[ setCategory]] error.", [err localizedDescription]));
@@ -108,6 +109,11 @@ vector<pair<string, string>> availableLanguages()
     self.active = YES;
   }
   return self;
+}
+
+- (void)dealloc
+{
+  self.speechSynthesizer.delegate = nil;
 }
 
 + (NSString *)ttsStatusNotificationKey { return @"TTFStatusWasChangedFromSettingsNotification"; }
@@ -126,10 +132,10 @@ vector<pair<string, string>> availableLanguages()
 + (BOOL)isTTSEnabled { return [[NSUserDefaults standardUserDefaults] boolForKey:kIsTTSEnabled]; }
 + (void)setTTSEnabled:(BOOL)enabled
 {
-  if ([MWMTextToSpeech isTTSEnabled] == enabled)
+  if ([self isTTSEnabled] == enabled)
     return;
   if (!enabled)
-    [[MWMTextToSpeech tts] setActive:NO];
+    [[self tts] setActive:NO];
   NSUserDefaults * ud = [NSUserDefaults standardUserDefaults];
   [ud setBool:enabled forKey:kIsTTSEnabled];
   [ud synchronize];
@@ -137,12 +143,12 @@ vector<pair<string, string>> availableLanguages()
                                                       object:nil
                                                     userInfo:nil];
   if (enabled)
-    [[MWMTextToSpeech tts] setActive:YES];
+    [[self tts] setActive:YES];
 }
 
 - (void)setActive:(BOOL)active
 {
-  if (![MWMTextToSpeech isTTSEnabled] || self.active == active)
+  if (![[self class] isTTSEnabled] || self.active == active)
     return;
   if (active && ![self isValid])
     [self createSynthesizer];
@@ -150,7 +156,7 @@ vector<pair<string, string>> availableLanguages()
   GetFramework().EnableTurnNotifications(active ? true : false);
   runAsyncOnMainQueue(^{
     [[NSNotificationCenter defaultCenter]
-        postNotificationName:[MWMTextToSpeech ttsStatusNotificationKey]
+        postNotificationName:[[self class] ttsStatusNotificationKey]
                       object:nil
                     userInfo:nil];
   });
@@ -158,7 +164,7 @@ vector<pair<string, string>> availableLanguages()
 
 - (BOOL)active
 {
-  return [MWMTextToSpeech isTTSEnabled] && GetFramework().AreTurnNotificationsEnabled() ? YES : NO;
+  return [[self class] isTTSEnabled] && GetFramework().AreTurnNotificationsEnabled() ? YES : NO;
 }
 
 + (NSString *)savedLanguage
@@ -171,7 +177,7 @@ vector<pair<string, string>> availableLanguages()
   dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     self.speechSynthesizer = [[AVSpeechSynthesizer alloc] init];
     self.speechSynthesizer.delegate = self;
-    [self createVoice:[MWMTextToSpeech savedLanguage]];
+    [self createVoice:[[self class] savedLanguage]];
   });
   // TODO(vbykoianko) Use [NSLocale preferredLanguages] instead of [AVSpeechSynthesisVoice
   // currentLanguageCode].

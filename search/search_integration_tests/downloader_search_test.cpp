@@ -77,14 +77,14 @@ class TestMapFilesDownloader : public storage::MapFilesDownloader
 {
 public:
   // MapFilesDownloader overrides:
-  void GetServersList(int64_t const mapVersion, string const & mapFileName,
-                      TServersListCallback const & callback) override
+  void GetServersList(int64_t const /* mapVersion */, string const & /* mapFileName */,
+                      TServersListCallback const & /* callback */) override
   {
   }
 
-  void DownloadMapFile(vector<string> const & urls, string const & path, int64_t size,
-                       TFileDownloadedCallback const & onDownloaded,
-                       TDownloadingProgressCallback const & onProgress) override
+  void DownloadMapFile(vector<string> const & /* urls */, string const & /* path */,
+                       int64_t /* size */, TFileDownloadedCallback const & /* onDownloaded */,
+                       TDownloadingProgressCallback const & /* onProgress */) override
   {
   }
 
@@ -143,13 +143,14 @@ private:
     p.m_onResults = [this](storage::DownloaderSearchResults const & r)
     {
       CHECK(!m_endMarker, ());
-      if (r.m_endMarker)
-      {
-        m_endMarker = true;
-        return;
-      }
 
-      m_downloaderResults.insert(m_downloaderResults.end(), r.m_results.begin(), r.m_results.end());
+      auto const & results = r.m_results;
+      CHECK_GREATER_OR_EQUAL(results.size(), m_downloaderResults.size(), ());
+      CHECK(equal(m_downloaderResults.begin(), m_downloaderResults.end(), results.begin()), ());
+
+      m_downloaderResults = r.m_results;
+      if (r.m_endMarker)
+        m_endMarker = true;
     };
     return p;
   }

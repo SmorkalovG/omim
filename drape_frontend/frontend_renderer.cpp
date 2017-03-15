@@ -2,14 +2,17 @@
 #include "drape_frontend/gui/drape_gui.hpp"
 #include "drape_frontend/gui/ruler_helper.hpp"
 #include "drape_frontend/animation_system.hpp"
+#include "drape_frontend/batch_merge_helper.hpp"
+#include "drape_frontend/drape_measurer.hpp"
 #include "drape_frontend/framebuffer.hpp"
 #include "drape_frontend/frontend_renderer.hpp"
 #include "drape_frontend/message_subclasses.hpp"
+#include "drape_frontend/scenario_manager.hpp"
 #include "drape_frontend/screen_operations.hpp"
 #include "drape_frontend/transparent_layer.hpp"
 #include "drape_frontend/visual_params.hpp"
 #include "drape_frontend/user_mark_shapes.hpp"
-#include "drape_frontend/batch_merge_helper.hpp"
+
 
 #include "drape/debug_rect_renderer.hpp"
 #include "drape/shader_def.hpp"
@@ -33,6 +36,7 @@
 #include "std/algorithm.hpp"
 #include "std/bind.hpp"
 #include "std/cmath.hpp"
+#include "std/chrono.hpp"
 
 #include <iostream>
 
@@ -138,12 +142,12 @@ FrontendRenderer::FrontendRenderer(Params const & params)
   , m_requestedTiles(params.m_requestedTiles)
   , m_maxGeneration(0)
   , m_needRestoreSize(false)
-{
-#ifdef DRAW_INFO
-  m_tpf = 0.0;
-  m_fps = 0.0;
+  , m_needRegenerateTraffic(false)
+  , m_trafficEnabled(params.m_trafficEnabled)
+#ifdef SCENARIO_ENABLE
+  , m_scenarioManager(new ScenarioManager(this))
 #endif
-
+{
 #ifdef DEBUG
   m_isTeardowned = false;
 #endif
@@ -153,9 +157,7 @@ FrontendRenderer::FrontendRenderer(Params const & params)
 
   m_myPositionController.reset(new MyPositionController(params.m_initMyPositionMode, params.m_timeInBackground,
                                                         params.m_firstLaunch, params.m_isRoutingActive,
-                                                        params.m_isAutozoomEnabled));
-  m_myPositionController->SetModeListener(params.m_myPositionModeCallback);
-
+                                                        params.m_isAutozoomEnabled, params.m_myPositionModeCallback));
   StartThread();
 }
 
@@ -166,48 +168,12 @@ FrontendRenderer::~FrontendRenderer()
 
 void FrontendRenderer::Teardown()
 {
+  m_scenarioManager.reset();
   StopThread();
 #ifdef DEBUG
   m_isTeardowned = true;
 #endif
 }
-
-#ifdef DRAW_INFO
-void FrontendRenderer::BeforeDrawFrame()
-{
-  m_frameStartTime = m_timer.ElapsedSeconds();
-}
-
-void FrontendRenderer::AfterDrawFrame()
-{
-  m_drawedFrames++;
-
-  double elapsed = m_timer.ElapsedSeconds();
-  m_tpfs.push_back(elapsed - m_frameStartTime);
-
-  if (elapsed > 1.0)
-  {
-    m_timer.Reset();
-    m_fps = m_drawedFrames / elapsed;
-    m_drawedFrames = 0;
-
-    m_tpf = accumulate(m_tpfs.begin(), m_tpfs.end(), 0.0) / m_tpfs.size();
-
-    LOG(LINFO, ("Average Fps : ", m_fps));
-    LOG(LINFO, ("Average Tpf : ", m_tpf));
-
-#if defined(TRACK_GPU_MEM)
-    string report = dp::GPUMemTracker::Inst().Report();
-    LOG(LINFO, (report));
-#endif
-#if defined(TRACK_GLYPH_USAGE)
-    string glyphReport = dp::GlyphUsageTracker::Instance().Report();
-    LOG(LINFO, (glyphReport));
-#endif
-  }
-}
-
-#endif
 
 void FrontendRenderer::UpdateCanBeDeletedStatus()
 {
@@ -296,9 +262,16 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
           }
         }
       }
-
       if (changed)
         UpdateCanBeDeletedStatus();
+
+      if (m_notFinishedTiles.empty())
+      {
+#if defined(DRAPE_MEASURER) && defined(GENERATING_STATISTIC)
+        DrapeMeasurer::Instance().EndScenePreparing();
+#endif
+        m_trafficRenderer->OnGeometryReady(m_currentZoomLevel);
+      }
       break;
     }
 
@@ -430,13 +403,22 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
 
   case Message::GpsInfo:
     {
+#ifdef SCENARIO_ENABLE
+      if (m_scenarioManager->IsRunning())
+        break;
+#endif
       ref_ptr<GpsInfoMessage> msg = message;
       m_myPositionController->OnLocationUpdate(msg->GetInfo(), msg->IsNavigable(),
                                                m_userEventStream.GetCurrentScreen());
 
       location::RouteMatchingInfo const & info = msg->GetRouteInfo();
       if (info.HasDistanceFromBegin())
+      {
         m_routeRenderer->UpdateDistanceFromBegin(info.GetDistanceFromBegin());
+        // Here we have to recache route arrows.
+        m_routeRenderer->UpdateRoute(m_userEventStream.GetCurrentScreen(),
+                                     bind(&FrontendRenderer::OnCacheRouteArrows, this, _1, _2));
+      }
 
       break;
     }
@@ -493,6 +475,10 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
 
       m2::PointD const finishPoint = routeData->m_sourcePolyline.Back();
       m_routeRenderer->SetRouteData(move(routeData), make_ref(m_gpuProgramManager));
+      // Here we have to recache route arrows.
+      m_routeRenderer->UpdateRoute(m_userEventStream.GetCurrentScreen(),
+                                   bind(&FrontendRenderer::OnCacheRouteArrows, this, _1, _2));
+
       if (!m_routeRenderer->GetFinishPoint())
       {
         m_commutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
@@ -745,24 +731,37 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
       break;
     }
 
-  case Message::UpdateTraffic:
+  case Message::EnableTraffic:
     {
-      ref_ptr<UpdateTrafficMessage> msg = message;
-      m_trafficRenderer->UpdateTraffic(msg->GetSegmentsData());
+      ref_ptr<EnableTrafficMessage> msg = message;
+      m_trafficEnabled = msg->IsTrafficEnabled();
+      if (msg->IsTrafficEnabled())
+        m_needRegenerateTraffic = true;
+      else
+        m_trafficRenderer->ClearGLDependentResources();
       break;
     }
 
-  case Message::SetTrafficTexCoords:
+  case Message::RegenerateTraffic:
+  case Message::SetSimplifiedTrafficColors:
     {
-      ref_ptr<SetTrafficTexCoordsMessage> msg = message;
-      m_trafficRenderer->SetTexCoords(move(msg->AcceptTexCoords()));
+      m_needRegenerateTraffic = true;
       break;
     }
 
   case Message::FlushTrafficData:
     {
+      if (!m_trafficEnabled)
+        break;
       ref_ptr<FlushTrafficDataMessage> msg = message;
       m_trafficRenderer->AddRenderData(make_ref(m_gpuProgramManager), msg->AcceptTrafficData());
+      break;
+    }
+
+  case Message::ClearTrafficData:
+    {
+      ref_ptr<ClearTrafficDataMessage> msg = message;
+      m_trafficRenderer->Clear(msg->GetMwmId());
       break;
     }
 
@@ -819,20 +818,20 @@ void FrontendRenderer::UpdateGLResources()
   auto const & routeData = m_routeRenderer->GetRouteData();
   if (routeData != nullptr)
   {
-    auto recacheRouteMsg = make_unique_dp<AddRouteMessage>(routeData->m_sourcePolyline,
-                                                           routeData->m_sourceTurns,
-                                                           routeData->m_color,
-                                                           routeData->m_pattern,
-                                                           m_lastRecacheRouteId);
+    auto recacheRouteMsg = make_unique_dp<AddRouteMessage>(routeData->m_sourcePolyline, routeData->m_sourceTurns,
+                                                           routeData->m_color, routeData->m_traffic,
+                                                           routeData->m_pattern, m_lastRecacheRouteId);
     m_routeRenderer->ClearGLDependentResources();
     m_commutator->PostMessage(ThreadsCommutator::ResourceUploadThread, move(recacheRouteMsg),
                               MessagePriority::Normal);
   }
 
+  m_trafficRenderer->ClearGLDependentResources();
+
   // Request new tiles.
   ScreenBase screen = m_userEventStream.GetCurrentScreen();
   m_lastReadedModelView = screen;
-  m_requestedTiles->Set(screen, m_isIsometry || screen.isPerspective(), ResolveTileKeys(screen));
+  m_requestedTiles->Set(screen, m_isIsometry || screen.isPerspective(), m_needRegenerateTraffic, ResolveTileKeys(screen));
   m_commutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
                             make_unique_dp<UpdateReadManagerMessage>(),
                             MessagePriority::UberHighSingleton);
@@ -887,7 +886,8 @@ void FrontendRenderer::InvalidateRect(m2::RectD const & gRect)
 
     // Request new tiles.
     m_lastReadedModelView = screen;
-    m_requestedTiles->Set(screen, m_isIsometry || screen.isPerspective(), ResolveTileKeys(screen));
+    m_requestedTiles->Set(screen, m_isIsometry || screen.isPerspective(),
+                          m_needRegenerateTraffic, ResolveTileKeys(screen));
     m_commutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
                               make_unique_dp<UpdateReadManagerMessage>(),
                               MessagePriority::UberHighSingleton);
@@ -1004,14 +1004,14 @@ FeatureID FrontendRenderer::GetVisiblePOI(m2::RectD const & pixelRect)
     if (curDist < dist)
     {
       dist = curDist;
-      featureID = handle->GetFeatureID();
+      featureID = handle->GetOverlayID().m_featureId;
     }
   }
 
   return featureID;
 }
 
-void FrontendRenderer::PrepareGpsTrackPoints(size_t pointsCount)
+void FrontendRenderer::PrepareGpsTrackPoints(uint32_t pointsCount)
 {
   m_commutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
                             make_unique_dp<CacheGpsTrackPointsMessage>(pointsCount),
@@ -1080,11 +1080,9 @@ void FrontendRenderer::EndUpdateOverlayTree()
 
 void FrontendRenderer::RenderScene(ScreenBase const & modelView)
 {
-#ifdef DRAW_INFO
-  BeforeDrawFrame();
+#if defined(DRAPE_MEASURER) && (defined(RENDER_STATISTIC) || defined(TRACK_GPU_MEM))
+  DrapeMeasurer::Instance().BeforeRenderFrame();
 #endif
-
-  bool const isPerspective = modelView.isPerspective();
 
   GLFunctions::glEnable(gl_const::GLDepthTest);
   m_viewport.Apply();
@@ -1093,10 +1091,23 @@ void FrontendRenderer::RenderScene(ScreenBase const & modelView)
 
   Render2dLayer(modelView);
 
-  bool hasSelectedPOI = false;
+  if (m_framebuffer->IsSupported())
+  {
+    RenderTrafficAndRouteLayer(modelView);
+    Render3dLayer(modelView, true /* useFramebuffer */);
+  }
+  else
+  {
+    Render3dLayer(modelView, false /* useFramebuffer */);
+    RenderTrafficAndRouteLayer(modelView);
+  }
+
+  // After this line we do not use (almost) depth buffer.
+  GLFunctions::glDisable(gl_const::GLDepthTest);
+  GLFunctions::glClearDepth();
+
   if (m_selectionShape != nullptr)
   {
-    GLFunctions::glDisable(gl_const::GLDepthTest);
     SelectionShape::ESelectedObject selectedObject = m_selectionShape->GetSelectedObject();
     if (selectedObject == SelectionShape::OBJECT_MY_POSITION)
     {
@@ -1107,47 +1118,16 @@ void FrontendRenderer::RenderScene(ScreenBase const & modelView)
     }
     else if (selectedObject == SelectionShape::OBJECT_POI)
     {
-      if (!isPerspective && m_layers[RenderLayer::Geometry3dID].m_renderGroups.empty())
-        m_selectionShape->Render(modelView, m_currentZoomLevel,
-                                 make_ref(m_gpuProgramManager), m_generalUniforms);
-      else
-        hasSelectedPOI = true;
+      m_selectionShape->Render(modelView, m_currentZoomLevel, make_ref(m_gpuProgramManager), m_generalUniforms);
     }
   }
 
-  if (m_framebuffer->IsSupported())
-  {
-    m_framebuffer->Enable();
-    GLFunctions::glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    GLFunctions::glClear();
-    Render3dLayer(modelView);
-    m_framebuffer->Disable();
-    GLFunctions::glDisable(gl_const::GLDepthTest);
-    m_transparentLayer->Render(m_framebuffer->GetTextureId(), make_ref(m_gpuProgramManager));
-  }
-  else
-  {
-    GLFunctions::glClearDepth();
-    Render3dLayer(modelView);
-  }
-
-  GLFunctions::glDisable(gl_const::GLDepthTest);
-  if (hasSelectedPOI)
-    m_selectionShape->Render(modelView, m_currentZoomLevel, make_ref(m_gpuProgramManager), m_generalUniforms);
-
-  m_trafficRenderer->RenderTraffic(modelView, m_currentZoomLevel, make_ref(m_gpuProgramManager), m_generalUniforms);
-
-  GLFunctions::glEnable(gl_const::GLDepthTest);
-  GLFunctions::glClearDepth();
   RenderOverlayLayer(modelView);
 
   m_gpsTrackRenderer->RenderTrack(modelView, m_currentZoomLevel, make_ref(m_gpuProgramManager), m_generalUniforms);
 
-  GLFunctions::glDisable(gl_const::GLDepthTest);
   if (m_selectionShape != nullptr && m_selectionShape->GetSelectedObject() == SelectionShape::OBJECT_USER_MARK)
     m_selectionShape->Render(modelView, m_currentZoomLevel, make_ref(m_gpuProgramManager), m_generalUniforms);
-
-  m_routeRenderer->RenderRoute(modelView, make_ref(m_gpuProgramManager), m_generalUniforms);
 
   RenderUserMarksLayer(modelView);
 
@@ -1158,17 +1138,15 @@ void FrontendRenderer::RenderScene(ScreenBase const & modelView)
   m_drapeApiRenderer->Render(modelView, make_ref(m_gpuProgramManager), m_generalUniforms);
 
   if (m_guiRenderer != nullptr)
-    m_guiRenderer->Render(make_ref(m_gpuProgramManager), modelView);
-
-  GLFunctions::glEnable(gl_const::GLDepthTest);
+    m_guiRenderer->Render(make_ref(m_gpuProgramManager), m_myPositionController->IsInRouting(), modelView);
 
 #if defined(RENDER_DEBUG_RECTS) && defined(COLLECT_DISPLACEMENT_INFO)
   for (auto const & arrow : m_overlayTree->GetDisplacementInfo())
     dp::DebugRectRenderer::Instance().DrawArrow(modelView, arrow);
 #endif
 
-#ifdef DRAW_INFO
-  AfterDrawFrame();
+#if defined(DRAPE_MEASURER) && (defined(RENDER_STATISTIC) || defined(TRACK_GPU_MEM))
+  DrapeMeasurer::Instance().AfterRenderFrame();
 #endif
 
   MergeBuckets();
@@ -1183,13 +1161,29 @@ void FrontendRenderer::Render2dLayer(ScreenBase const & modelView)
     RenderSingleGroup(modelView, make_ref(group));
 }
 
-void FrontendRenderer::Render3dLayer(ScreenBase const & modelView)
+void FrontendRenderer::Render3dLayer(ScreenBase const & modelView, bool useFramebuffer)
 {
+  if (useFramebuffer)
+  {
+    ASSERT(m_framebuffer->IsSupported(), ());
+    m_framebuffer->Enable();
+    GLFunctions::glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    GLFunctions::glClear();
+  }
+
+  GLFunctions::glClearDepth();
   GLFunctions::glEnable(gl_const::GLDepthTest);
   RenderLayer & layer = m_layers[RenderLayer::Geometry3dID];
   layer.Sort(make_ref(m_overlayTree));
   for (drape_ptr<RenderGroup> const & group : layer.m_renderGroups)
     RenderSingleGroup(modelView, make_ref(group));
+
+  if (useFramebuffer)
+  {
+    m_framebuffer->Disable();
+    GLFunctions::glDisable(gl_const::GLDepthTest);
+    m_transparentLayer->Render(m_framebuffer->GetTextureId(), make_ref(m_gpuProgramManager));
+  }
 }
 
 void FrontendRenderer::RenderOverlayLayer(ScreenBase const & modelView)
@@ -1198,6 +1192,20 @@ void FrontendRenderer::RenderOverlayLayer(ScreenBase const & modelView)
   BuildOverlayTree(modelView);
   for (drape_ptr<RenderGroup> & group : overlay.m_renderGroups)
     RenderSingleGroup(modelView, make_ref(group));
+}
+
+void FrontendRenderer::RenderTrafficAndRouteLayer(ScreenBase const & modelView)
+{
+  GLFunctions::glClearDepth();
+  GLFunctions::glEnable(gl_const::GLDepthTest);
+  if (m_trafficRenderer->HasRenderData())
+  {
+    m_trafficRenderer->RenderTraffic(modelView, m_currentZoomLevel, 1.0f /* opacity */,
+                                     make_ref(m_gpuProgramManager), m_generalUniforms);
+  }
+  GLFunctions::glClearDepth();
+  m_routeRenderer->RenderRoute(modelView, m_trafficRenderer->HasRenderData(),
+                               make_ref(m_gpuProgramManager), m_generalUniforms);
 }
 
 void FrontendRenderer::RenderUserMarksLayer(ScreenBase const & modelView)
@@ -1506,22 +1514,33 @@ bool FrontendRenderer::OnNewVisibleViewport(m2::RectD const & oldViewport, m2::R
     return false;
 
   ScreenBase const & screen = m_userEventStream.GetCurrentScreen();
-  m2::PointD pos;
 
-  double const vs = VisualParams::Instance().GetVisualScale();
-  if (m_selectionShape->IsVisible(screen, pos))
+  ScreenBase targetScreen;
+  AnimationSystem::Instance().GetTargetScreen(screen, targetScreen);
+
+  m2::PointD pos;
+  m2::PointD targetPos;
+  if (m_selectionShape->IsVisible(screen, pos) &&
+      m_selectionShape->IsVisible(targetScreen, targetPos))
   {
     m2::RectD rect(pos, pos);
+    m2::RectD targetRect(targetPos, targetPos);
+
+    if (m_overlayTree->IsNeedUpdate())
+      BuildOverlayTree(screen);
+
     if (!(m_selectionShape->GetSelectedObject() == SelectionShape::OBJECT_POI &&
-        m_overlayTree->GetSelectedFeatureRect(screen, rect)))
+          m_overlayTree->GetSelectedFeatureRect(screen, rect) &&
+          m_overlayTree->GetSelectedFeatureRect(targetScreen, targetRect)))
     {
       double const r = m_selectionShape->GetRadius();
       rect.Inflate(r, r);
+      targetRect.Inflate(r, r);
     }
 
-    if (oldViewport.IsIntersect(rect) && !newViewport.IsRectInside(rect))
+    if (oldViewport.IsIntersect(targetRect) && !newViewport.IsRectInside(rect))
     {
-      double const kOffset = 50 * vs;
+      double const kOffset = 50 * VisualParams::Instance().GetVisualScale();
       m2::PointD pOffset(0.0, 0.0);
       if (rect.minX() < newViewport.minX())
         pOffset.x = newViewport.minX() - rect.minX() + kOffset;
@@ -1582,6 +1601,12 @@ TTilesCollection FrontendRenderer::ResolveTileKeys(ScreenBase const & screen)
     return group->GetTileKey().m_zoomLevel != m_currentZoomLevel;
   });
 
+  m_trafficRenderer->OnUpdateViewport(result, m_currentZoomLevel, tilesToDelete);
+
+#if defined(DRAPE_MEASURER) && defined(GENERATING_STATISTIC)
+  DrapeMeasurer::Instance().StartScenePreparing();
+#endif
+
   return tiles;
 }
 
@@ -1596,16 +1621,19 @@ void FrontendRenderer::OnContextDestroy()
     layer.m_isDirty = false;
   }
 
+  m_selectObjectMessage.reset();
+  m_overlayTree->SetSelectedFeature(FeatureID());
+
   m_userMarkRenderGroups.clear();
   m_guiRenderer.reset();
-  m_selectionShape.release();
+  m_selectionShape.reset();
   m_framebuffer.reset();
   m_transparentLayer.reset();
 
   m_myPositionController->ResetRenderShape();
   m_routeRenderer->ClearGLDependentResources();
   m_gpsTrackRenderer->ClearRenderData();
-  m_trafficRenderer->Clear();
+  m_trafficRenderer->ClearGLDependentResources();
   m_drapeApiRenderer->Clear();
 
 #ifdef RENDER_DEBUG_RECTS
@@ -1631,7 +1659,6 @@ void FrontendRenderer::OnContextCreate()
   GLFunctions::AttachCache(this_thread::get_id());
 
   GLFunctions::glPixelStore(gl_const::GLUnpackAlignment, 1);
-  GLFunctions::glEnable(gl_const::GLDepthTest);
 
   GLFunctions::glClearDepthValue(1.0);
   GLFunctions::glDepthFunc(gl_const::GLLessOrEqual);
@@ -1702,7 +1729,7 @@ void FrontendRenderer::Routine::Do()
     isActiveFrame |= m_renderer.m_texMng->UpdateDynamicTextures();
     m_renderer.RenderScene(modelView);
 
-    if (modelViewChanged)
+    if (modelViewChanged || m_renderer.m_needRegenerateTraffic)
       m_renderer.UpdateScene(modelView);
 
     isActiveFrame |= InterpolationHolder::Instance().Advance(frameTime);
@@ -1772,6 +1799,7 @@ void FrontendRenderer::ReleaseResources()
   m_routeRenderer.reset();
   m_framebuffer.reset();
   m_transparentLayer.reset();
+  m_trafficRenderer.reset();
 
   m_gpuProgramManager.reset();
   m_contextFactory->getDrawContext()->doneCurrent();
@@ -1779,6 +1807,10 @@ void FrontendRenderer::ReleaseResources()
 
 void FrontendRenderer::AddUserEvent(drape_ptr<UserEvent> && event)
 {
+#ifdef SCENARIO_ENABLE
+  if (m_scenarioManager->IsRunning() && event->GetType() == UserEvent::EventType::Touch)
+    return;
+#endif
   m_userEventStream.AddEvent(move(event));
   if (IsInInfinityWaiting())
     CancelMessageWaiting();
@@ -1850,14 +1882,16 @@ void FrontendRenderer::UpdateScene(ScreenBase const & modelView)
   for (RenderLayer & layer : m_layers)
     layer.m_isDirty |= RemoveGroups(removePredicate, layer.m_renderGroups, make_ref(m_overlayTree));
 
-  if (m_lastReadedModelView != modelView)
+  if (m_needRegenerateTraffic || m_lastReadedModelView != modelView)
   {
     EmitModelViewChanged(modelView);
     m_lastReadedModelView = modelView;
-    m_requestedTiles->Set(modelView, m_isIsometry || modelView.isPerspective(), ResolveTileKeys(modelView));
+    m_requestedTiles->Set(modelView, m_isIsometry || modelView.isPerspective(), m_needRegenerateTraffic,
+                          ResolveTileKeys(modelView));
     m_commutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
                               make_unique_dp<UpdateReadManagerMessage>(),
                               MessagePriority::UberHighSingleton);
+    m_needRegenerateTraffic = false;
   }
 }
 
@@ -1871,6 +1905,11 @@ void FrontendRenderer::OnCacheRouteArrows(int routeIndex, vector<ArrowBorders> c
   m_commutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
                             make_unique_dp<CacheRouteArrowsMessage>(routeIndex, borders),
                             MessagePriority::Normal);
+}
+
+drape_ptr<ScenarioManager> const & FrontendRenderer::GetScenarioManager() const
+{
+  return m_scenarioManager;
 }
 
 FrontendRenderer::RenderLayer::RenderLayerID FrontendRenderer::RenderLayer::GetLayerID(dp::GLState const & state)

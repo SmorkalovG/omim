@@ -11,8 +11,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.NestedScrollView;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -28,12 +31,12 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.mapswithme.maps.Framework;
@@ -55,8 +58,8 @@ import com.mapswithme.maps.editor.data.TimeFormatUtils;
 import com.mapswithme.maps.editor.data.Timetable;
 import com.mapswithme.maps.gallery.FullScreenGalleryActivity;
 import com.mapswithme.maps.gallery.GalleryActivity;
+import com.mapswithme.maps.gallery.Image;
 import com.mapswithme.maps.location.LocationHelper;
-import com.mapswithme.maps.review.ReviewActivity;
 import com.mapswithme.maps.routing.RoutingController;
 import com.mapswithme.maps.widget.ArrowView;
 import com.mapswithme.maps.widget.BaseShadowController;
@@ -65,7 +68,9 @@ import com.mapswithme.maps.widget.ObservableScrollView;
 import com.mapswithme.maps.widget.ScrollViewShadowController;
 import com.mapswithme.maps.widget.recycler.DividerItemDecoration;
 import com.mapswithme.maps.widget.recycler.RecyclerClickListener;
+import com.mapswithme.util.ConnectionState;
 import com.mapswithme.util.Graphics;
+import com.mapswithme.util.NetworkPolicy;
 import com.mapswithme.util.StringUtils;
 import com.mapswithme.util.ThemeUtils;
 import com.mapswithme.util.UiUtils;
@@ -92,12 +97,12 @@ public class PlacePageView extends RelativeLayout
                Sponsored.OnHotelInfoReceivedListener,
                LineCountTextView.OnLineCountCalculatedListener,
                RecyclerClickListener,
-               NearbyAdapter.OnItemClickListener
+               NearbyAdapter.OnItemClickListener,
+               BottomPlacePageAnimationController.OnBannerOpenListener,
+               EditBookmarkFragment.EditBookmarkListener,
+               BannerController.BannerListener
 {
   private static final String PREF_USE_DMS = "use_dms";
-
-//TODO: remove this after booking_api.cpp will be done
-  private static final boolean USE_OLD_BOOKING = true;
 
   private boolean mIsDocked;
   private boolean mIsFloating;
@@ -114,7 +119,7 @@ public class PlacePageView extends RelativeLayout
   private TextView mTvSponsoredRating;
   private TextView mTvSponsoredPrice;
   // Details.
-  private ScrollView mDetails;
+  private NestedScrollView mDetails;
   private View mPhone;
   private TextView mTvPhone;
   private View mWebsite;
@@ -133,12 +138,14 @@ public class PlacePageView extends RelativeLayout
   private View mWiki;
   private View mEntrance;
   private TextView mTvEntrance;
+  private View mTaxi;
   private View mEditPlace;
   private View mAddOrganisation;
   private View mAddPlace;
   // Bookmark
   private View mBookmarkFrame;
-  private TextView mBookmarkNote;
+  private WebView mWvBookmarkNote;
+  private TextView mTvBookmarkNote;
   private boolean mBookmarkSet;
   // Place page buttons
   private PlacePageButtons mButtons;
@@ -147,6 +154,7 @@ public class PlacePageView extends RelativeLayout
   private View mHotelDescription;
   private LineCountTextView mTvHotelDescription;
   private View mHotelMoreDescription;
+  private View mHotelMoreDescriptionOnWeb;
   private View mHotelFacilities;
   private View mHotelMoreFacilities;
   private View mHotelGallery;
@@ -157,6 +165,11 @@ public class PlacePageView extends RelativeLayout
   private TextView mHotelRatingBase;
 //TODO: remove this after booking_api.cpp will be done
   private View mHotelMore;
+  @Nullable
+  BannerController mBannerController;
+
+  @Nullable
+  View mHeightCompensationView;
 
   // Animations
   private BaseShadowController mShadowController;
@@ -223,6 +236,11 @@ public class PlacePageView extends RelativeLayout
     FULLSCREEN
   }
 
+  public interface SetMapObjectListener
+  {
+    void onSetMapObjectComplete();
+  }
+
   public PlacePageView(Context context)
   {
     this(context, null, 0);
@@ -269,7 +287,7 @@ public class PlacePageView extends RelativeLayout
     mTvSponsoredRating = (TextView) mSponsoredInfo.findViewById(R.id.tv__hotel_rating);
     mTvSponsoredPrice = (TextView) mSponsoredInfo.findViewById(R.id.tv__hotel_price);
 
-    mDetails = (ScrollView) findViewById(R.id.pp__details);
+    mDetails = (NestedScrollView) findViewById(R.id.pp__details);
     RelativeLayout address = (RelativeLayout) mDetails.findViewById(R.id.ll__place_name);
     mPhone = mDetails.findViewById(R.id.ll__place_phone);
     mPhone.setOnClickListener(this);
@@ -296,6 +314,9 @@ public class PlacePageView extends RelativeLayout
     mWiki.setOnClickListener(this);
     mEntrance = mDetails.findViewById(R.id.ll__place_entrance);
     mTvEntrance = (TextView) mEntrance.findViewById(R.id.tv__place_entrance);
+    mTaxi = mDetails.findViewById(R.id.ll__place_page_taxi);
+    TextView orderTaxi = (TextView) mTaxi.findViewById(R.id.tv__place_page_order_taxi);
+    orderTaxi.setOnClickListener(this);
     mEditPlace = mDetails.findViewById(R.id.ll__place_editor);
     mEditPlace.setOnClickListener(this);
     mAddOrganisation = mDetails.findViewById(R.id.ll__add_organisation);
@@ -312,10 +333,14 @@ public class PlacePageView extends RelativeLayout
     mWiki.setOnLongClickListener(this);
 
     mBookmarkFrame = mDetails.findViewById(R.id.bookmark_frame);
-    mBookmarkNote = (TextView) mBookmarkFrame.findViewById(R.id.tv__bookmark_notes);
+    mWvBookmarkNote = (WebView) mBookmarkFrame.findViewById(R.id.wv__bookmark_notes);
+    mWvBookmarkNote.getSettings().setJavaScriptEnabled(false);
+    mTvBookmarkNote = (TextView) mBookmarkFrame.findViewById(R.id.tv__bookmark_notes);
     mBookmarkFrame.findViewById(R.id.tv__bookmark_edit).setOnClickListener(this);
 
     ViewGroup ppButtons = (ViewGroup) findViewById(R.id.pp__buttons);
+
+    mHeightCompensationView = findViewById(R.id.pp__height_compensation);
 
 //  TODO: remove this after booking_api.cpp will be done
     mHotelMore = findViewById(R.id.ll__more);
@@ -326,6 +351,10 @@ public class PlacePageView extends RelativeLayout
     initHotelGalleryView();
     initHotelNearbyView();
     initHotelRatingView();
+
+    View bannerView = findViewById(R.id.banner);
+    if (bannerView != null)
+      mBannerController = new BannerController(bannerView, this);
 
     mButtons = new PlacePageButtons(this, ppButtons, new PlacePageButtons.ItemListener()
     {
@@ -348,7 +377,7 @@ public class PlacePageView extends RelativeLayout
 
           case BOOKMARK:
             mBookmarkButtonIcon = icon;
-            updateButtons();
+            updateBookmarkButton();
             color = ThemeUtils.getColor(getContext(), R.attr.iconTint);
             break;
 
@@ -392,26 +421,38 @@ public class PlacePageView extends RelativeLayout
           break;
 
         case ROUTE_FROM:
-          if (RoutingController.get().setStartPoint(mMapObject))
+          RoutingController controller = RoutingController.get();
+          if (!controller.isPlanning())
+          {
+            controller.prepare(mMapObject, null);
             hide();
+          }
+          else if (controller.setStartPoint(mMapObject))
+          {
+            hide();
+          }
           break;
 
-          case ROUTE_TO:
-            if (RoutingController.get().isPlanning())
-            {
-              if (RoutingController.get().setEndPoint(mMapObject))
-                hide();
-            }
-            else
-            {
-              getActivity().startLocationToPoint(Statistics.EventName.PP_ROUTE, AlohaHelper.PP_ROUTE, getMapObject());
-            }
-            break;
+        case ROUTE_TO:
+          if (RoutingController.get().isPlanning())
+          {
+            if (RoutingController.get().setEndPoint(mMapObject))
+              hide();
+          }
+          else
+          {
+            getActivity().startLocationToPoint(Statistics.EventName.PP_ROUTE, AlohaHelper.PP_ROUTE, getMapObject());
+          }
+          break;
 
-          case BOOKING:
-          case OPENTABLE:
-            onSponsoredClick(true /* book */);
-            break;
+        case BOOKING:
+        case OPENTABLE:
+          onSponsoredClick(true /* book */);
+          break;
+
+        case CALL:
+          Utils.callPhone(getContext(), mTvPhone.getText().toString());
+          break;
         }
       }
     });
@@ -468,8 +509,12 @@ public class PlacePageView extends RelativeLayout
   private void initHotelRatingView()
   {
     mHotelReview = findViewById(R.id.ll__place_hotel_rating);
-    GridView gvHotelReview = (GridView) findViewById(R.id.gv__place_hotel_review);
-    gvHotelReview.setAdapter(mReviewAdapter);
+    RecyclerView rvHotelReview = (RecyclerView) findViewById(R.id.rv__place_hotel_review);
+    rvHotelReview.setLayoutManager(new LinearLayoutManager(getContext()));
+    rvHotelReview.getLayoutManager().setAutoMeasureEnabled(true);
+    rvHotelReview.setNestedScrollingEnabled(false);
+    rvHotelReview.setHasFixedSize(false);
+    rvHotelReview.setAdapter(mReviewAdapter);
     mHotelRating = (TextView) findViewById(R.id.tv__place_hotel_rating);
     mHotelRatingBase = (TextView) findViewById(R.id.tv__place_hotel_rating_base);
     View hotelMoreReviews = findViewById(R.id.tv__place_hotel_reviews_more);
@@ -499,9 +544,13 @@ public class PlacePageView extends RelativeLayout
   private void initHotelFacilitiesView()
   {
     mHotelFacilities = findViewById(R.id.ll__place_hotel_facilities);
-    GridView gvHotelFacilities = (GridView) findViewById(R.id.gv__place_hotel_facilities);
+    RecyclerView rvHotelFacilities = (RecyclerView) findViewById(R.id.rv__place_hotel_facilities);
+    rvHotelFacilities.setLayoutManager(new GridLayoutManager(getContext(), 2));
+    rvHotelFacilities.getLayoutManager().setAutoMeasureEnabled(true);
+    rvHotelFacilities.setNestedScrollingEnabled(false);
+    rvHotelFacilities.setHasFixedSize(false);
     mHotelMoreFacilities = findViewById(R.id.tv__place_hotel_facilities_more);
-    gvHotelFacilities.setAdapter(mFacilitiesAdapter);
+    rvHotelFacilities.setAdapter(mFacilitiesAdapter);
     mHotelMoreFacilities.setOnClickListener(this);
   }
 
@@ -510,8 +559,10 @@ public class PlacePageView extends RelativeLayout
     mHotelDescription = findViewById(R.id.ll__place_hotel_description);
     mTvHotelDescription = (LineCountTextView) findViewById(R.id.tv__place_hotel_details);
     mHotelMoreDescription = findViewById(R.id.tv__place_hotel_more);
+    mHotelMoreDescriptionOnWeb = findViewById(R.id.tv__place_hotel_more_on_web);
     mTvHotelDescription.setListener(this);
     mHotelMoreDescription.setOnClickListener(this);
+    mHotelMoreDescriptionOnWeb.setOnClickListener(this);
   }
 
   @Override
@@ -532,7 +583,7 @@ public class PlacePageView extends RelativeLayout
     }
 
     mSponsoredPrice = getContext().getString(R.string.place_page_starting_from, text);
-    refreshPreview();
+    refreshPreview(NetworkPolicy.newInstance(true));
   }
 
   @Override
@@ -558,9 +609,9 @@ public class PlacePageView extends RelativeLayout
     {
       UiUtils.show(mHotelReview);
       mReviewAdapter.setItems(new ArrayList<>(Arrays.asList(info.mReviews)));
-      mHotelRating.setText(mSponsored.mRating);
+      mHotelRating.setText(mSponsored.getRating());
       mHotelRatingBase.setText(getResources().getQuantityString(R.plurals.place_page_booking_rating_base,
-                                                                info.mReviews.length, info.mReviews.length));
+                                                                info.mReviews.length, info.mReviewsAmount));
     }
   }
 
@@ -623,7 +674,8 @@ public class PlacePageView extends RelativeLayout
   @Override
   public void onItemClick(View v, int position)
   {
-    if (position == GalleryAdapter.MAX_COUNT - 1)
+    if (position == GalleryAdapter.MAX_COUNT - 1
+        && mGalleryAdapter.getItems().size() > GalleryAdapter.MAX_COUNT)
     {
       GalleryActivity.start(getContext(), mGalleryAdapter.getItems(), mMapObject.getTitle());
     }
@@ -691,7 +743,7 @@ public class PlacePageView extends RelativeLayout
 
             try
             {
-              followUrl(book ? info.mUrl : info.mUrlDescription);
+              followUrl(book ? info.getUrl() : info.getDescriptionUrl());
             }
             catch (ActivityNotFoundException e)
             {
@@ -699,6 +751,23 @@ public class PlacePageView extends RelativeLayout
             }
           }
         });
+  }
+
+  @Override
+  public void onNeedOpenBanner()
+  {
+    if (mBannerController != null)
+      mBannerController.open();
+  }
+
+  private void compensateViewHeight(int height)
+  {
+    if (mHeightCompensationView == null)
+      return;
+
+    ViewGroup.LayoutParams lp = mHeightCompensationView.getLayoutParams();
+    lp.height = height;
+    mHeightCompensationView.setLayoutParams(lp);
   }
 
   private void init(AttributeSet attrs, int defStyleAttr)
@@ -714,14 +783,20 @@ public class PlacePageView extends RelativeLayout
     mIsFloating = attrArray.getBoolean(R.styleable.PlacePageView_floating, false);
     attrArray.recycle();
 
-    mAnimationController = animationType == 0 ? new BottomPlacePageAnimationController(this)
-                                              : new LeftPlacePageAnimationController(this);
+    boolean isBottom = animationType == 0;
+    mAnimationController = isBottom ? new BottomPlacePageAnimationController(this)
+                                    : new LeftPlacePageAnimationController(this);
+    if (isBottom)
+      ((BottomPlacePageAnimationController) mAnimationController).setBannerOpenListener(this);
   }
 
   public void restore()
   {
-//    if (mMapObject != null)
-    // FIXME query map object again
+    if (mMapObject == null)
+      // FIXME query map object again
+      return;
+
+    setMapObject(mMapObject, true, null);
   }
 
   @Override
@@ -755,13 +830,36 @@ public class PlacePageView extends RelativeLayout
   {
     mDetails.scrollTo(0, 0);
 
+    // If place page is closed the state of webview should be cleared,
+    // otherwise the animation controller will work with stale webview height,
+    // since the webview caches its state completely, and animation will work wrong.
+    if (state == State.HIDDEN)
+      clearBookmarkWebView();
+
+    int heightCompensation = 0;
+    if (mBannerController != null)
+    {
+      if ((state == State.HIDDEN || state == State.PREVIEW) && !UiUtils.isLandscape(getContext()))
+      {
+        if (mBannerController.close())
+          heightCompensation = mBannerController.getLastBannerHeight();
+      }
+      else
+      {
+        mBannerController.open();
+      }
+    }
+
+    compensateViewHeight(heightCompensation);
+
     if (mMapObject != null)
       mAnimationController.setState(state, mMapObject.getMapObjectType());
 
     if (!mIsDocked && !mIsFloating)
     {
       // After ninepatch background is set from code, all paddings are lost, so we need to restore it later.
-      int bottom = mPreview.getPaddingBottom();
+      int bottom = mBannerController != null && mBannerController.isBannerVisible()
+                   ? 0 : (int) getResources().getDimension(R.dimen.margin_base);
       int left = mPreview.getPaddingLeft();
       int right = mPreview.getPaddingRight();
       int top = mPreview.getPaddingTop();
@@ -771,6 +869,12 @@ public class PlacePageView extends RelativeLayout
     }
   }
 
+  private void clearBookmarkWebView()
+  {
+    mWvBookmarkNote.loadUrl("about:blank");
+  }
+
+  @Nullable
   public MapObject getMapObject()
   {
     return mMapObject;
@@ -779,38 +883,80 @@ public class PlacePageView extends RelativeLayout
   /**
    * @param mapObject new MapObject
    * @param force     if true, new object'll be set without comparison with the old one
+   * @param listener  listener
    */
-  public void setMapObject(MapObject mapObject, boolean force)
+  public void setMapObject(@Nullable MapObject mapObject, boolean force,
+                           @Nullable final SetMapObjectListener listener)
   {
     if (!force && MapObject.same(mMapObject, mapObject))
+    {
+      if (listener != null)
+        listener.onSetMapObjectComplete();
       return;
+    }
 
     mMapObject = mapObject;
     mSponsored = (mMapObject == null ? null : Sponsored.nativeGetCurrent());
 
+    if (isNetworkNeeded())
+    {
+      NetworkPolicy.checkNetworkPolicy(getActivity().getSupportFragmentManager(),
+                                       new NetworkPolicy.NetworkPolicyListener()
+      {
+        @Override
+        public void onResult(@NonNull NetworkPolicy policy)
+        {
+          setMapObjectInternal(policy);
+          if (listener != null)
+            listener.onSetMapObjectComplete();
+        }
+      });
+    }
+    else
+    {
+      setMapObjectInternal(NetworkPolicy.newInstance(false));
+      if (listener != null)
+        listener.onSetMapObjectComplete();
+    }
+  }
+
+  private void setMapObjectInternal(@NonNull NetworkPolicy policy)
+  {
     detachCountry();
     if (mMapObject != null)
     {
       if (mSponsored != null)
       {
         mSponsored.updateId(mMapObject);
-        mSponsoredPrice = mSponsored.mPrice;
+        mSponsoredPrice = mSponsored.getPrice();
 
         Locale locale = Locale.getDefault();
         Currency currency = Currency.getInstance(locale);
-        if (mSponsored.getType() == Sponsored.TYPE_BOOKING)
-          Sponsored.requestPrice(mSponsored.getId(), currency.getCurrencyCode());
-//      TODO: remove this after booking_api.cpp will be done
-        if (!USE_OLD_BOOKING)
-          Sponsored.requestInfo(mSponsored, locale.toString());
+        if (mSponsored.getType() == Sponsored.TYPE_BOOKING && mSponsored.getId() != null)
+          Sponsored.requestPrice(mSponsored.getId(), currency.getCurrencyCode(), policy);
+        Sponsored.requestInfo(mSponsored, locale.toString(), policy);
       }
 
       String country = MapManager.nativeGetSelectedCountry();
-      if (country != null)
+      if (country != null && !RoutingController.get().isNavigating())
         attachCountry(country);
     }
 
-    refreshViews();
+    refreshViews(policy);
+  }
+
+  private boolean isNetworkNeeded()
+  {
+    return mMapObject != null && (isSponsored() || mMapObject.getBanner() != null);
+  }
+
+  private void refreshViews(@NonNull NetworkPolicy policy)
+  {
+    if (mMapObject == null)
+      return;
+
+    refreshPreview(policy);
+    refreshViewsInternal();
   }
 
   public void refreshViews()
@@ -819,7 +965,13 @@ public class PlacePageView extends RelativeLayout
       return;
 
     refreshPreview();
+    refreshViewsInternal();
+  }
+
+  private void refreshViewsInternal()
+  {
     refreshDetails();
+
     final Location loc = LocationHelper.INSTANCE.getSavedLocation();
 
     switch (mMapObject.getMapObjectType())
@@ -827,6 +979,7 @@ public class PlacePageView extends RelativeLayout
       case MapObject.BOOKMARK:
         refreshDistanceToObject(loc);
         showBookmarkDetails();
+        updateBookmarkButton();
         setButtons(false, true);
         break;
       case MapObject.POI:
@@ -875,6 +1028,18 @@ public class PlacePageView extends RelativeLayout
     }
   }
 
+  private void refreshPreview(@NonNull NetworkPolicy policy)
+  {
+    if (mBannerController != null)
+    {
+      boolean canShow = mMapObject.getMapObjectType() != MapObject.MY_POSITION
+                        && policy.сanUseNetwork();
+      mBannerController.updateData(canShow ? mMapObject.getBanner() : null);
+    }
+
+    refreshPreview();
+  }
+
   private void refreshPreview()
   {
     UiUtils.setTextAndHideIfEmpty(mTvTitle, mMapObject.getTitle());
@@ -885,23 +1050,29 @@ public class PlacePageView extends RelativeLayout
     UiUtils.hide(mAvDirection);
     UiUtils.setTextAndHideIfEmpty(mTvAddress, mMapObject.getAddress());
 
-    boolean sponsored = (mSponsored != null && mSponsored.getType() != Sponsored.TYPE_NONE);
+    boolean sponsored = isSponsored();
     UiUtils.showIf(sponsored, mSponsoredInfo);
     if (sponsored)
     {
       boolean isPriceEmpty = TextUtils.isEmpty(mSponsoredPrice);
-      boolean isRatingEmpty = TextUtils.isEmpty(mSponsored.mRating);
-      mTvSponsoredRating.setText(mSponsored.mRating);
+      boolean isRatingEmpty = TextUtils.isEmpty(mSponsored.getRating());
+      mTvSponsoredRating.setText(mSponsored.getRating());
       UiUtils.showIf(!isPriceEmpty && !isRatingEmpty, mTvSponsoredRating);
       mTvSponsoredPrice.setText(mSponsoredPrice);
       UiUtils.showIf(!isPriceEmpty, mTvSponsoredPrice);
     }
   }
 
+  private boolean isSponsored()
+  {
+    return mSponsored != null && mSponsored.getType() != Sponsored.TYPE_NONE;
+  }
+
   private void refreshDetails()
   {
     refreshLatLon();
 
+    mGalleryAdapter.setItems(new ArrayList<Image>());
     if (mSponsored == null)
     {
       final String website = mMapObject.getMetadata(Metadata.MetadataType.FMD_WEBSITE);
@@ -917,9 +1088,7 @@ public class PlacePageView extends RelativeLayout
     else
     {
       UiUtils.hide(mWebsite);
-//    TODO: remove this after booking_api.cpp will be done
-      if (!USE_OLD_BOOKING)
-        UiUtils.hide(mHotelMore);
+      UiUtils.show(mHotelMore);
 
       if (mSponsored.getType() != Sponsored.TYPE_BOOKING)
         UiUtils.hide(mHotelMore);
@@ -934,9 +1103,16 @@ public class PlacePageView extends RelativeLayout
     refreshMetadataOrHide(mMapObject.getMetadata(Metadata.MetadataType.FMD_FLATS), mEntrance, mTvEntrance);
     refreshOpeningHours();
 
-    if (RoutingController.get().isNavigating() ||
-        RoutingController.get().isPlanning() ||
-        MapManager.nativeIsLegacyMode())
+    boolean showTaxiOffer = mMapObject.isReachableByTaxi() &&
+                            LocationHelper.INSTANCE.getMyPosition() != null &&
+                            ConnectionState.isConnected();
+
+    UiUtils.showIf(showTaxiOffer, mTaxi);
+
+    boolean inRouting = RoutingController.get().isNavigating() ||
+                        RoutingController.get().isPlanning();
+
+    if (inRouting || MapManager.nativeIsLegacyMode())
     {
       UiUtils.hide(mEditPlace, mAddOrganisation, mAddPlace);
     }
@@ -993,7 +1169,7 @@ public class PlacePageView extends RelativeLayout
     mTodayOpeningHours.setTextColor(color);
   }
 
-  private void updateButtons()
+  private void updateBookmarkButton()
   {
     if (mBookmarkButtonIcon == null)
       return;
@@ -1008,16 +1184,35 @@ public class PlacePageView extends RelativeLayout
   {
     mBookmarkSet = false;
     UiUtils.hide(mBookmarkFrame);
-    updateButtons();
+    updateBookmarkButton();
   }
 
   private void showBookmarkDetails()
   {
     mBookmarkSet = true;
     UiUtils.show(mBookmarkFrame);
-    UiUtils.setTextAndHideIfEmpty(mBookmarkNote, ((Bookmark) mMapObject).getBookmarkDescription());
-    Linkify.addLinks(mBookmarkNote, Linkify.ALL);
-    updateButtons();
+
+    final String notes = ((Bookmark) mMapObject).getBookmarkDescription();
+
+    if (TextUtils.isEmpty(notes))
+    {
+      UiUtils.hide(mTvBookmarkNote, mWvBookmarkNote);
+      return;
+    }
+
+    if (StringUtils.nativeIsHtml(notes))
+    {
+      mWvBookmarkNote.loadData(notes, "text/html; charset=utf-8", null);
+      UiUtils.show(mWvBookmarkNote);
+      UiUtils.hide(mTvBookmarkNote);
+    }
+    else
+    {
+      mTvBookmarkNote.setText(notes);
+      Linkify.addLinks(mTvBookmarkNote, Linkify.ALL);
+      UiUtils.show(mTvBookmarkNote);
+      UiUtils.hide(mWvBookmarkNote);
+    }
   }
 
   private void setButtons(boolean showBackButton, boolean showRoutingButton)
@@ -1044,17 +1239,15 @@ public class PlacePageView extends RelativeLayout
       }
     }
 
+    if (mMapObject.hasPhoneNumber())
+      buttons.add(PlacePageButtons.Item.CALL);
+
     buttons.add(PlacePageButtons.Item.BOOKMARK);
 
-    if (RoutingController.get().isPlanning())
+    if (RoutingController.get().isPlanning() || showRoutingButton)
     {
       buttons.add(PlacePageButtons.Item.ROUTE_FROM);
       buttons.add(PlacePageButtons.Item.ROUTE_TO);
-    }
-    else
-    {
-      if (showRoutingButton)
-        buttons.add(PlacePageButtons.Item.ROUTE_TO);
     }
 
     buttons.add(PlacePageButtons.Item.SHARE);
@@ -1082,11 +1275,15 @@ public class PlacePageView extends RelativeLayout
 
     final StringBuilder builder = new StringBuilder();
     if (l.hasAltitude())
-      builder.append(Framework.nativeFormatAltitude(l.getAltitude()));
+    {
+      double altitude = l.getAltitude();
+      builder.append(altitude >= 0 ? "▲" : "▼");
+      builder.append(Framework.nativeFormatAltitude(altitude));
+    }
     if (l.hasSpeed())
       builder.append("   ")
              .append(Framework.nativeFormatSpeed(l.getSpeed()));
-    mTvSubtitle.setText(builder.toString());
+    UiUtils.setTextAndHideIfEmpty(mTvSubtitle, builder.toString());
 
     mMapObject.setLat(l.getLatitude());
     mMapObject.setLon(l.getLongitude());
@@ -1158,6 +1355,11 @@ public class PlacePageView extends RelativeLayout
     mAnimationController.setOnVisibilityChangedListener(listener);
   }
 
+  public void setOnAnimationListener(@Nullable BasePlacePageAnimationController.OnAnimationListener listener)
+  {
+    mAnimationController.setOnProgressListener(listener);
+  }
+
   private void addOrganisation()
   {
     Statistics.INSTANCE.trackEvent(Statistics.EventName.EDITOR_ADD_CLICK,
@@ -1187,6 +1389,7 @@ public class PlacePageView extends RelativeLayout
         addPlace();
         break;
       case R.id.ll__more:
+      case R.id.tv__place_hotel_more_on_web:
         onSponsoredClick(false /* book */);
         break;
       case R.id.ll__place_latlon:
@@ -1195,15 +1398,7 @@ public class PlacePageView extends RelativeLayout
         refreshLatLon();
         break;
       case R.id.ll__place_phone:
-        Intent intent = new Intent(Intent.ACTION_DIAL);
-        intent.setData(Uri.parse("tel:" + mTvPhone.getText()));
-        try
-        {
-          getContext().startActivity(intent);
-        } catch (ActivityNotFoundException e)
-        {
-          AlohaHelper.logException(e);
-        }
+        Utils.callPhone(getContext(), mTvPhone.getText().toString());
         break;
       case R.id.ll__place_website:
         followUrl(mTvWebsite.getText().toString());
@@ -1218,14 +1413,13 @@ public class PlacePageView extends RelativeLayout
         showBigDirection();
         break;
       case R.id.ll__place_email:
-        intent = new Intent(Intent.ACTION_SENDTO);
-        intent.setData(Utils.buildMailUri(mTvEmail.getText().toString(), "", ""));
-        getContext().startActivity(intent);
+        Utils.sendTo(getContext(), mTvEmail.getText().toString());
         break;
       case R.id.tv__bookmark_edit:
         Bookmark bookmark = (Bookmark) mMapObject;
         EditBookmarkFragment.editBookmark(bookmark.getCategoryId(), bookmark.getBookmarkId(),
-                                          getActivity(), getActivity().getSupportFragmentManager());
+                                          getActivity(), getActivity().getSupportFragmentManager(),
+                                          this);
         break;
       case R.id.tv__place_hotel_more:
         UiUtils.hide(mHotelMoreDescription);
@@ -1236,9 +1430,14 @@ public class PlacePageView extends RelativeLayout
         mFacilitiesAdapter.setShowAll(true);
         break;
       case R.id.tv__place_hotel_reviews_more:
-        ReviewActivity.start(getContext(), mReviewAdapter.getItems(), mMapObject.getTitle(),
-                             mSponsored.mRating, mReviewAdapter.getItems()
-                                                               .size(), mSponsored.mUrl);
+        if (isSponsored())
+          followUrl(mSponsored.getReviewUrl());
+        break;
+      case R.id.tv__place_page_order_taxi:
+        RoutingController.get().prepare(LocationHelper.INSTANCE.getMyPosition(), mMapObject,
+                                        Framework.ROUTER_TYPE_TAXI);
+        hide();
+        Framework.nativeDeactivatePopup();
         break;
     }
   }
@@ -1255,10 +1454,10 @@ public class PlacePageView extends RelativeLayout
   private void toggleIsBookmark()
   {
     if (MapObject.isOfType(MapObject.BOOKMARK, mMapObject))
-      setMapObject(Framework.nativeDeleteBookmarkFromMapObject(), true);
+      setMapObject(Framework.nativeDeleteBookmarkFromMapObject(), true, null);
     else
       setMapObject(BookmarkManager.INSTANCE.addNewBookmark(BookmarkManager.nativeFormatNewBookmarkName(),
-                                                           mMapObject.getLat(), mMapObject.getLon()), true);
+                                                           mMapObject.getLat(), mMapObject.getLon()), true, null);
     post(new Runnable()
     {
       @Override
@@ -1446,5 +1645,32 @@ public class PlacePageView extends RelativeLayout
   MwmActivity getActivity()
   {
     return (MwmActivity) getContext();
+  }
+
+  @Override
+  public void onBookmarkSaved(int categoryId, int bookmarkId)
+  {
+    setMapObject(BookmarkManager.INSTANCE.getBookmark(categoryId, bookmarkId), true, null);
+  }
+
+  public boolean isBannerTouched(@NonNull MotionEvent event)
+  {
+    return mBannerController != null && mBannerController.isActionButtonTouched(event);
+  }
+
+  @Override
+  public void onSizeChanged()
+  {
+    addOnLayoutChangeListener(new OnLayoutChangeListener()
+    {
+      @Override
+      public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
+                                 int oldTop, int oldRight, int oldBottom)
+      {
+        removeOnLayoutChangeListener(this);
+        mAnimationController.onContentSizeChanged();
+      }
+    });
+    requestLayout();
   }
 }

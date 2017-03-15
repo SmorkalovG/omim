@@ -10,13 +10,13 @@ DEPENDENCIES = \
     generator \
     search \
     routing \
+    routing_common \
     indexer \
     geometry \
     editor \
     platform \
     coding \
     base \
-    tomcrypt \
     jansson \
     pugixml \
     stats_client \
@@ -31,6 +31,10 @@ include($$ROOT_DIR/common.pri)
 INCLUDEPATH *= $$ROOT_DIR/3party/gflags/src
 
 QT *= core
+
+macx-* {
+  LIBS *= "-framework IOKit" "-framework SystemConfiguration"
+}
 
 SOURCES += \
   booking_quality_check.cpp \

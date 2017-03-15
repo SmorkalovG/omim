@@ -23,7 +23,7 @@ namespace df
 int const kDoNotChangeZoom = -1;
 double const kDoNotAutoZoom = -1.0;
 
-using TAnimationCreator = function<drape_ptr<Animation>(double)>;
+using TAnimationCreator = function<drape_ptr<Animation>(ref_ptr<Animation>)>;
 
 class UserEvent
 {
@@ -452,8 +452,8 @@ private:
   void CancelFilter(Touch const & t);
 
   void ApplyAnimations();
-  void ResetAnimations(Animation::Type animType, bool finishAll = false);
-  void ResetAnimations(Animation::Type animType, string const & customType, bool finishAll = false);
+  void ResetAnimations(Animation::Type animType, bool rewind = true, bool finishAll = false);
+  void ResetAnimations(Animation::Type animType, string const & customType, bool rewind = true, bool finishAll = false);
   void ResetMapPlaneAnimations();
   bool InterruptFollowAnimations(bool force);
 

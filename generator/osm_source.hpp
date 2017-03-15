@@ -5,7 +5,10 @@
 
 #include "std/function.hpp"
 #include "std/iostream.hpp"
+#include "std/string.hpp"
+#include "std/sstream.hpp"
 #include "std/unique_ptr.hpp"
+#include "std/vector.hpp"
 
 class SourceReader
 {

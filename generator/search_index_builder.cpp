@@ -100,6 +100,7 @@ void GetCategoryTypes(CategoriesHolder const & categories, pair<int, int> const 
                       feature::TypesHolder const & types, vector<uint32_t> & result)
 {
   Classificator const & c = classif();
+  auto const & invisibleChecker = ftypes::IsInvisibleIndexedChecker::Instance();
 
   for (uint32_t t : types)
   {
@@ -111,6 +112,13 @@ void GetCategoryTypes(CategoriesHolder const & categories, pair<int, int> const 
     // Only categorized types will be added to index.
     if (!categories.IsTypeExist(t))
       continue;
+
+    // There are some special non-drawable types we plan to search on.
+    if (invisibleChecker.IsMatched(t))
+    {
+      result.push_back(t);
+      continue;
+    }
 
     // Index only those types that are visible.
     pair<int, int> r = feature::GetDrawableScaleRange(t);
@@ -202,8 +210,7 @@ struct ValueBuilder<FeatureWithRankAndCenter>
 {
   ValueBuilder() = default;
 
-  void MakeValue(FeatureType const & ft, feature::TypesHolder const & types, uint32_t index,
-                 FeatureWithRankAndCenter & v) const
+  void MakeValue(FeatureType const & ft, uint32_t index, FeatureWithRankAndCenter & v) const
   {
     v.m_featureId = index;
 
@@ -218,8 +225,7 @@ struct ValueBuilder<FeatureIndexValue>
 {
   ValueBuilder() = default;
 
-  void MakeValue(FeatureType const & /* f */, feature::TypesHolder const & /* types */,
-                 uint32_t index, FeatureIndexValue & value) const
+  void MakeValue(FeatureType const & /* f */, uint32_t index, FeatureIndexValue & value) const
   {
     value.m_featureId = index;
   }
@@ -264,7 +270,7 @@ public:
     // Insert synonyms only for countries and states (maybe will add cities in future).
     FeatureNameInserter<TKey, TValue> inserter(
         skipIndex.IsCountryOrState(types) ? m_synonyms : nullptr, m_keyValuePairs, hasStreetType);
-    m_valueBuilder.MakeValue(f, types, index, inserter.m_val);
+    m_valueBuilder.MakeValue(f, index, inserter.m_val);
 
     string const postcode = f.GetMetadata().Get(feature::Metadata::FMD_POSTCODE);
     if (!postcode.empty())
@@ -363,7 +369,7 @@ void BuildAddressTable(FilesContainerR & container, Writer & writer)
         ++address;
       }
       if (streetMatched)
-        building2Street.PushBack(streetIndex);
+        building2Street.PushBack(base::checked_cast<decltype(building2Street)::ValueType>(streetIndex));
       else
         building2Street.PushBackUndefined();
     }

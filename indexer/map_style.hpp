@@ -1,13 +1,14 @@
 #pragma once
 
-#include "std/string.hpp"
+#include <string>
 
 enum MapStyle
 {
-  MapStyleLight = 0, //< The first must be 0
+  MapStyleClear = 0,
   MapStyleDark = 1,
-  MapStyleClear = 2,
-  MapStyleMerged = 3,
+  MapStyleMerged = 2,
+  MapStyleVehicleClear = 3,
+  MapStyleVehicleDark = 4,
   // Add new map style here
 
   // Specifies number of MapStyle enum values, must be last
@@ -16,4 +17,6 @@ enum MapStyle
 
 extern MapStyle const kDefaultMapStyle;
 
-string DebugPrint(MapStyle mapStyle);
+extern MapStyle MapStyleFromSettings(std::string const & str);
+extern std::string MapStyleToString(MapStyle mapStyle);
+extern std::string DebugPrint(MapStyle mapStyle);

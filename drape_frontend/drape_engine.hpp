@@ -4,12 +4,14 @@
 #include "drape_frontend/color_constants.hpp"
 #include "drape_frontend/frontend_renderer.hpp"
 #include "drape_frontend/route_shape.hpp"
+#include "drape_frontend/scenario_manager.hpp"
 #include "drape_frontend/selection_shape.hpp"
-#include "drape_frontend/traffic_generator.hpp"
 #include "drape_frontend/threads_commutator.hpp"
 
 #include "drape/pointers.hpp"
 #include "drape/texture_manager.hpp"
+
+#include "traffic/traffic_info.hpp"
 
 #include "platform/location.hpp"
 
@@ -41,29 +43,37 @@ public:
            Viewport const & viewport,
            MapDataProvider const & model,
            double vs,
+           double fontsScaleFactor,
            gui::TWidgetsInitInfo && info,
            pair<location::EMyPositionMode, bool> const & initialMyPositionMode,
+           location::TMyPositionModeChanged && myPositionModeChanged,
            bool allow3dBuildings,
+           bool trafficEnabled,
            bool blockTapEvents,
            bool showChoosePositionMark,
            vector<m2::TriangleD> && boundAreaTriangles,
            bool firstLaunch,
            bool isRoutingActive,
-           bool isAutozoomEnabled)
+           bool isAutozoomEnabled,
+           bool simplifiedTrafficColors)
       : m_factory(factory)
       , m_stringsBundle(stringBundle)
       , m_viewport(viewport)
       , m_model(model)
       , m_vs(vs)
+      , m_fontsScaleFactor(fontsScaleFactor)
       , m_info(move(info))
       , m_initialMyPositionMode(initialMyPositionMode)
+      , m_myPositionModeChanged(move(myPositionModeChanged))
       , m_allow3dBuildings(allow3dBuildings)
+      , m_trafficEnabled(trafficEnabled)
       , m_blockTapEvents(blockTapEvents)
       , m_showChoosePositionMark(showChoosePositionMark)
       , m_boundAreaTriangles(move(boundAreaTriangles))
       , m_isFirstLaunch(firstLaunch)
       , m_isRoutingActive(isRoutingActive)
       , m_isAutozoomEnabled(isAutozoomEnabled)
+      , m_simplifiedTrafficColors(simplifiedTrafficColors)
     {}
 
     ref_ptr<dp::OGLContextFactory> m_factory;
@@ -71,15 +81,19 @@ public:
     Viewport m_viewport;
     MapDataProvider m_model;
     double m_vs;
+    double m_fontsScaleFactor;
     gui::TWidgetsInitInfo m_info;
     pair<location::EMyPositionMode, bool> m_initialMyPositionMode;
+    location::TMyPositionModeChanged m_myPositionModeChanged;
     bool m_allow3dBuildings;
+    bool m_trafficEnabled;
     bool m_blockTapEvents;
     bool m_showChoosePositionMark;
     vector<m2::TriangleD> m_boundAreaTriangles;
     bool m_isFirstLaunch;
     bool m_isRoutingActive;
     bool m_isAutozoomEnabled;
+    bool m_simplifiedTrafficColors;
   };
 
   DrapeEngine(Params && params);
@@ -117,7 +131,6 @@ public:
   void SwitchMyPositionNextMode();
   void LoseLocation();
   void StopLocationFollow();
-  void SetMyPositionModeListener(location::TMyPositionModeChanged && fn);
 
   using TTapEventInfoFn = FrontendRenderer::TTapEventInfoFn;
   void SetTapEventInfoListener(TTapEventInfoFn && fn);
@@ -131,7 +144,8 @@ public:
   SelectionShape::ESelectedObject GetSelectedObject();
 
   void AddRoute(m2::PolylineD const & routePolyline, vector<double> const & turns,
-                df::ColorConstant color, df::RoutePattern pattern = df::RoutePattern());
+                df::ColorConstant color, vector<traffic::SpeedGroup> const & traffic,
+                df::RoutePattern pattern = df::RoutePattern());
   void RemoveRoute(bool deactivateFollowing);
   void FollowRoute(int preferredZoomLevel, int preferredZoomLevel3d, bool enableAutoZoom);
   void DeactivateRouteFollowing();
@@ -157,15 +171,21 @@ public:
 
   void SetDisplacementMode(int mode);
 
-  using TRequestSymbolsSizeCallback = function<void(vector<m2::PointU> const &)>;
+  using TRequestSymbolsSizeCallback = function<void(vector<m2::PointF> const &)>;
 
   void RequestSymbolsSize(vector<string> const & symbols,
                           TRequestSymbolsSizeCallback const & callback);
 
-  void AddTrafficSegments(vector<pair<uint64_t, m2::PolylineD>> const & segments);
-  void UpdateTraffic(vector<TrafficSegmentData> const & segmentsData);
+  void EnableTraffic(bool trafficEnabled);
+  void UpdateTraffic(traffic::TrafficInfo const & info);
+  void ClearTrafficCache(MwmSet::MwmId const & mwmId);
+  void SetSimplifiedTrafficColors(bool simplified);
 
   void SetFontScaleFactor(double scaleFactor);
+
+  void RunScenario(ScenarioManager::ScenarioData && scenarioData,
+                   ScenarioManager::ScenarioCallback const & onStartFn,
+                   ScenarioManager::ScenarioCallback const & onFinishFn);
 
 private:
   void AddUserEvent(drape_ptr<UserEvent> && e);
@@ -179,17 +199,16 @@ private:
   void RecacheGui(bool needResetOldGui);
   void RecacheMapShapes();
 
-private:
   drape_ptr<FrontendRenderer> m_frontend;
   drape_ptr<BackendRenderer> m_backend;
   drape_ptr<ThreadsCommutator> m_threadCommutator;
   drape_ptr<dp::TextureManager> m_textureManager;
   drape_ptr<RequestedTiles> m_requestedTiles;
+  location::TMyPositionModeChanged m_myPositionModeChanged;
 
   Viewport m_viewport;
 
   TModelViewListenerFn m_modelViewChanged;
-  location::TMyPositionModeChanged m_myPositionModeChanged;
   TUserPositionChangedFn m_userPositionChanged;
   TTapEventInfoFn m_tapListener;
 

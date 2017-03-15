@@ -1,0 +1,36 @@
+@interface MWMSettings : NSObject
+
++ (BOOL)adServerForbidden;
++ (void)setAdServerForbidden:(BOOL)adServerForbidden;
+
++ (BOOL)adForbidden;
++ (void)setAdForbidden:(BOOL)adForbidden;
+
++ (BOOL)autoDownloadEnabled;
++ (void)setAutoDownloadEnabled:(BOOL)autoDownloadEnabled;
+
++ (MWMUnits)measurementUnits;
++ (void)setMeasurementUnits:(MWMUnits)measurementUnits;
+
++ (BOOL)zoomButtonsEnabled;
++ (void)setZoomButtonsEnabled:(BOOL)zoomButtonsEnabled;
+
++ (BOOL)compassCalibrationEnabled;
++ (void)setCompassCalibrationEnabled:(BOOL)compassCalibrationEnabled;
+
++ (BOOL)statisticsEnabled;
++ (void)setStatisticsEnabled:(BOOL)statisticsEnabled;
+
++ (MWMTheme)theme;
++ (void)setTheme:(MWMTheme)theme;
+
++ (BOOL)routingDisclaimerApproved;
++ (void)setRoutingDisclaimerApproved;
+
++ (NSString *)spotlightLocaleLanguageId;
++ (void)setSpotlightLocaleLanguageId:(NSString *)spotlightLocaleLanguageId;
+
++ (BOOL)largeFontSize;
++ (void)setLargeFontSize:(BOOL)largeFontSize;
+
+@end

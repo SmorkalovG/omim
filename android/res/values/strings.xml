@@ -423,7 +423,7 @@
 	<!-- Settings item title -->
 	<string name="pref_calibration_title">Compass calibration</string>
 	<!-- Search Suggestion -->
-	<string name="wifi">Wi-Fi</string>
+	<string name="wifi">WiFi</string>
 	<!-- Update map suggestion -->
 	<string name="routing_map_outdated">Please update the map to create a route</string>
 	<!-- Update maps suggestion -->
@@ -975,7 +975,7 @@
 	<!-- For place page hotel nearby block -->
 	<string name="placepage_hotel_nearby">Nearby</string>
 	<!-- For ordering a taxi (as opposed to hotels or other things) -->
-	<string name="taxi_order">Order</string>
+	<string name="taxi_order">Order a taxi</string>
 	<!-- How long it is until the taxi arrives -->
 	<string name="taxi_wait">Expected in %s</string>
 	<!-- When there are no available taxis nearby -->
@@ -990,19 +990,106 @@
 	<string name="booking_filters_rating_very_good">Very Good</string>
 	<string name="booking_filters_rating_excellent">Excellent</string>
 	<string name="booking_filters_price_category">Price Category</string>
-	<string name="booking_filters_no_results">No Results Found</string>
-	<string name="booking_filters_nores_message">Try a more general search term, zoom out or reset the filter.</string>
-	<string name="booking_filters_expand_area_button">Zoom out</string>
-	<string name="booking_filters_reset_button">Reset Filter</string>
-	<string name="booking_list">List</string>
+	<string name="search_no_results_title">No Results Found</string>
+	<string name="search_no_results_message">Try a more general search term, zoom out or reset the filter.</string>
+	<string name="search_no_results_expand_area_button">Zoom out</string>
+	<string name="search_no_results_reset_button">Reset Filter</string>
+	<!-- noun -->
+	<string name="search_in_table">List</string>
 	<string name="booking_based_on_reviews">Based on %d hotel reviews</string>
 	<string name="booking_show_more">Show more</string>
 	<string name="booking_reviews">Reviews</string>
 	<string name="booking_hotel">Hotel</string>
+	<!-- hotel room -->
 	<string name="booking_hotel_room">Room</string>
+	<!-- A neologism for a chat based on geographical proximity -->
 	<string name="chat">Geochat</string>
+	<!-- Verb. Text on a button that opens the chat. -->
 	<string name="chat_open">Open</string>
-	<!-- TODO: it's temporary -->
-	<string name="uber_no_internet">Internet connection is required to order taxi</string>
-	<string name="uber_remote_error">Uber is unavailable</string>
+	<string name="whatsnew_uber_header">MAPS.ME &amp; Uber</string>
+	<string name="whatsnew_uber_message">Order a taxi directly from the app!</string>
+	<string name="dialog_taxi_offline">Taxi ordering is unavailable in offline mode.</string>
+	<string name="dialog_taxi_error">Taxi ordering is temporarily unavailable.</string>
+	<string name="advertisement">Advertisement</string>
+	<string name="mobile_data_dialog">Use mobile internet to show detailed information?</string>
+	<string name="mobile_data_option_always">Use Always</string>
+	<string name="mobile_data_option_today">Only Today</string>
+	<string name="mobile_data_option_not_today">Do not Use Today</string>
+	<string name="mobile_data">Mobile Internet</string>
+	<string name="mobile_data_description">Mobile internet is required for displaying detailed information about places, such as photographs, prices and reviews.</string>
+	<string name="mobile_data_option_never">Never Use</string>
+	<string name="mobile_data_option_ask">Always Ask</string>
+	<string name="traffic_update_maps_text">To display traffic data, maps must be updated.</string>
+	<string name="traffic_outdated">Traffic data is outdated.</string>
+	<string name="big_font">Increase font size on the map</string>
+	<string name="traffic_update_app">Please update MAPS.ME</string>
+	<!-- "traffic" as in road congestion -->
+	<string name="traffic_update_app_message">To display traffic data, the application must be updated.</string>
+	<!-- "traffic" as in "road congestion" -->
+	<string name="traffic_data_unavailable">Traffic data is not available</string>
+	<string name="banner_deliveryclub_title">Food delivery</string>
+	<string name="banner_deliveryclub_message">Fast delivery from 4,000 restaurants. Order from Delivery Club.</string>
+	<string name="banner_lamoda_title">Online clothing and shoe store</string>
+	<string name="banner_lamoda_message">More than 1,000 brands. Up to 70% off. Free delivery all over the country.</string>
+	<string name="banner_tutu_title">Train tickets online</string>
+	<string name="banner_tutu_message">Train tickets to any city online - prices, search, and booking.</string>
+	<string name="banner_geerbest_title">Online electronics store</string>
+	<string name="banner_geerbest_message">Instant search in over 50,000 items at low prices.</string>
+	<string name="banner_rentalcars_title">Renting cars online</string>
+	<string name="banner_rentalcars_message">800 car rental companies in more than 49,000 car rental locations.</string>
+	<string name="banner_viator_title">Online tour search</string>
+	<string name="banner_viator_message">Search in over 50,000 tours all over the world.</string>
+	<!-- december -->
+	<string name="whatsnew_traffic">Traffic Data in 36 Countries</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_text">Up-to-date traffic info and fastest driving routes based on it!</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming">Traffic Info in Roaming</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming_text">Requires less than 1 MB of mobile bandwidth per trip.</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi">Order Taxi</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi_text">Most of the location pages now contain a button for ordering a taxi.</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search">Improved Search</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search_text">Even misspelled queries bring accurate search results.</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search">Search Filters</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search_text">Search hotels based on price and rating.</string>
+	<!-- january -->
+	<string name="whatsnew_font_size">Font Size</string>
+	<!-- january -->
+	<string name="whatsnew_font_size_text">Labels on the map can be made bigger.</string>
+	<!-- "Translation is no needed, because it's a company name" -->
+	<string name="uber">Uber</string>
+	<!-- Seven points and higher -->
+	<string name="booking_filter_rating_num_good">7.0+</string>
+	<!-- Eight points and higher -->
+	<string name="booking_filter_rating_num_very_good">8.0+</string>
+	<!-- Nine points and higher -->
+	<string name="booking_filter_rating_num_excellent">9.0+</string>
+	<string name="booking_filter_price_low">$</string>
+	<string name="booking_filter_price_medium">$$</string>
+	<string name="booking_filter_price_high">$$$</string>
+	<!-- Simplified colour scheme for traffic information, fewer colours are used to display traffic jams on the map. The string should be kept as short as possible -->
+	<string name="pref_traffic_simplified_colors_title">Simplified traffic colors</string>
+	<string name="enable_logging">Enable logging</string>
+	<string name="whatsnew_more_info_on_hotels_title">More Information on Hotels</string>
+	<string name="whatsnew_more_info_on_hotels_message">Brand new look for hotel pages: check out photos, user reviews and other information online.</string>
+	<string name="whatsnew_better_routing_title">Improved Route Planning</string>
+	<string name="whatsnew_better_routing_message">• More accurate estimation of arrival time.\n• The app takes into account restricted areas and road signs.</string>
+	<string name="whatsnew_smaller_mwm_title">Maps Got Smaller</string>
+	<string name="whatsnew_smaller_mwm_message">Maps require up to 20% less storage.</string>
+	<string name="whatsnew_waypoints_title">Waypoints in Routing</string>
+	<string name="whatsnew_waypoints_message">Tap places to add waypoints to your route.</string>
+	<string name="whatsnew_driving_style_title">New Map Style for Driving</string>
+	<string name="whatsnew_driving_style_message">Car navigation mode got easier to use.</string>
+	<string name="more_on_bookingcom">More on Booking.com</string>
+	<string name="details_on_bookingcom">Details on Booking.com</string>
+	<string name="reviews_on_bookingcom">More reviews on Booking.com</string>
+	<string name="offline_place_page_more_information">Connect to the internet to get more information about the place.</string>
+	<string name="failed_load_information">Failed to load information.</string>
 </resources>

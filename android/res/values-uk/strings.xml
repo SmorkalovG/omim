@@ -384,6 +384,8 @@
 	<string name="follow_on_twitter">MAPS.ME у Twitter</string>
 	<!-- Text in menu -->
 	<string name="contact_us">Контакти</string>
+	<!-- Settings: Send feedback button and dialog title -->
+	<string name="feedback">Відгук</string>
 	<!-- Text in menu -->
 	<string name="subscribe_to_news">Email-бюлетень</string>
 	<!-- Text in menu -->
@@ -951,4 +953,121 @@
 	<string name="whats_new_route_profile_message">Для пішохідних і велосипедних маршрутів тепер відображається профіль рельєфу.</string>
 	<string name="whats_new_booking_improve_title">Заощаджуйте на бронюванні готелів</string>
 	<string name="whats_new_booking_improve_message">В результатах пошуку готелів на карті відображається цінова категорія.\nКрім того, тепер у нашій базі даних з\&#39;явилося 110 000 нових готелів.</string>
+	<!-- For place page hotel facilities block -->
+	<string name="placepage_hotel_facilities">Зручності</string>
+	<!-- For place page hotel nearby block -->
+	<string name="placepage_hotel_nearby">Поблизу</string>
+	<!-- For ordering a taxi (as opposed to hotels or other things) -->
+	<string name="taxi_order">Замовлення таксі</string>
+	<!-- How long it is until the taxi arrives -->
+	<string name="taxi_wait">Очікується через %s</string>
+	<!-- When there are no available taxis nearby -->
+	<string name="taxi_not_found">Не вдалося знайти таксі поблизу</string>
+	<string name="install_app">Встановити</string>
+	<!-- `Filter` is a noun here -->
+	<string name="booking_filters">Фільтр</string>
+	<string name="booking_filters_reset">Скинути</string>
+	<string name="booking_filters_rating">Рейтинг</string>
+	<string name="booking_filters_rating_any">Будь-який</string>
+	<string name="booking_filters_ragting_good">Добре</string>
+	<string name="booking_filters_rating_very_good">Дуже добре</string>
+	<string name="booking_filters_rating_excellent">Чудово</string>
+	<string name="booking_filters_price_category">Цінова категорія</string>
+	<string name="search_no_results_title">Не знайдено жодного результату</string>
+	<string name="search_no_results_message">Спробуйте пошук за більш узагальненим пошуковим виразом, зменшіть масштаб або скиньте фільтри.</string>
+	<string name="search_no_results_expand_area_button">Зменшити масштаб</string>
+	<string name="search_no_results_reset_button">Скинути фільтри</string>
+	<!-- noun -->
+	<string name="search_in_table">Список</string>
+	<string name="booking_based_on_reviews">На основі %d відгуків(-у) про готель</string>
+	<string name="booking_show_more">Показати більше</string>
+	<string name="booking_reviews">Відгуки</string>
+	<string name="booking_hotel">Готель</string>
+	<!-- hotel room -->
+	<string name="booking_hotel_room">Номер</string>
+	<!-- A neologism for a chat based on geographical proximity -->
+	<string name="chat">Геочат</string>
+	<!-- Verb. Text on a button that opens the chat. -->
+	<string name="chat_open">Відкрити</string>
+	<string name="whatsnew_uber_header">MAPS.ME і Uber</string>
+	<string name="whatsnew_uber_message">Замовляйте таксі прямо з додатку!</string>
+	<string name="dialog_taxi_offline">Замовлення таксі неможливе в автономному режимі.</string>
+	<string name="dialog_taxi_error">Замовлення таксі тимчасово недоступне.</string>
+	<string name="advertisement">Реклама</string>
+	<string name="mobile_data_dialog">Використовувати мобільні дані для перегляду докладної інформації?</string>
+	<string name="mobile_data_option_always">Завжди</string>
+	<string name="mobile_data_option_today">Тільки сьогодні</string>
+	<string name="mobile_data_option_not_today">За винятком сьогодні</string>
+	<string name="mobile_data">Мобільні дані</string>
+	<string name="mobile_data_description">Використання мобільних даних необхідно для відображення докладної інформації про місця (наприклад, фотографій, цін і відгуків).</string>
+	<string name="mobile_data_option_never">Ніколи</string>
+	<string name="mobile_data_option_ask">Завжди питати</string>
+	<string name="traffic_update_maps_text">Для відображення інформації про трафік необхідно оновити карти.</string>
+	<string name="traffic_outdated">Дані про трафік застаріли.</string>
+	<string name="big_font">Збільшити розмір шрифту на карті</string>
+	<string name="traffic_update_app">Будь ласка, встановіть оновлення MAPS.ME</string>
+	<!-- "traffic" as in road congestion -->
+	<string name="traffic_update_app_message">Для відображення даних про трафік оновіть додаток.</string>
+	<!-- "traffic" as in "road congestion" -->
+	<string name="traffic_data_unavailable">Дані про трафік недоступні</string>
+	<string name="banner_deliveryclub_title">Доставка їжі</string>
+	<string name="banner_deliveryclub_message">Швидка доставка з 4000 ресторанів. Замовляйте з Delivery Club.</string>
+	<string name="banner_lamoda_title">Онлайн-магазини одягу та взуття</string>
+	<string name="banner_lamoda_message">Понад 1000 брендів. Знижки до 70%. Безкоштовна доставка по всій країні.</string>
+	<string name="banner_tutu_title">Онлайн-замовлення залізничних квитків</string>
+	<string name="banner_tutu_message">Онлайн-пошук і замовлення квитків на поїзд до будь-якого міста.</string>
+	<string name="banner_geerbest_title">Онлайн-магазин електроніки</string>
+	<string name="banner_geerbest_message">Миттєвий пошук по більш ніж 50 000 виробів за зниженими цінами.</string>
+	<string name="banner_rentalcars_title">Онлайн-оренда автомобілів</string>
+	<string name="banner_rentalcars_message">800 компаній з прокату автомобілів та понад 49 000 агентів.</string>
+	<string name="banner_viator_title">Онлайн-пошук турів</string>
+	<string name="banner_viator_message">Вибір з понад 50 000 турів у різних куточках світу.</string>
+	<!-- december -->
+	<string name="whatsnew_traffic">Дані про трафік у 36 країнах</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_text">Актуальні відомості про трафік та найменш перевантажені дороги!</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming">Інформація про трафік у роумінгу</string>
+	<!-- december -->
+	<string name="whatsnew_traffic_roaming_text">Менше 1 МБ мобільних даних на одну поїздку.</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi">Замовлення таксі</string>
+	<!-- december -->
+	<string name="whatsnew_order_taxi_text">На більшості сторінок місцязнаходження тепер є кнопка замовлення таксі.</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search">Вдосконалений пошук</string>
+	<!-- january -->
+	<string name="whatsnew_improved_search_text">Видача правильних результатів навіть за наявності помилок у запиті.</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search">Пошукові фільтри</string>
+	<!-- january -->
+	<string name="whatsnew_filters_in_search_text">Пошук готелів виходячи з ціни та рейтингу.</string>
+	<!-- january -->
+	<string name="whatsnew_font_size">Розмір шрифту</string>
+	<!-- january -->
+	<string name="whatsnew_font_size_text">Можливість збільшення розміру написів на карті.</string>
+	<!-- Seven points and higher -->
+	<string name="booking_filter_rating_num_good">7,0+</string>
+	<!-- Eight points and higher -->
+	<string name="booking_filter_rating_num_very_good">8,0+</string>
+	<!-- Nine points and higher -->
+	<string name="booking_filter_rating_num_excellent">9,0+</string>
+	<!-- Simplified colour scheme for traffic information, fewer colours are used to display traffic jams on the map. The string should be kept as short as possible -->
+	<string name="pref_traffic_simplified_colors_title">Спрощені кольори світлофору</string>
+	<string name="enable_logging">Підтримка журналювання</string>
+	<string name="whatsnew_more_info_on_hotels_title">Докладна інформація про готелі</string>
+	<string name="whatsnew_more_info_on_hotels_message">Оновлений дизайн сторінок готелів. Для вас — фотографії, відгуки користувачів та інша інформація онлайн.</string>
+	<string name="whatsnew_better_routing_title">Вдосконалена технологія планування маршруту</string>
+	<string name="whatsnew_better_routing_message">• Більш точне обчислення часу прибуття.\n• Врахування інформації про зони обмеженого руху та дорожні знаки.</string>
+	<string name="whatsnew_smaller_mwm_title">Зменшений розмір карт</string>
+	<string name="whatsnew_smaller_mwm_message">Тепер карти займають на 20% менше дискового простору.</string>
+	<string name="whatsnew_waypoints_title">Точки маршруту</string>
+	<string name="whatsnew_waypoints_message">Додавання точок до маршруту одним дотиком.</string>
+	<string name="whatsnew_driving_style_title">Новий дизайн карт для водіїв</string>
+	<string name="whatsnew_driving_style_message">Режим навігації став ще простішим.</string>
+	<string name="more_on_bookingcom">Більше на Booking.com</string>
+	<string name="details_on_bookingcom">Докладніше на Booking.com</string>
+	<string name="reviews_on_bookingcom">Більше відгуків на Booking.com</string>
+	<string name="offline_place_page_more_information">Підключіться до мережі Інтернет, щоб отримати більше інформації про місце.</string>
+	<string name="failed_load_information">Не вдалося завантажити інформацію.</string>
 </resources>

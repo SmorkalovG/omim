@@ -56,9 +56,10 @@ agg::rgba8 GetLineColor(MapStyle mapStyle)
     LOG(LERROR, ("Wrong map style param."));
     // No need break or return here.
   case MapStyleDark:
+  case MapStyleVehicleDark:
     return agg::rgba8(255, 230, 140, 255);
-  case MapStyleLight:
   case MapStyleClear:
+  case MapStyleVehicleClear:
   case MapStyleMerged:
     return agg::rgba8(30, 150, 240, 255);
   }
@@ -72,9 +73,10 @@ agg::rgba8 GetCurveColor(MapStyle mapStyle)
     LOG(LERROR, ("Wrong map style param."));
     // No need break or return here.
   case MapStyleDark:
+  case MapStyleVehicleDark:
     return agg::rgba8(255, 230, 140, 20);
-  case MapStyleLight:
   case MapStyleClear:
+  case MapStyleVehicleClear:
   case MapStyleMerged:
     return agg::rgba8(30, 150, 240, 20);
   }

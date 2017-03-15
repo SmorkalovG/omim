@@ -96,6 +96,7 @@ class FinishReadingMessage : public Message
 {
 public:
   FinishReadingMessage() = default;
+
   Type GetType() const override { return Message::FinishReading; }
 };
 
@@ -167,6 +168,7 @@ class UpdateReadManagerMessage : public Message
 {
 public:
   UpdateReadManagerMessage(){}
+
   Type GetType() const override { return Message::UpdateReadManager; }
 };
 
@@ -187,7 +189,6 @@ public:
   Type GetType() const override { return Message::InvalidateReadManagerRect; }
 
   TTilesCollection const & GetTilesForInvalidate() const { return m_tiles; }
-
   bool NeedInvalidateAll() const { return m_needInvalidateAll; }
 
 private:
@@ -372,6 +373,7 @@ public:
   {}
 
   Type GetType() const override { return Message::SetKineticScrollEnabled; }
+
   bool IsEnabled() const { return m_enabled; }
 
 private:
@@ -391,6 +393,7 @@ public:
   {}
 
   Type GetType() const override { return Message::SetAddNewPlaceMode; }
+
   vector<m2::TriangleD> && AcceptBoundArea() { return move(m_boundArea); }
   bool IsEnabled() const { return m_enable; }
   bool IsKineticScrollEnabled() const { return m_enableKineticScroll; }
@@ -468,6 +471,7 @@ public:
   {}
 
   Type GetType() const override { return Message::CompassInfo; }
+
   location::CompassInfo const & GetInfo() const { return m_info; }
 
 private:
@@ -485,6 +489,7 @@ public:
   {}
 
   Type GetType() const override { return Message::GpsInfo; }
+
   location::GpsInfo const & GetInfo() const { return m_info; }
   bool IsNavigable() const { return m_isNavigable; }
   location::RouteMatchingInfo const & GetRouteInfo() const { return m_routeInfo; }
@@ -538,6 +543,8 @@ public:
   {}
 
   Type GetType() const override { return SelectObject; }
+  bool IsGLContextDependent() const override { return true; }
+
   m2::PointD const & GetPosition() const { return m_glbPoint; }
   SelectionShape::ESelectedObject GetSelectedObject() const { return m_selected; }
   FeatureID const & GetFeatureID() const { return m_featureID; }
@@ -597,16 +604,19 @@ class AddRouteMessage : public Message
 {
 public:
   AddRouteMessage(m2::PolylineD const & routePolyline, vector<double> const & turns,
-                  df::ColorConstant color, df::RoutePattern const & pattern)
-    : AddRouteMessage(routePolyline, turns, color, pattern, -1 /* invalid recache id */)
+                  df::ColorConstant color, vector<traffic::SpeedGroup> const & traffic,
+                  df::RoutePattern const & pattern)
+    : AddRouteMessage(routePolyline, turns, color, traffic, pattern, -1 /* invalid recache id */)
   {}
 
   AddRouteMessage(m2::PolylineD const & routePolyline, vector<double> const & turns,
-                  df::ColorConstant color, df::RoutePattern const & pattern, int recacheId)
+                  df::ColorConstant color, vector<traffic::SpeedGroup> const & traffic,
+                  df::RoutePattern const & pattern, int recacheId)
     : m_routePolyline(routePolyline)
     , m_color(color)
     , m_turns(turns)
     , m_pattern(pattern)
+    , m_traffic(traffic)
     , m_recacheId(recacheId)
   {}
 
@@ -616,6 +626,7 @@ public:
   df::ColorConstant GetColor() const { return m_color; }
   vector<double> const & GetTurns() const { return m_turns; }
   df::RoutePattern const & GetPattern() const { return m_pattern; }
+  vector<traffic::SpeedGroup> const & GetTraffic() const { return m_traffic; }
   int GetRecacheId() const { return m_recacheId; }
 
 private:
@@ -623,6 +634,7 @@ private:
   df::ColorConstant m_color;
   vector<double> m_turns;
   df::RoutePattern m_pattern;
+  vector<traffic::SpeedGroup> m_traffic;
   int const m_recacheId;
 };
 
@@ -718,6 +730,7 @@ public:
   {}
 
   Type GetType() const override { return Message::FlushRouteArrows; }
+
   drape_ptr<RouteArrowsData> && AcceptRouteArrowsData() { return move(m_routeArrowsData); }
 
 private:
@@ -760,6 +773,7 @@ public:
   {}
 
   Type GetType() const override { return Message::FollowRoute; }
+
   int GetPreferredZoomLevel() const { return m_preferredZoomLevel; }
   int GetPreferredZoomLevelIn3d() const { return m_preferredZoomLevelIn3d; }
   bool EnableAutoZoom() const { return m_enableAutoZoom; }
@@ -805,6 +819,7 @@ public:
   {}
 
   Type GetType() const override { return Message::SetVisibleViewport;  }
+
   m2::RectD const &  GetRect() const { return m_rect; }
 
 private:
@@ -828,6 +843,7 @@ public:
   {}
 
   Type GetType() const override { return Message::Allow3dMode; }
+
   bool AllowPerspective() const { return m_allowPerspective; }
   bool Allow3dBuildings() const { return m_allow3dBuildings; }
 
@@ -844,6 +860,7 @@ public:
   {}
 
   Type GetType() const override { return Message::AllowAutoZoom; }
+
   bool AllowAutoZoom() const { return m_allowAutoZoom; }
 
 private:
@@ -858,6 +875,7 @@ public:
   {}
 
   Type GetType() const override { return Message::Allow3dBuildings; }
+
   bool Allow3dBuildings() const { return m_allow3dBuildings; }
 
 private:
@@ -875,12 +893,14 @@ public:
 class CacheGpsTrackPointsMessage : public Message
 {
 public:
-  CacheGpsTrackPointsMessage(size_t pointsCount) : m_pointsCount(pointsCount) {}
+  CacheGpsTrackPointsMessage(uint32_t pointsCount) : m_pointsCount(pointsCount) {}
+
   Type GetType() const override { return Message::CacheGpsTrackPoints; }
-  size_t GetPointsCount() const { return m_pointsCount; }
+
+  uint32_t GetPointsCount() const { return m_pointsCount; }
 
 private:
-  size_t m_pointsCount;
+  uint32_t m_pointsCount;
 };
 
 class FlushGpsTrackPointsMessage : public Message
@@ -908,6 +928,7 @@ public:
   {}
 
   Type GetType() const override { return Message::UpdateGpsTrackPoints; }
+
   vector<GpsTrackPoint> const & GetPointsToAdd() { return m_pointsToAdd; }
   vector<uint32_t> const & GetPointsToRemove() { return m_pointsToRemove; }
 
@@ -919,8 +940,10 @@ private:
 class ClearGpsTrackPointsMessage : public Message
 {
 public:
-  ClearGpsTrackPointsMessage(){}
+  ClearGpsTrackPointsMessage() = default;
+
   Type GetType() const override { return Message::ClearGpsTrackPoints; }
+
 };
 
 class SetTimeInBackgroundMessage : public Message
@@ -931,6 +954,7 @@ public:
   {}
 
   Type GetType() const override { return Message::SetTimeInBackground; }
+
   double GetTime() const { return m_time; }
 
 private:
@@ -945,6 +969,7 @@ public:
   {}
 
   Type GetType() const override { return Message::SetDisplacementMode; }
+
   int GetMode() const { return m_mode; }
 
 private:
@@ -954,7 +979,7 @@ private:
 class RequestSymbolsSizeMessage : public Message
 {
 public:
-  using TRequestSymbolsSizeCallback = function<void(vector<m2::PointU> const &)>;
+  using TRequestSymbolsSizeCallback = function<void(vector<m2::PointF> const &)>;
 
   RequestSymbolsSizeMessage(vector<string> const & symbols,
                             TRequestSymbolsSizeCallback const & callback)
@@ -966,7 +991,7 @@ public:
 
   vector<string> const & GetSymbols() const { return m_symbols; }
 
-  void InvokeCallback(vector<m2::PointU> const & sizes)
+  void InvokeCallback(vector<m2::PointF> const & sizes)
   {
     if (m_callback != nullptr)
       m_callback(sizes);
@@ -977,60 +1002,102 @@ private:
   TRequestSymbolsSizeCallback m_callback;
 };
 
-class AddTrafficSegmentsMessage : public Message
+class EnableTrafficMessage : public Message
 {
 public:
-  explicit AddTrafficSegmentsMessage(vector<pair<uint64_t, m2::PolylineD>> const & segments)
-    : m_segments(segments)
+  explicit EnableTrafficMessage(bool trafficEnabled)
+    : m_trafficEnabled(trafficEnabled)
   {}
 
-  Type GetType() const override { return Message::AddTrafficSegments; }
-  vector<pair<uint64_t, m2::PolylineD>> const & GetSegments() const { return m_segments; }
+  Type GetType() const override { return Message::EnableTraffic; }
+
+  bool IsTrafficEnabled() const { return m_trafficEnabled; }
 
 private:
-  vector<pair<uint64_t, m2::PolylineD>> m_segments;
+  bool const m_trafficEnabled;
 };
 
-class SetTrafficTexCoordsMessage : public Message
+class FlushTrafficGeometryMessage : public BaseTileMessage
 {
 public:
-  explicit SetTrafficTexCoordsMessage(unordered_map<int, glsl::vec2> && texCoords)
-    : m_texCoords(move(texCoords))
+  FlushTrafficGeometryMessage(TileKey const & tileKey, TrafficSegmentsGeometry && segments)
+    : BaseTileMessage(tileKey)
+    , m_segments(move(segments))
   {}
 
-  Type GetType() const override { return Message::SetTrafficTexCoords; }
-  unordered_map<int, glsl::vec2> && AcceptTexCoords() { return move(m_texCoords); }
+  Type GetType() const override { return Message::FlushTrafficGeometry; }
+
+  TrafficSegmentsGeometry & GetSegments() { return m_segments; }
 
 private:
-  unordered_map<int, glsl::vec2> m_texCoords;
+  TrafficSegmentsGeometry m_segments;
+};
+
+class RegenerateTrafficMessage : public Message
+{
+public:
+  Type GetType() const override { return Message::RegenerateTraffic; }
 };
 
 class UpdateTrafficMessage : public Message
 {
 public:
-  explicit UpdateTrafficMessage(vector<TrafficSegmentData> const & segmentsData)
-    : m_segmentsData(segmentsData)
+  explicit UpdateTrafficMessage(TrafficSegmentsColoring && segmentsColoring)
+    : m_segmentsColoring(move(segmentsColoring))
   {}
 
   Type GetType() const override { return Message::UpdateTraffic; }
-  vector<TrafficSegmentData> const & GetSegmentsData() const { return m_segmentsData; }
+
+  TrafficSegmentsColoring & GetSegmentsColoring() { return m_segmentsColoring; }
 
 private:
-  vector<TrafficSegmentData> m_segmentsData;
+  TrafficSegmentsColoring m_segmentsColoring;
 };
 
 class FlushTrafficDataMessage : public Message
 {
 public:
-  explicit FlushTrafficDataMessage(vector<TrafficRenderData> && trafficData)
+  explicit FlushTrafficDataMessage(TrafficRenderData && trafficData)
     : m_trafficData(move(trafficData))
   {}
 
   Type GetType() const override { return Message::FlushTrafficData; }
-  vector<TrafficRenderData> && AcceptTrafficData() { return move(m_trafficData); }
+  bool IsGLContextDependent() const override { return true; }
+
+  TrafficRenderData && AcceptTrafficData() { return move(m_trafficData); }
 
 private:
-  vector<TrafficRenderData> m_trafficData;
+  TrafficRenderData m_trafficData;
+};
+
+class ClearTrafficDataMessage : public Message
+{
+public:
+  explicit ClearTrafficDataMessage(MwmSet::MwmId const & mwmId)
+    : m_mwmId(mwmId)
+  {}
+
+  Type GetType() const override { return Message::ClearTrafficData; }
+
+  MwmSet::MwmId const & GetMwmId() { return m_mwmId; }
+
+private:
+  MwmSet::MwmId m_mwmId;
+};
+
+class SetSimplifiedTrafficColorsMessage : public Message
+{
+public:
+  SetSimplifiedTrafficColorsMessage(bool isSimplified)
+    : m_isSimplified(isSimplified)
+  {}
+
+  Type GetType() const override { return Message::SetSimplifiedTrafficColors; }
+
+  bool IsSimplified() const { return m_isSimplified; }
+
+private:
+  bool const m_isSimplified;
 };
 
 class DrapeApiAddLinesMessage : public Message

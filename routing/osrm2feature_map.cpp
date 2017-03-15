@@ -1,7 +1,5 @@
 #include "routing/osrm2feature_map.hpp"
 
-#include "defines.hpp"
-
 #include "indexer/data_header.hpp"
 
 #include "platform/local_country_file_utils.hpp"
@@ -19,6 +17,8 @@
 #include "std/fstream.hpp"
 #include "std/sstream.hpp"
 #include "std/unordered_map.hpp"
+
+#include "defines.hpp"
 
 #include "3party/succinct/mapper.hpp"
 
@@ -59,8 +59,7 @@ bool FtSeg::Merge(FtSeg const & other)
   if (other.m_fid != m_fid)
     return false;
 
-  bool const dir = other.m_pointEnd > other.m_pointStart;
-  if (dir != (m_pointEnd > m_pointStart))
+  if (IsForward() != other.IsForward())
     return false;
 
   auto const s1 = min(m_pointStart, m_pointEnd);
@@ -72,7 +71,7 @@ bool FtSeg::Merge(FtSeg const & other)
   {
     m_pointStart = min(s1, s2);
     m_pointEnd = max(e1, e2);
-    if (!dir)
+    if (!other.IsForward())
       swap(m_pointStart, m_pointEnd);
 
     return true;

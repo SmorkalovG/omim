@@ -1,5 +1,7 @@
 #include "routing/directions_engine.hpp"
 
+#include "geometry/mercator.hpp"
+
 #include "base/assert.hpp"
 
 namespace
@@ -9,7 +11,7 @@ double constexpr KMPH2MPS = 1000.0 / (60 * 60);
 
 namespace routing
 {
-void IDirectionsEngine::CalculateTimes(IRoadGraph const & graph, vector<Junction> const & path,
+void IDirectionsEngine::CalculateTimes(RoadGraphBase const & graph, vector<Junction> const & path,
                                        Route::TTimes & times) const
 {
   times.clear();
@@ -44,7 +46,7 @@ void IDirectionsEngine::CalculateTimes(IRoadGraph const & graph, vector<Junction
   }
 }
 
-bool IDirectionsEngine::ReconstructPath(IRoadGraph const & graph, vector<Junction> const & path,
+bool IDirectionsEngine::ReconstructPath(RoadGraphBase const & graph, vector<Junction> const & path,
                                         vector<Edge> & routeEdges,
                                         my::Cancellable const & cancellable) const
 {
@@ -78,7 +80,12 @@ bool IDirectionsEngine::ReconstructPath(IRoadGraph const & graph, vector<Junctio
     }
 
     if (!found)
+    {
+      LOG(LERROR, ("Can't find next edge, curr:", MercatorBounds::ToLatLon(curr.GetPoint()),
+                   ", next:", MercatorBounds::ToLatLon(next.GetPoint()), ", edges size:",
+                   currEdges.size(), ", i:", i));
       return false;
+    }
 
     curr = next;
   }

@@ -8,7 +8,6 @@ include($$ROOT_DIR/common.pri)
 INCLUDEPATH *= $$ROOT_DIR/3party/protobuf/src
 INCLUDEPATH *= $$ROOT_DIR/3party/expat/lib
 INCLUDEPATH *= $$ROOT_DIR/3party/freetype/include
-#DEFINES += DRAW_INFO
 
 SOURCES += \
     $$ROOT_DIR/3party/agg/agg_curves.cpp \
@@ -43,14 +42,14 @@ SOURCES += \
     arrow3d.cpp \
     backend_renderer.cpp \
     base_renderer.cpp \
-    batchers_pool.cpp \
     batch_merge_helper.cpp \
-    circle_shape.cpp \
     color_constants.cpp \
+    colored_symbol_shape.cpp \
     drape_api.cpp \
     drape_api_builder.cpp \
     drape_api_renderer.cpp \
     drape_engine.cpp \
+    drape_measurer.cpp \
     engine_context.cpp \
     framebuffer.cpp \
     frontend_renderer.cpp \
@@ -77,6 +76,7 @@ SOURCES += \
     route_renderer.cpp \
     route_shape.cpp \
     rule_drawer.cpp \
+    scenario_manager.cpp \
     screen_animations.cpp \
     screen_operations.cpp \
     selection_shape.cpp \
@@ -144,12 +144,13 @@ HEADERS += \
     base_renderer.hpp \
     batchers_pool.hpp \
     batch_merge_helper.hpp \
-    circle_shape.hpp \
     color_constants.hpp \
+    colored_symbol_shape.hpp \
     drape_api.hpp \
     drape_api_builder.hpp \
     drape_api_renderer.hpp \
     drape_engine.hpp \
+    drape_measurer.hpp \
     engine_context.hpp \
     framebuffer.hpp \
     frontend_renderer.hpp \
@@ -181,6 +182,7 @@ HEADERS += \
     route_renderer.hpp \
     route_shape.hpp \
     rule_drawer.hpp \
+    scenario_manager.hpp \
     screen_animations.hpp \
     screen_operations.hpp \
     selection_shape.hpp \

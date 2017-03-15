@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>Pushwoosh_APPID</key>
+	<string>84E00-0F767</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
@@ -72,7 +74,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>${CURRENT_PROJECT_VERSION}</string>
+	<string>0</string>
 	<key>Fabric</key>
 	<dict>
 		<key>APIKey</key>
@@ -101,8 +103,6 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>LocalNotificationsFileName</key>
-	<string>LocalNotifications</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -146,6 +146,14 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Unused by an application</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Unused by an application</string>
+	<key>PW_USE_GPS</key>
+	<false/>
+	<key>Pushwoosh_LOG_LEVEL</key>
+	<string>WARNING</string>
 	<key>UIApplicationShortcutItems</key>
 	<array>
 		<dict>
@@ -185,7 +193,7 @@
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
-	<string>Mapsme</string>
+	<string>Main</string>
 	<key>UIPrerenderedIcon</key>
 	<true/>
 	<key>UIStatusBarHidden</key>
@@ -246,13 +254,5 @@
 			</dict>
 		</dict>
 	</array>
-	<key>PW_USE_GPS</key>
-	<false/>
-	<key>Pushwoosh_LOG_LEVEL</key>
-	<string>WARNING</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Unused by an application</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Unused by an application</string>
 </dict>
 </plist>

@@ -1,37 +1,32 @@
 #import "MapViewController.h"
 #import "BookmarksRootVC.h"
 #import "BookmarksVC.h"
-#import "Common.h"
 #import "EAGLView.h"
 #import "MWMAPIBar.h"
 #import "MWMAlertViewController.h"
 #import "MWMAuthorizationCommon.h"
 #import "MWMAuthorizationLoginViewController.h"
 #import "MWMAuthorizationWebViewLoginViewController.h"
+#import "MWMCommon.h"
 #import "MWMEditBookmarkController.h"
 #import "MWMEditorViewController.h"
-#import "MWMFirstLaunchController.h"
+#import "MWMFacilitiesController.h"
 #import "MWMFrameworkListener.h"
-#import "MWMFrameworkObservers.h"
+#import "MWMKeyboard.h"
 #import "MWMLocationHelpers.h"
 #import "MWMLocationManager.h"
 #import "MWMMapDownloadDialog.h"
 #import "MWMMapDownloaderViewController.h"
 #import "MWMMapViewControlsManager.h"
-#import "MWMPageController.h"
 #import "MWMPlacePageData.h"
-#import "MWMPlacePageEntity.h"
 #import "MWMPlacePageProtocol.h"
 #import "MWMRouter.h"
 #import "MWMRouterSavedState.h"
 #import "MWMSettings.h"
 #import "MWMStorage.h"
 #import "MWMTableViewController.h"
-#import "MWMWhatsNewUberController.h"
 #import "MapsAppDelegate.h"
 #import "Statistics.h"
-#import "UIColor+MapsMeColor.h"
-#import "UIFont+MapsMeFonts.h"
 #import "UIViewController+Navigation.h"
 
 #import "3party/Alohalytics/src/alohalytics_objc.h"
@@ -39,8 +34,6 @@
 #include "indexer/osm_editor.hpp"
 
 #include "Framework.h"
-
-#include "../Statistics/Statistics.h"
 
 #include "map/user_mark.hpp"
 
@@ -73,6 +66,7 @@ NSString * const kMigrationSegue = @"Map2MigrationSegue";
 NSString * const kEditorSegue = @"Map2EditorSegue";
 NSString * const kUDViralAlertWasShown = @"ViralAlertWasShown";
 NSString * const kPP2BookmarkEditingSegue = @"PP2BookmarkEditing";
+NSString * const kHotelFacilitiesSegue = @"Map2FacilitiesSegue";
 
 // The first launch after process started. Used to skip "Not follow, no position" state and to run
 // locator.
@@ -103,17 +97,20 @@ BOOL gIsFirstMyPositionMode = YES;
 @end
 
 @interface MapViewController ()<MWMFrameworkDrapeObserver, MWMFrameworkStorageObserver,
-                                MWMPageControllerProtocol>
+                                MWMWelcomePageControllerProtocol, MWMKeyboardObserver>
 
 @property(nonatomic, readwrite) MWMMapViewControlsManager * controlsManager;
 
 @property(nonatomic) BOOL disableStandbyOnLocationStateMode;
 
 @property(nonatomic) UserTouchesAction userTouchesAction;
-@property(nonatomic) MWMPageController * pageViewController;
+
 @property(nonatomic) MWMMapDownloadDialog * downloadDialog;
 
 @property(nonatomic) BOOL skipForceTouch;
+
+@property(weak, nonatomic) IBOutlet NSLayoutConstraint * visibleAreaBottom;
+@property(weak, nonatomic) IBOutlet NSLayoutConstraint * visibleAreaKeyboard;
 
 @end
 
@@ -237,27 +234,13 @@ BOOL gIsFirstMyPositionMode = YES;
 #pragma mark - ViewController lifecycle
 
 - (void)dealloc { [[NSNotificationCenter defaultCenter] removeObserver:self]; }
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-  return YES;  // We support all orientations
-}
-
-- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
-                                duration:(NSTimeInterval)duration
-{
-  [self.alertController willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
-  [self.controlsManager willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
-}
 
 - (void)viewWillTransitionToSize:(CGSize)size
        withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
-  [self.alertController willRotateToInterfaceOrientation:(size.width > size.height)
-                                                             ? UIInterfaceOrientationLandscapeLeft
-                                                             : UIInterfaceOrientationPortrait
-                                                duration:kDefaultAnimationDuration];
+  [self.alertController viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
   [self.controlsManager viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-  [self.pageViewController viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+  [self.welcomePageController viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
 }
 
 - (void)didReceiveMemoryWarning
@@ -289,6 +272,7 @@ BOOL gIsFirstMyPositionMode = YES;
   [super viewDidLoad];
   self.view.clipsToBounds = YES;
   [self processMyPositionStateModeEvent:location::PendingPosition];
+  [MWMKeyboard addObserver:self];
 }
 
 - (void)mwm_refreshUI
@@ -301,28 +285,13 @@ BOOL gIsFirstMyPositionMode = YES;
 
 - (void)showWelcomeScreenIfNeeded
 {
-  Class<MWMWelcomeControllerProtocol> whatsNewClass = [MWMWhatsNewUberController class];
-  BOOL const isFirstSession = [Alohalytics isFirstSession];
-  Class<MWMWelcomeControllerProtocol> welcomeClass =
-      isFirstSession ? [MWMFirstLaunchController class] : whatsNewClass;
-
-  NSUserDefaults * ud = [NSUserDefaults standardUserDefaults];
-  if ([ud boolForKey:[welcomeClass udWelcomeWasShownKey]])
-    return;
-  
-  self.pageViewController =
-      [MWMPageController pageControllerWithParent:self welcomeClass:welcomeClass];
-  [self.pageViewController show];
-
-  [ud setBool:YES forKey:[whatsNewClass udWelcomeWasShownKey]];
-  [ud setBool:YES forKey:[welcomeClass udWelcomeWasShownKey]];
-  [ud synchronize];
+  self.welcomePageController = [MWMWelcomePageController controllerWithParent:self];
 }
 
-- (void)closePageController:(MWMPageController *)pageController
+- (void)closePageController:(MWMWelcomePageController *)pageController
 {
-  if ([pageController isEqual:self.pageViewController])
-    self.pageViewController = nil;
+  if ([pageController isEqual:self.welcomePageController])
+    self.welcomePageController = nil;
 }
 
 - (void)showViralAlertIfNeeded
@@ -350,15 +319,6 @@ BOOL gIsFirstMyPositionMode = YES;
 {
   [super viewWillDisappear:animated];
   self.controlsManager.menuRestoreState = self.controlsManager.menuState;
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(orientationChanged:)
-                                               name:UIDeviceOrientationDidChangeNotification
-                                             object:nil];
-}
-
-- (void)orientationChanged:(NSNotification *)notification
-{
-  [self willRotateToInterfaceOrientation:self.interfaceOrientation duration:0.];
 }
 
 - (BOOL)prefersStatusBarHidden { return self.apiBar.isVisible; }
@@ -432,6 +392,11 @@ BOOL gIsFirstMyPositionMode = YES;
   [self performSegueWithIdentifier:kEditorSegue sender:self.controlsManager.featureHolder];
 }
 
+- (void)openHotelFacilities
+{
+  [self performSegueWithIdentifier:kHotelFacilitiesSegue sender:self.controlsManager.bookingInfoHolder];
+}
+
 - (void)openBookmarkEditorWithData:(MWMPlacePageData *)data
 {
   [self performSegueWithIdentifier:kPP2BookmarkEditingSegue sender:data];
@@ -439,27 +404,35 @@ BOOL gIsFirstMyPositionMode = YES;
 
 - (void)processMyPositionStateModeEvent:(location::EMyPositionMode)mode
 {
-  [MWMLocationManager setMyPositionMode:mode];
+  location_helpers::setMyPositionMode(mode);
   [self.controlsManager processMyPositionStateModeEvent:mode];
   self.disableStandbyOnLocationStateMode = NO;
   switch (mode)
   {
   case location::NotFollowNoPosition:
-    if (gIsFirstMyPositionMode && ![Alohalytics isFirstSession])
+  {
+    BOOL const hasLocation = [MWMLocationManager lastLocation] != nil;
+    if (hasLocation)
     {
       GetFramework().SwitchMyPositionNextMode();
+      break;
     }
-    else
+    if ([Alohalytics isFirstSession])
+      break;
+    if (gIsFirstMyPositionMode)
     {
-      BOOL const isMapVisible = (self.navigationController.visibleViewController == self);
-      if (isMapVisible && !location_helpers::isLocationProhibited())
-      {
-        [self.alertController presentLocationNotFoundAlertWithOkBlock:^{
-          GetFramework().SwitchMyPositionNextMode();
-        }];
-      }
+      GetFramework().SwitchMyPositionNextMode();
+      break;
+    }
+    BOOL const isMapVisible = (self.navigationController.visibleViewController == self);
+    if (isMapVisible && ![MWMLocationManager isLocationProhibited])
+    {
+      [self.alertController presentLocationNotFoundAlertWithOkBlock:^{
+        GetFramework().SwitchMyPositionNextMode();
+      }];
     }
     break;
+  }
   case location::PendingPosition:
   case location::NotFollow: break;
   case location::Follow:
@@ -521,7 +494,7 @@ BOOL gIsFirstMyPositionMode = YES;
 {
   [self.navigationController popToRootViewControllerAnimated:NO];
   self.controlsManager.searchHidden = YES;
-  [[MWMRouter router] stop];
+  [MWMRouter stopRouting];
   if ([action isEqualToString:@"me.maps.3daction.bookmarks"])
     [self openBookmarks];
   else if ([action isEqualToString:@"me.maps.3daction.search"])
@@ -585,19 +558,18 @@ BOOL gIsFirstMyPositionMode = YES;
     MWMAuthorizationWebViewLoginViewController * dvc = segue.destinationViewController;
     dvc.authType = MWMWebViewAuthorizationTypeGoogle;
   }
-  else if ([segue.identifier isEqualToString:@"PP2BookmarkEditingIPAD"])
+  else if ([segue.identifier isEqualToString:kHotelFacilitiesSegue])
   {
-    UINavigationController * nav = segue.destinationViewController;
-    MWMEditBookmarkController * dvc = nav.viewControllers.firstObject;
-    dvc.manager = sender;
-  }
-  else if ([segue.identifier isEqualToString:@"PP2BookmarkEditing"])
-  {
-    MWMEditBookmarkController * dvc = segue.destinationViewController;
-    dvc.manager = sender;
+    MWMFacilitiesController * dvc = segue.destinationViewController;
+    auto bookingInfo = id<MWMBookingInfoHolder>(sender);
+    dvc.facilities = bookingInfo.hotelFacilities;
+    dvc.hotelName = bookingInfo.hotelName;
   }
 }
 
+#pragma mark - MWMKeyboard
+
+- (void)onKeyboardAnimation { self.visibleAreaKeyboard.constant = [MWMKeyboard keyboardHeight]; }
 #pragma mark - Properties
 
 - (MWMMapViewControlsManager *)controlsManager
@@ -615,6 +587,12 @@ BOOL gIsFirstMyPositionMode = YES;
   if (!_downloadDialog)
     _downloadDialog = [MWMMapDownloadDialog dialogForController:self];
   return _downloadDialog;
+}
+
+- (CGFloat)visibleAreaBottomOffset { return self.visibleAreaBottom.constant; }
+- (void)setVisibleAreaBottomOffset:(CGFloat)visibleAreaBottomOffset
+{
+  self.visibleAreaBottom.constant = visibleAreaBottomOffset;
 }
 
 @end

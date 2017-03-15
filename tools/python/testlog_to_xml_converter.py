@@ -15,6 +15,8 @@ import xml.etree.ElementTree as ElementTree
 from optparse import OptionParser
 import re
 
+REPLACE_CHARS_RE = re.compile("[\x00-\x1f]")
+
 
 class PrefixesInLog:
     OK = "OK"
@@ -134,8 +136,6 @@ class Parser:
         return self.var_should_pass
 
 
-
-
     def check_for_exe_boundaries(self, line):
         if line.startswith(PrefixesInLog.BEGIN):
             if self.current_exe: #if we never had an End to a Beginning
@@ -204,6 +204,7 @@ class Parser:
             if line == "All tests passed." or re.match("\d{1,} tests failed", line, re.IGNORECASE):
                 self.var_should_pass = True
                 return False
+            line = REPLACE_CHARS_RE.sub("_", line)
             self.test_info.append_comment(line)
         return False
 

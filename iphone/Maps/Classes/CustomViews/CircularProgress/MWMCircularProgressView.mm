@@ -1,6 +1,5 @@
 #import "MWMCircularProgressView.h"
-#import "Common.h"
-#import "UIColor+MapsMeColor.h"
+#import "MWMCommon.h"
 #import "UIImageView+Coloring.h"
 
 #include "std/map.hpp"
@@ -172,9 +171,11 @@ CGFloat angleWithProgress(CGFloat progress) { return 2.0 * M_PI * progress - M_P
                            ? @"dark"
                            : @"light";
   for (NSUInteger i = 0; i < animationImagesCount; ++i)
-    animationImages[i] =
+  {
+    UIImage * image =
         [UIImage imageNamed:[NSString stringWithFormat:@"Spinner_%@_%@", @(i + 1), postfix]];
-
+    animationImages[i] = image;
+  }
   self.spinner.animationDuration = 0.8;
   self.spinner.animationImages = animationImages;
   [self.spinner startAnimating];

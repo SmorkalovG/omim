@@ -20,8 +20,8 @@ SOURCES += \
   cache_test.cpp \
   collection_cast_test.cpp \
   condition_test.cpp \
-  const_helper.cpp \
   containers_test.cpp \
+  levenshtein_dfa_test.cpp \
   logging_test.cpp \
   newtype_test.cpp \
   math_test.cpp \
@@ -33,6 +33,7 @@ SOURCES += \
   regexp_test.cpp \
   rolling_hash_test.cpp \
   scope_guard_test.cpp \
+  small_set_test.cpp \
   stl_add_test.cpp \
   stl_helpers_test.cpp \
   string_format_test.cpp \
@@ -43,6 +44,6 @@ SOURCES += \
   threads_test.cpp \
   timegm_test.cpp \
   timer_test.cpp \
-  worker_thread_test.cpp \
+  uni_string_dfa_test.cpp \
 
 HEADERS +=

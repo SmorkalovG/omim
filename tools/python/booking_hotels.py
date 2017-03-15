@@ -89,7 +89,8 @@ def download(user, password, path):
 
             # Check for error.
             if hotels is None:
-                exit(1)
+                logging.critical('No hotels downloaded for country {0}'.format(country['name']))
+                break
 
             for h in hotels:
                 allhotels[h['hotel_id']] = h
@@ -97,6 +98,9 @@ def download(user, password, path):
             # If hotels in answer less then maxrows, we reach end of data.
             if len(hotels) < maxrows:
                 break
+
+        if not hotels:
+            continue
 
         # Now the same for hotel translations
         offset = 0
@@ -139,8 +143,12 @@ def translate(source, output):
     # Fix chinese coordinates
     for hotel in data:
         if hotel['countrycode'] == 'cn' and 'location' in hotel:
-            hotel['location']['latitude'], hotel['location']['longitude'] = eviltransform.gcj2wgs_exact(
-                float(hotel['location']['latitude']), float(hotel['location']['longitude']))
+            try:
+                hotel['location']['latitude'], hotel['location']['longitude'] = eviltransform.gcj2wgs_exact(
+                    float(hotel['location']['latitude']), float(hotel['location']['longitude']))
+            except ValueError:
+                # We don't care if there were errors converting coordinates to float
+                pass
 
     # Dict of dicts city_id -> { currency -> [prices] }
     cities = defaultdict(lambda: defaultdict(list))

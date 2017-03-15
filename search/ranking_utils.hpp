@@ -9,20 +9,20 @@
 #include "base/stl_add.hpp"
 #include "base/string_utils.hpp"
 
-#include "std/cstdint.hpp"
-#include "std/limits.hpp"
-#include "std/string.hpp"
-#include "std/vector.hpp"
+#include <cstdint>
+#include <limits>
+#include <string>
+#include <vector>
 
 namespace search
 {
-struct QueryParams;
+class QueryParams;
 
 namespace impl
 {
-bool Match(vector<strings::UniString> const & tokens, strings::UniString const & token);
+bool FullMatch(QueryParams::Token const & token, strings::UniString const & text);
 
-bool PrefixMatch(vector<strings::UniString> const & prefixes, strings::UniString const & token);
+bool PrefixMatch(QueryParams::Token const & token, strings::UniString const & text);
 }  // namespace impl
 
 // The order and numeric values are important here.  Please, check all
@@ -38,19 +38,25 @@ enum NameScore
   NAME_SCORE_COUNT
 };
 
+// Returns true when |s| is a stop-word and may be removed from a query.
+bool IsStopWord(strings::UniString const & s);
+
+// Normalizes, simplifies and splits string, removes stop-words.
+void PrepareStringForMatching(std::string const & name, std::vector<strings::UniString> & tokens);
+
 template <typename TSlice>
-NameScore GetNameScore(string const & name, TSlice const & slice)
+NameScore GetNameScore(std::string const & name, TSlice const & slice)
 {
   if (slice.Empty())
     return NAME_SCORE_ZERO;
 
-  vector<strings::UniString> tokens;
+  std::vector<strings::UniString> tokens;
   SplitUniString(NormalizeAndSimplifyString(name), MakeBackInsertFunctor(tokens), Delimiters());
   return GetNameScore(tokens, slice);
 }
 
 template <typename TSlice>
-NameScore GetNameScore(vector<strings::UniString> const & tokens, TSlice const & slice)
+NameScore GetNameScore(std::vector<strings::UniString> const & tokens, TSlice const & slice)
 {
   if (slice.Empty())
     return NAME_SCORE_ZERO;
@@ -61,15 +67,15 @@ NameScore GetNameScore(vector<strings::UniString> const & tokens, TSlice const &
   bool const lastTokenIsPrefix = slice.IsPrefix(m - 1);
 
   NameScore score = NAME_SCORE_ZERO;
-  for (int offset = 0; offset + m <= n; ++offset)
+  for (size_t offset = 0; offset + m <= n; ++offset)
   {
     bool match = true;
-    for (int i = 0; i < m - 1 && match; ++i)
-      match = match && impl::Match(slice.Get(i), tokens[offset + i]);
+    for (size_t i = 0; i < m - 1 && match; ++i)
+      match = match && impl::FullMatch(slice.Get(i), tokens[offset + i]);
     if (!match)
       continue;
 
-    if (impl::Match(slice.Get(m - 1), tokens[offset + m - 1]))
+    if (impl::FullMatch(slice.Get(m - 1), tokens[offset + m - 1]))
     {
       if (m == n)
         return NAME_SCORE_FULL_MATCH;
@@ -86,5 +92,4 @@ NameScore GetNameScore(vector<strings::UniString> const & tokens, TSlice const &
 }
 
 string DebugPrint(NameScore score);
-
 }  // namespace search

@@ -2,32 +2,47 @@
 
 #include "partners_api/booking_api.hpp"
 
-UNIT_TEST(Booking_SmokeTest)
-{
-  BookingApi api;
+#include "base/scope_guard.hpp"
 
-  string url = api.GetBookHotelUrl("http://someurl.com");
-  TEST(!url.empty(), ());
+namespace
+{
+UNIT_TEST(Booking_GetHotelAvailability)
+{
+  string const kHotelId = "98251";  // Booking hotel id for testing.
+  string result;
+  TEST(booking::RawApi::GetHotelAvailability(kHotelId, "", result), ());
+  TEST(!result.empty(), ());
+}
+
+UNIT_TEST(Booking_GetExtendedInfo)
+{
+  string const kHotelId = "0";  // Internal hotel id for testing.
+  string result;
+  TEST(booking::RawApi::GetExtendedInfo(kHotelId, "en", result), ());
+  TEST(!result.empty(), ());
 }
 
 UNIT_TEST(Booking_GetMinPrice)
 {
-  BookingApi api;
-  api.SetTestingMode(true);
-  string const kHotelId = "98251"; // Special hotel id for testing.
+  booking::SetBookingUrlForTesting("http://localhost:34568/booking/min_price");
+  MY_SCOPE_GUARD(cleanup, []() { booking::SetBookingUrlForTesting(""); });
 
+  string const kHotelId = "0";  // Internal hotel id for testing.
+  booking::Api api;
   {
     string price;
     string currency;
-    api.GetMinPrice(kHotelId, BookingApi::kDefaultCurrency,
-                    [&price, &currency](string const & val, string const & curr)
-                    {
+    string hotelId;
+    api.GetMinPrice(kHotelId, "" /* default currency */,
+                    [&hotelId, &price, &currency](string const & id, string const & val, string const & curr) {
+                      hotelId = id;
                       price = val;
                       currency = curr;
                       testing::StopEventLoop();
                     });
     testing::RunEventLoop();
 
+    TEST_EQUAL(hotelId, kHotelId, ());
     TEST(!price.empty(), ());
     TEST(!currency.empty(), ());
     TEST_EQUAL(currency, "USD", ());
@@ -36,14 +51,17 @@ UNIT_TEST(Booking_GetMinPrice)
   {
     string price;
     string currency;
-    api.GetMinPrice(kHotelId, "RUB", [&price, &currency](string const & val, string const & curr)
+    string hotelId;
+    api.GetMinPrice(kHotelId, "RUB", [&hotelId, &price, &currency](string const & id, string const & val, string const & curr)
                     {
+                      hotelId = id;
                       price = val;
                       currency = curr;
                       testing::StopEventLoop();
                     });
     testing::RunEventLoop();
 
+    TEST_EQUAL(hotelId, kHotelId, ());
     TEST(!price.empty(), ());
     TEST(!currency.empty(), ());
     TEST_EQUAL(currency, "RUB", ());
@@ -52,32 +70,40 @@ UNIT_TEST(Booking_GetMinPrice)
   {
     string price;
     string currency;
-    api.GetMinPrice(kHotelId, "ISK", [&price, &currency](string const & val, string const & curr)
+    string hotelId;
+    api.GetMinPrice(kHotelId, "ISK", [&hotelId, &price, &currency](string const & id, string const & val, string const & curr)
                     {
+                      hotelId = id;
                       price = val;
                       currency = curr;
                       testing::StopEventLoop();
                     });
     testing::RunEventLoop();
 
+    TEST_EQUAL(hotelId, kHotelId, ());
     TEST(!price.empty(), ());
     TEST(!currency.empty(), ());
     TEST_EQUAL(currency, "ISK", ());
   }
 }
 
-UNIT_TEST(GetHotelInfo)  // GetHotelInfo is a mockup now.
+UNIT_TEST(GetHotelInfo)
 {
-  BookingApi api;
-  BookingApi::HotelInfo info;
+//  string const kHotelId = "0";  // Internal hotel id for testing.
+//  booking::Api api;
+//  booking::HotelInfo info;
 
-  api.GetHotelInfo("000", "en", [&info](BookingApi::HotelInfo const & i)
-  {
-    info = i;
-  });
+//  api.GetHotelInfo(kHotelId, "en", [&info](booking::HotelInfo const & i)
+//  {
+//    info = i;
+//    testing::StopEventLoop();
+//  });
+//  testing::RunEventLoop();
 
-  TEST(!info.m_description.empty(), ());
-  TEST_EQUAL(info.m_photos.size(), 9, ());
-  TEST_EQUAL(info.m_facilities.size(), 3, ());
-  TEST_EQUAL(info.m_reviews.size(), 12, ());
+//  TEST_EQUAL(info.m_hotelId, kHotelId, ());
+//  TEST(!info.m_description.empty(), ());
+//  TEST_EQUAL(info.m_photos.size(), 2, ());
+//  TEST_EQUAL(info.m_facilities.size(), 7, ());
+//  TEST_EQUAL(info.m_reviews.size(), 4, ());
+}
 }

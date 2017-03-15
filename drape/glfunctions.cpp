@@ -10,13 +10,14 @@
 
 #ifdef DEBUG
 #include "base/thread.hpp"
-#include "std/map.hpp"
 #endif
+
+#include "std/algorithm.hpp"
+#include "std/map.hpp"
+#include "std/utility.hpp"
 
 #if defined(OMIM_OS_WINDOWS)
 #define DP_APIENTRY __stdcall
-#elif defined(OMIM_OS_ANDROID)
-#define DP_APIENTRY __NDK_FPABI__
 #else
 #define DP_APIENTRY
 #endif

@@ -1,6 +1,10 @@
 #pragma once
+
+#include "base/mem_trie.hpp"
+#include "base/stl_helpers.hpp"
 #include "base/string_utils.hpp"
 
+#include "std/algorithm.hpp"
 #include "std/deque.hpp"
 #include "std/iostream.hpp"
 #include "std/map.hpp"
@@ -8,8 +12,8 @@
 #include "std/string.hpp"
 #include "std/unique_ptr.hpp"
 #include "std/unordered_map.hpp"
+#include "std/utility.hpp"
 #include "std/vector.hpp"
-
 
 class Reader;
 
@@ -46,13 +50,16 @@ public:
   using GroupTranslations = unordered_map<string, vector<Category::Name>>;
 
 private:
-  typedef strings::UniString StringT;
-  typedef multimap<uint32_t, shared_ptr<Category> > Type2CategoryContT;
-  typedef multimap<pair<int8_t, StringT>, uint32_t> Name2CatContT;
-  typedef Type2CategoryContT::const_iterator IteratorT;
+  using String = strings::UniString;
+  using Type2CategoryCont = multimap<uint32_t, shared_ptr<Category>>;
+  using Trie = my::MemTrie<String, my::VectorValues<uint32_t>>;
 
-  Type2CategoryContT m_type2cat;
-  Name2CatContT m_name2type;
+  Type2CategoryCont m_type2cat;
+
+  // Maps locale and category token to the list of corresponding types.
+  // Locale is treated as a special symbol prepended to the token.
+  Trie m_name2type;
+
   GroupTranslations m_groupTranslations;
 
 public:
@@ -70,8 +77,8 @@ public:
   template <class ToDo>
   void ForEachCategory(ToDo && toDo) const
   {
-    for (IteratorT i = m_type2cat.begin(); i != m_type2cat.end(); ++i)
-      toDo(*i->second);
+    for (auto const & p : m_type2cat)
+      toDo(*p.second);
   }
 
   template <class ToDo>
@@ -84,9 +91,11 @@ public:
   template <class ToDo>
   void ForEachName(ToDo && toDo) const
   {
-    for (IteratorT i = m_type2cat.begin(); i != m_type2cat.end(); ++i)
-      for (size_t j = 0; j < i->second->m_synonyms.size(); ++j)
-        toDo(i->second->m_synonyms[j]);
+    for (auto const & p : m_type2cat)
+    {
+      for (auto const & synonym : p.second->m_synonyms)
+        toDo(synonym);
+    }
   }
 
   template <class ToDo>
@@ -100,34 +109,31 @@ public:
   }
 
   template <class ToDo>
-  void ForEachTypeByName(int8_t locale, StringT const & name, ToDo && toDo) const
+  void ForEachTypeByName(int8_t locale, String const & name, ToDo && toDo) const
   {
-    typedef typename Name2CatContT::const_iterator IterT;
-
-    pair<IterT, IterT> range = m_name2type.equal_range(make_pair(locale, name));
-    while (range.first != range.second)
-    {
-      toDo(range.first->second);
-      ++range.first;
-    }
+    auto const localePrefix = String(1, static_cast<strings::UniChar>(locale));
+    m_name2type.ForEachInNode(localePrefix + name,
+                               my::MakeIgnoreFirstArgument(forward<ToDo>(toDo)));
   }
 
   inline GroupTranslations const & GetGroupTranslations() const { return m_groupTranslations; }
 
   /// Search name for type with preffered locale language.
-  /// If no name for this language, return first (en) name.
+  /// If no name for this language, return en name.
   /// @return false if no categories for type.
   bool GetNameByType(uint32_t type, int8_t locale, string & name) const;
 
   /// @returns raw classificator type if it's not localized in categories.txt.
   string GetReadableFeatureType(uint32_t type, int8_t locale) const;
 
+  // Exposes the tries that map category tokens to types.
+  Trie const & GetNameToTypesTrie() const { return m_name2type; }
   bool IsTypeExist(uint32_t type) const;
 
   inline void Swap(CategoriesHolder & r)
   {
     m_type2cat.swap(r.m_type2cat);
-    m_name2type.swap(r.m_name2type);
+    std::swap(m_name2type, r.m_name2type);
   }
 
   // Converts any language |locale| from UI to the corresponding
@@ -141,7 +147,7 @@ public:
 
 private:
   void AddCategory(Category & cat, vector<uint32_t> & types);
-  static bool ValidKeyToken(StringT const & s);
+  static bool ValidKeyToken(String const & s);
 };
 
 inline void swap(CategoriesHolder & a, CategoriesHolder & b)

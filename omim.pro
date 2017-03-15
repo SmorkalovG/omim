@@ -23,17 +23,21 @@ HEADERS += defines.hpp
   CONFIG *= desktop
 }
 
-SUBDIRS = 3party base coding geometry editor indexer routing search
+SUBDIRS = 3party base coding geometry editor indexer routing routing_common search openlr
 
 !CONFIG(osrm) {
   SUBDIRS *= platform stats storage
 
   CONFIG(desktop) {
-    SUBDIRS *= generator
+    SUBDIRS *= traffic generator
 
     generator_tool.subdir = generator/generator_tool
     generator_tool.depends = $$SUBDIRS
     SUBDIRS *= generator_tool
+
+    openlr_stat.subdir = openlr/openlr_stat
+    openlr_stat.depends = $$SUBDIRS
+    SUBDIRS *= openlr_stat
   }
 
   # Integration tests dependencies for gtool.
@@ -58,13 +62,13 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     srtm_coverage_checker.subdir = generator/srtm_coverage_checker
     srtm_coverage_checker.depends = $$SUBDIRS routing
     feature_segments_checker.subdir = generator/feature_segments_checker
-    feature_segments_checker.depends = $$SUBDIRS routing
+    feature_segments_checker.depends = $$SUBDIRS
     SUBDIRS *= routing_integration_tests routing_consistency_tests srtm_coverage_checker feature_segments_checker
   }
 }
 
 !CONFIG(gtool):!CONFIG(osrm) {
-  SUBDIRS *= drape drape_frontend partners_api tracking map
+  SUBDIRS *= drape drape_frontend partners_api tracking traffic  map
 
   CONFIG(map_designer):CONFIG(desktop) {
     SUBDIRS *= skin_generator
@@ -79,10 +83,13 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     benchmark_tool.subdir = map/benchmark_tool
     benchmark_tool.depends = 3party base coding geometry platform indexer search map
     mapshot.depends = $$SUBDIRS
-    qt.depends = $$SUBDIRS
-    SUBDIRS *= qt
 
-#    SUBDIRS *= benchmark_tool mapshot qt
+    qt_common.subdir = qt/qt_common
+    qt_common.depends = $$SUBDIRS
+
+    qt.depends = $$SUBDIRS qt_common
+
+    SUBDIRS *= benchmark_tool mapshot qt qt_common
     }
 
   CONFIG(desktop) {
@@ -119,7 +126,6 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
 
       SUBDIRS *= search_quality_tool features_collector_tool feature_list
     }
-  }
 
   CONFIG(desktop):!CONFIG(no-tests) {
     # Additional desktop-only, tests-only libraries.
@@ -153,6 +159,7 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
     platform_tests.depends = 3party base coding platform platform_tests_support
     SUBDIRS *= platform_tests
 
+#   Uncomment after replace hash function
 #    downloader_tests.subdir = platform/downloader_tests
 #    downloader_tests.depends = 3party base coding platform platform_tests_support
 #    SUBDIRS *= downloader_tests
@@ -162,7 +169,7 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
 #    SUBDIRS *= search_tests
 
     MapDepLibs = 3party base coding geometry editor platform storage indexer search map \
-                 routing drape drape_frontend
+                 routing_common drape drape_frontend
 
     # @TODO storage_tests.depends is equal to map_tests because now storage/migrate_tests.cpp
     # is located in storage_tests. When the new map downloader is used and storage_integraion_tests
@@ -189,8 +196,13 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
 #    style_tests.depends = $$MapDepLibs
 #    SUBDIRS *= style_tests
 
+
+#    routing_common_tests.subdir = routing_common/routing_common_tests
+#    routing_common_tests.depends = $$MapDepLibs
+#    SUBDIRS *= routing_common_tests
+#    
 #    routing_tests.subdir = routing/routing_tests
-#    routing_tests.depends = $$MapDepLibs
+#    routing_tests.depends = $$MapDepLibs routing
 #    SUBDIRS *= routing_tests
 
 #    routing_integration_tests.subdir = routing/routing_integration_tests
@@ -249,12 +261,19 @@ SUBDIRS = 3party base coding geometry editor indexer routing search
 #    SUBDIRS *= drape_frontend_tests
 
 #    partners_api_tests.subdir = partners_api/partners_api_tests
-#    partners_api_tests.depends = base platform partners_api
+#    partners_api_tests.depends = 3party base geometry coding platform indexer partners_api
 #    SUBDIRS *= partners_api_tests
-
+#
 #    tracking_tests.subdir = tracking/tracking_tests
-#    tracking_tests.depends = 3party base routing tracking platform_tests_support platform coding geometry
+#    tracking_tests.depends = 3party base routing routing_common tracking platform_tests_support platform coding geometry
 #    SUBDIRS *= tracking_tests
 
+    traffic_tests.subdir = traffic/traffic_tests
+    traffic_tests.depends = 3party base traffic routing_common platform_tests_support platform coding geometry
+    SUBDIRS *= traffic_tests
+
+    openlr_tests.subdir = openlr/openlr_tests
+    openlr_tests.depends = $$SUBDIRS platform_tests_support
+    SUBDIRS *= openlr_tests
   } # !no-tests
 } # !gtool

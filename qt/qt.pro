@@ -1,8 +1,10 @@
 # Main application in qt.
 ROOT_DIR = ..
-DEPENDENCIES = map drape_frontend routing search storage tracking indexer drape partners_api platform editor geometry \
-               coding base freetype expat fribidi tomcrypt jansson protobuf osrm stats_client \
-               minizip succinct pugixml oauthcpp opening_hours
+
+DEPENDENCIES = qt_common map drape_frontend openlr routing search storage tracking traffic routing_common \
+               indexer drape partners_api platform editor geometry \
+               coding base freetype expat fribidi jansson protobuf osrm stats_client \
+               minizip succinct pugixml oauthcpp stb_image sdf_image
 
 DEPENDENCIES += opening_hours \
 
@@ -65,13 +67,13 @@ OTHER_RES.files = ../data/copyright.html ../data/eula.html ../data/welcome.html 
 CLASSIFICATOR_RES.path = $$DATADIR
 CLASSIFICATOR_RES.files = ../data/classificator.txt \
                           ../data/types.txt \
-                          ../data/drules_proto_legacy.bin
+                          ../data/drules_proto_clear.bin
 DEFAULT_SKIN_RES.path = $$DATADIR/resources-default
 DEFAULT_SKIN_RES.files = ../resources-default/default.ui
-MDPI_SKIN_RES.path = $$DATADIR/resources-mdpi_legacy
-MDPI_SKIN_RES.files = ../data/resources-mdpi_legacy/symbols.sdf ../data/resources-mdpi_legacy/symbols.png
-XHDPI_SKIN_RES.path = $$DATADIR/resources-xhdpi_legacy
-XHDPI_SKIN_RES.files = ../data/resources-xhdpi_legacy/symbols.sdf ../data/resources-xhdpi_legacy/symbols.png
+MDPI_SKIN_RES.path = $$DATADIR/resources-mdpi_clear
+MDPI_SKIN_RES.files = ../data/resources-mdpi_clear/symbols.sdf ../data/resources-mdpi_clear/symbols.png
+XHDPI_SKIN_RES.path = $$DATADIR/resources-xhdpi_clear
+XHDPI_SKIN_RES.files = ../data/resources-xhdpi_clear/symbols.sdf ../data/resources-xhdpi_clear/symbols.png
 
 FONT_RES.path = $$FONTSDIR
 FONT_RES.files = ../data/01_dejavusans.ttf \
@@ -111,11 +113,10 @@ SOURCES += \
     osm_auth_dialog.cpp \
     place_page_dialog.cpp \
     preferences_dialog.cpp \
-    proxystyle.cpp \
-    qtoglcontext.cpp \
-    qtoglcontextfactory.cpp \
     search_panel.cpp \
-    slider_ctrl.cpp \
+    traffic_mode.cpp \
+    traffic_panel.cpp \
+    trafficmodeinitdlg.cpp \
     update_dialog.cpp \
     SimplestMapWidget.cc
 
@@ -129,12 +130,14 @@ HEADERS += \
     osm_auth_dialog.hpp \
     place_page_dialog.hpp \
     preferences_dialog.hpp \
-    proxystyle.hpp \
-    qtoglcontext.hpp \
-    qtoglcontextfactory.hpp \
     search_panel.hpp \
-    slider_ctrl.hpp \
+    traffic_mode.hpp \
+    traffic_panel.hpp \
+    trafficmodeinitdlg.h \
     update_dialog.hpp \
     SimplestMapWidget.h
 
 RESOURCES += res/resources.qrc
+
+FORMS += \
+    trafficmodeinitdlg.ui

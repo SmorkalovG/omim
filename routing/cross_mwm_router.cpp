@@ -1,5 +1,7 @@
-#include "cross_mwm_router.hpp"
-#include "cross_mwm_road_graph.hpp"
+#include "routing/cross_mwm_router.hpp"
+
+#include "routing/cross_mwm_road_graph.hpp"
+
 #include "base/astar_algorithm.hpp"
 #include "base/timer.hpp"
 
@@ -10,7 +12,7 @@ namespace
 {
 /// Function to run AStar Algorithm from the base.
 IRouter::ResultCode CalculateRoute(BorderCross const & startPos, BorderCross const & finalPos,
-                                   CrossMwmGraph const & roadGraph, RouterDelegate const & delegate,
+                                   CrossMwmGraph & roadGraph, RouterDelegate const & delegate,
                                    RoutingResult<BorderCross> & route)
 {
   using TAlgorithm = AStarAlgorithm<CrossMwmGraph>;

@@ -6,15 +6,12 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import java.text.DateFormat;
-import java.util.Calendar;
-import java.util.concurrent.TimeUnit;
 
 import com.mapswithme.maps.Framework;
 import com.mapswithme.maps.MwmActivity;
@@ -23,6 +20,7 @@ import com.mapswithme.maps.bookmarks.data.DistanceAndAzimut;
 import com.mapswithme.maps.location.LocationHelper;
 import com.mapswithme.maps.settings.SettingsActivity;
 import com.mapswithme.maps.sound.TtsPlayer;
+import com.mapswithme.maps.traffic.TrafficManager;
 import com.mapswithme.maps.widget.FlatProgressView;
 import com.mapswithme.maps.widget.menu.NavMenu;
 import com.mapswithme.util.StringUtils;
@@ -31,7 +29,11 @@ import com.mapswithme.util.Utils;
 import com.mapswithme.util.statistics.AlohaHelper;
 import com.mapswithme.util.statistics.Statistics;
 
-public class NavigationController
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
+
+public class NavigationController implements TrafficManager.TrafficCallback
 {
   private static final String STATE_SHOW_TIME_LEFT = "ShowTimeLeft";
 
@@ -62,6 +64,7 @@ public class NavigationController
   private final TextView mDistanceUnits;
   private final FlatProgressView mRouteProgress;
 
+  @NonNull
   private final SearchWheel mSearchWheel;
 
   private boolean mShowTimeLeft = true;
@@ -81,7 +84,7 @@ public class NavigationController
       }
     });
     mNavMenu = createNavMenu();
-    mNavMenu.refreshTts();
+    mNavMenu.refresh();
 
     // Top frame
     View topFrame = mFrame.findViewById(R.id.nav_top_frame);
@@ -97,6 +100,9 @@ public class NavigationController
     mNextStreet = (TextView) mStreetFrame.findViewById(R.id.street);
     View shadow = topFrame.findViewById(R.id.shadow_top);
     UiUtils.showIf(Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP, shadow);
+
+    UiUtils.extendViewWithStatusBar(mStreetFrame);
+    UiUtils.extendViewMarginWithStatusBar(turnFrame);
 
     // Bottom frame
     mSpeedValue = (TextView) mBottomFrame.findViewById(R.id.speed_value);
@@ -133,10 +139,6 @@ public class NavigationController
         {
         case STOP:
           RoutingController.get().cancel();
-          Statistics.INSTANCE.trackEvent(Statistics.EventName.ROUTING_CLOSE);
-          AlohaHelper.logClick(AlohaHelper.ROUTING_CLOSE);
-          parent.refreshFade();
-          mSearchWheel.reset();
           break;
         case SETTINGS:
           parent.closeMenu(Statistics.EventName.ROUTING_SETTINGS, AlohaHelper.MENU_SETTINGS, new Runnable()
@@ -154,12 +156,25 @@ public class NavigationController
           Statistics.INSTANCE.trackEvent(Statistics.EventName.ROUTING_CLOSE);
           AlohaHelper.logClick(AlohaHelper.ROUTING_CLOSE);
           break;
+        case TRAFFIC:
+          TrafficManager.INSTANCE.toggle();
+          mNavMenu.refreshTraffic();
+          //TODO: Add statistics reporting (in separate task)
+          break;
         case TOGGLE:
           mNavMenu.toggle(true);
           parent.refreshFade();
         }
       }
     });
+  }
+
+  public void stop(MwmActivity parent)
+  {
+    Statistics.INSTANCE.trackEvent(Statistics.EventName.ROUTING_CLOSE);
+    AlohaHelper.logClick(AlohaHelper.ROUTING_CLOSE);
+    parent.refreshFade();
+    mSearchWheel.reset();
   }
 
   private void updateVehicle(RoutingInfo info)
@@ -206,7 +221,7 @@ public class NavigationController
     update(Framework.nativeGetRouteFollowingInfo());
   }
 
-  public void update(RoutingInfo info)
+  public void update(@Nullable RoutingInfo info)
   {
     if (info == null)
       return;
@@ -282,8 +297,6 @@ public class NavigationController
     UiUtils.showIf(show, mFrame);
     UiUtils.showIf(show, mSearchButtonFrame);
     mNavMenu.show(show);
-    if (!show)
-      mSearchWheel.reset();
   }
 
   public NavMenu getNavMenu()
@@ -294,11 +307,60 @@ public class NavigationController
   public void onSaveState(@NonNull Bundle outState)
   {
     outState.putBoolean(STATE_SHOW_TIME_LEFT, mShowTimeLeft);
+    mSearchWheel.saveState(outState);
   }
 
   public void onRestoreState(@NonNull Bundle savedInstanceState)
   {
     mShowTimeLeft = savedInstanceState.getBoolean(STATE_SHOW_TIME_LEFT);
+    mSearchWheel.restoreState(savedInstanceState);
   }
 
+  @Override
+  public void onEnabled()
+  {
+    mNavMenu.refreshTraffic();
+  }
+
+  @Override
+  public void onDisabled()
+  {
+    mNavMenu.refreshTraffic();
+  }
+
+  @Override
+  public void onWaitingData()
+  {
+    // no op
+  }
+
+  @Override
+  public void onOutdated()
+  {
+    // no op
+  }
+
+  @Override
+  public void onNoData(boolean notify)
+  {
+    // no op
+  }
+
+  @Override
+  public void onNetworkError()
+  {
+    // no op
+  }
+
+  @Override
+  public void onExpiredData(boolean notify)
+  {
+    // no op
+  }
+
+  @Override
+  public void onExpiredApp(boolean notify)
+  {
+    // no op
+  }
 }

@@ -50,17 +50,15 @@ namespace search
 {
 struct Locality;
 struct Region;
-struct QueryParams;
-class ReverseGeocoder;
 
-class Geocoder;
-class Ranker;
-// todo(@m) Merge with Ranker.
-class PreResult2Maker;
-
-class FeatureLoader;
 class DoFindLocality;
+class FeatureLoader;
+class Geocoder;
 class HouseCompFactory;
+class PreResult2Maker;  // todo(@m) merge with Ranker
+class QueryParams;
+class Ranker;
+class ReverseGeocoder;
 
 class Processor : public my::Cancellable
 {
@@ -141,7 +139,10 @@ protected:
   TLocales GetCategoryLocales() const;
 
   template <typename ToDo>
-  void ForEachCategoryType(StringSliceBase const & slice, ToDo && todo) const;
+  void ForEachCategoryType(StringSliceBase const & slice, ToDo && toDo) const;
+
+  template <typename ToDo>
+  void ForEachCategoryTypeFuzzy(StringSliceBase const & slice, ToDo && toDo) const;
 
   m2::PointD GetPivotPoint() const;
   m2::RectD GetPivotRect() const;

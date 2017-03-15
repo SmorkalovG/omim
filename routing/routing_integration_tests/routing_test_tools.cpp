@@ -1,5 +1,7 @@
 #include "routing/routing_integration_tests/routing_test_tools.hpp"
 
+#include "routing/routing_tests/index_graph_tools.hpp"
+
 #include "testing/testing.hpp"
 
 #include "map/feature_vec_model.hpp"
@@ -7,6 +9,7 @@
 #include "geometry/distance_on_sphere.hpp"
 #include "geometry/latlon.hpp"
 
+#include "routing/index_router.hpp"
 #include "routing/online_absent_fetcher.hpp"
 #include "routing/online_cross_fetcher.hpp"
 #include "routing/road_graph_router.hpp"
@@ -28,8 +31,8 @@
 
 #include <sys/resource.h>
 
-
 using namespace routing;
+using namespace routing_test;
 
 using TRouterFactory =
     function<unique_ptr<IRouter>(Index & index, TCountryFileFn const & countryFileFn)>;
@@ -75,14 +78,21 @@ namespace integration
   }
 
   unique_ptr<CarRouter> CreateCarRouter(Index & index,
-                                        storage::CountryInfoGetter const & infoGetter)
+                                        storage::CountryInfoGetter const & infoGetter,
+                                        traffic::TrafficCache const & trafficCache,
+                                        vector<LocalCountryFile> const & localFiles)
   {
     auto const countryFileGetter = [&infoGetter](m2::PointD const & pt) {
       return infoGetter.GetRegionCountryId(pt);
     };
 
-    auto carRouter = make_unique<CarRouter>(
-        index, countryFileGetter, CreateCarAStarBidirectionalRouter(index, countryFileGetter));
+    shared_ptr<NumMwmIds> numMwmIds = make_shared<NumMwmIds>();
+    for (LocalCountryFile const & f : localFiles)
+      numMwmIds->RegisterFile(f.GetCountryFile());
+
+    auto carRouter = make_unique<CarRouter>(index, countryFileGetter,
+                                            IndexRouter::CreateCarRouter(countryFileGetter, numMwmIds,
+                                                                             trafficCache, index));
     return carRouter;
   }
 
@@ -105,12 +115,15 @@ namespace integration
   public:
     OsrmRouterComponents(vector<LocalCountryFile> const & localFiles)
       : IRouterComponents(localFiles)
-      , m_carRouter(CreateCarRouter(m_featuresFetcher->GetIndex(), *m_infoGetter))
+      , m_carRouter(CreateCarRouter(m_featuresFetcher->GetIndex(), *m_infoGetter, m_trafficCache,
+                                    localFiles))
     {
     }
 
     IRouter * GetRouter() const override { return m_carRouter.get(); }
+
   private:
+    traffic::TrafficCache m_trafficCache;
     unique_ptr<CarRouter> m_carRouter;
   };
 

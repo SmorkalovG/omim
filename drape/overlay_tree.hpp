@@ -1,5 +1,6 @@
 #pragma once
 
+#include "drape/drape_diagnostics.hpp"
 #include "drape/overlay_handle.hpp"
 
 #include "geometry/screenbase.hpp"
@@ -13,8 +14,6 @@
 
 namespace dp
 {
-
-//#define COLLECT_DISPLACEMENT_INFO
 
 namespace detail
 {
@@ -84,11 +83,14 @@ public:
 
 private:
   ScreenBase const & GetModelView() const { return m_traits.m_modelView; }
-  void InsertHandle(ref_ptr<OverlayHandle> handle,
+  void InsertHandle(ref_ptr<OverlayHandle> handle, int currentRank,
                     ref_ptr<OverlayHandle> const & parentOverlay);
   bool CheckHandle(ref_ptr<OverlayHandle> handle, int currentRank,
                    ref_ptr<OverlayHandle> & parentOverlay) const;
   void DeleteHandle(ref_ptr<OverlayHandle> const & handle);
+
+  ref_ptr<OverlayHandle> FindParent(ref_ptr<OverlayHandle> handle, int searchingRank) const;
+  void DeleteHandleWithParents(ref_ptr<OverlayHandle> handle, int currentRank);
 
   int m_frameCounter;
   array<vector<ref_ptr<OverlayHandle>>, dp::OverlayRanksCount> m_handles;

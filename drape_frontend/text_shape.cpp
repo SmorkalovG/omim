@@ -25,13 +25,14 @@ class StraightTextHandle : public TextHandle
   using TBase = TextHandle;
 
 public:
-  StraightTextHandle(FeatureID const & id, strings::UniString const & text,
+  StraightTextHandle(dp::OverlayID const & id, strings::UniString const & text,
                      dp::Anchor anchor, glsl::vec2 const & pivot,
                      glsl::vec2 const & pxSize, glsl::vec2 const & offset,
-                     uint64_t priority, ref_ptr<dp::TextureManager> textureManager,
+                     uint64_t priority, int fixedHeight,
+                     ref_ptr<dp::TextureManager> textureManager,
                      bool isOptional, bool affectedByZoomPriority,
                      gpu::TTextDynamicVertexBuffer && normals, bool isBillboard = false)
-    : TextHandle(id, text, anchor, priority, textureManager, move(normals), isBillboard)
+    : TextHandle(id, text, anchor, priority, fixedHeight, textureManager, move(normals), isBillboard)
     , m_pivot(glsl::ToPoint(pivot))
     , m_offset(glsl::ToPoint(offset))
     , m_size(glsl::ToPoint(pxSize))
@@ -122,11 +123,13 @@ private:
 
 } // namespace
 
-TextShape::TextShape(m2::PointF const & basePoint, TextViewParams const & params, bool hasPOI,
-                     size_t textIndex, bool affectedByZoomPriority, int displacementMode,
-                     uint16_t specialModePriority)
+TextShape::TextShape(m2::PointD const & basePoint, TextViewParams const & params,
+                     TileKey const & tileKey, bool hasPOI,
+                     uint32_t textIndex, bool affectedByZoomPriority,
+                     int displacementMode, uint16_t specialModePriority)
   : m_basePoint(basePoint)
   , m_params(params)
+  , m_tileCoords(tileKey.GetTileCoords())
   , m_hasPOI(hasPOI)
   , m_affectedByZoomPriority(affectedByZoomPriority)
   , m_textIndex(textIndex)
@@ -138,15 +141,25 @@ void TextShape::Draw(ref_ptr<dp::Batcher> batcher, ref_ptr<dp::TextureManager> t
 {
   ASSERT(!m_params.m_primaryText.empty(), ());
   StraightTextLayout primaryLayout(strings::MakeUniString(m_params.m_primaryText),
-                                   m_params.m_primaryTextFont.m_size, textures, m_params.m_anchor);
+                                   m_params.m_primaryTextFont.m_size, m_params.m_primaryTextFont.m_isSdf,
+                                   textures, m_params.m_anchor);
+
+  if (m_params.m_limitedText && primaryLayout.GetPixelSize().y >= m_params.m_limits.y)
+  {
+    float const newFontSize = m_params.m_primaryTextFont.m_size * m_params.m_limits.y / primaryLayout.GetPixelSize().y;
+    primaryLayout = StraightTextLayout(strings::MakeUniString(m_params.m_primaryText), newFontSize,
+                                       m_params.m_primaryTextFont.m_isSdf, textures, m_params.m_anchor);
+  }
+
   glsl::vec2 primaryOffset = glsl::ToVec2(m_params.m_primaryOffset);
 
   if (!m_params.m_secondaryText.empty())
   {
     StraightTextLayout secondaryLayout(strings::MakeUniString(m_params.m_secondaryText),
-                                       m_params.m_secondaryTextFont.m_size, textures, m_params.m_anchor);
+                                       m_params.m_secondaryTextFont.m_size, m_params.m_secondaryTextFont.m_isSdf,
+                                       textures, m_params.m_anchor);
 
-    glsl::vec2 secondaryOffset = primaryOffset;
+    glsl::vec2 secondaryOffset = primaryOffset + glsl::ToVec2(m_params.m_secondaryOffset);
 
     if (m_params.m_anchor & dp::Top)
       secondaryOffset += glsl::vec2(0.0, primaryLayout.GetPixelSize().y);
@@ -201,23 +214,30 @@ void TextShape::DrawSubStringPlain(StraightTextLayout const & layout, dp::FontDe
   layout.Cache(glsl::vec4(pt, m_params.m_depth, -m_params.m_posZ),
                baseOffset, color, staticBuffer, dynamicBuffer);
 
-  dp::GLState state(gpu::TEXT_PROGRAM, dp::GLState::OverlayLayer);
-  state.SetProgram3dIndex(gpu::TEXT_BILLBOARD_PROGRAM);
+  bool const isNonSdfText = layout.GetFixedHeight() > 0;
+  dp::GLState state(isNonSdfText ? gpu::TEXT_FIXED_PROGRAM : gpu::TEXT_PROGRAM, dp::GLState::OverlayLayer);
+  state.SetProgram3dIndex(isNonSdfText ? gpu::TEXT_FIXED_BILLBOARD_PROGRAM : gpu::TEXT_BILLBOARD_PROGRAM);
+
   ASSERT(color.GetTexture() == outline.GetTexture(), ());
   state.SetColorTexture(color.GetTexture());
   state.SetMaskTexture(layout.GetMaskTexture());
 
+  if (isNonSdfText)
+    state.SetTextureFilter(gl_const::GLNearest);
+
   gpu::TTextDynamicVertexBuffer initialDynBuffer(dynamicBuffer.size());
 
-  m2::PointU const & pixelSize = layout.GetPixelSize();
+  m2::PointF const & pixelSize = layout.GetPixelSize();
 
-  drape_ptr<dp::OverlayHandle> handle = make_unique_dp<StraightTextHandle>(m_params.m_featureID,
+  auto overlayId = dp::OverlayID(m_params.m_featureID, m_tileCoords, m_textIndex);
+  drape_ptr<dp::OverlayHandle> handle = make_unique_dp<StraightTextHandle>(overlayId,
                                                                            layout.GetText(),
                                                                            m_params.m_anchor,
                                                                            glsl::ToVec2(m_basePoint),
                                                                            glsl::vec2(pixelSize.x, pixelSize.y),
                                                                            baseOffset,
                                                                            GetOverlayPriority(),
+                                                                           layout.GetFixedHeight(),
                                                                            textures,
                                                                            isOptional,
                                                                            m_affectedByZoomPriority,
@@ -228,7 +248,7 @@ void TextShape::DrawSubStringPlain(StraightTextLayout const & layout, dp::FontDe
   handle->SetOverlayRank(m_hasPOI ? (isPrimary ? dp::OverlayRank1 : dp::OverlayRank2) : dp::OverlayRank0);
   handle->SetExtendingSize(m_params.m_extendingSize);
 
-  dp::AttributeProvider provider(2, staticBuffer.size());
+  dp::AttributeProvider provider(2, static_cast<uint32_t>(staticBuffer.size()));
   provider.InitStream(0, gpu::TextStaticVertex::GetBindingInfo(), make_ref(staticBuffer.data()));
   provider.InitStream(1, gpu::TextDynamicVertex::GetBindingInfo(), make_ref(initialDynBuffer.data()));
   batcher->InsertListOfStrip(state, make_ref(&provider), move(handle), 4);
@@ -257,15 +277,17 @@ void TextShape::DrawSubStringOutlined(StraightTextLayout const & layout, dp::Fon
 
   gpu::TTextDynamicVertexBuffer initialDynBuffer(dynamicBuffer.size());
 
-  m2::PointU const & pixelSize = layout.GetPixelSize();
+  m2::PointF const & pixelSize = layout.GetPixelSize();
 
-  drape_ptr<dp::OverlayHandle> handle = make_unique_dp<StraightTextHandle>(m_params.m_featureID,
+  auto overlayId = dp::OverlayID(m_params.m_featureID, m_tileCoords, m_textIndex);
+  drape_ptr<dp::OverlayHandle> handle = make_unique_dp<StraightTextHandle>(overlayId,
                                                                            layout.GetText(),
                                                                            m_params.m_anchor,
                                                                            glsl::ToVec2(m_basePoint),
                                                                            glsl::vec2(pixelSize.x, pixelSize.y),
                                                                            baseOffset,
                                                                            GetOverlayPriority(),
+                                                                           layout.GetFixedHeight(),
                                                                            textures,
                                                                            isOptional,
                                                                            m_affectedByZoomPriority,
@@ -276,7 +298,7 @@ void TextShape::DrawSubStringOutlined(StraightTextLayout const & layout, dp::Fon
   handle->SetOverlayRank(m_hasPOI ? (isPrimary ? dp::OverlayRank1 : dp::OverlayRank2) : dp::OverlayRank0);
   handle->SetExtendingSize(m_params.m_extendingSize);
 
-  dp::AttributeProvider provider(2, staticBuffer.size());
+  dp::AttributeProvider provider(2, static_cast<uint32_t>(staticBuffer.size()));
   provider.InitStream(0, gpu::TextOutlinedStaticVertex::GetBindingInfo(), make_ref(staticBuffer.data()));
   provider.InitStream(1, gpu::TextDynamicVertex::GetBindingInfo(), make_ref(initialDynBuffer.data()));
   batcher->InsertListOfStrip(state, make_ref(&provider), move(handle), 4);

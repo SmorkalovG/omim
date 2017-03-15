@@ -1,15 +1,16 @@
 #import "MWMNavigationInfoView.h"
 #import "AppInfo.h"
-#import "Common.h"
+#import "CLLocation+Mercator.h"
 #import "MWMButton.h"
+#import "MWMCommon.h"
 #import "MWMLocationHelpers.h"
 #import "MWMLocationManager.h"
+#import "MWMLocationObserver.h"
 #import "MWMMapViewControlsManager.h"
+#import "MWMMapWidgets.h"
 #import "MWMRouter.h"
 #import "MWMSearch.h"
 #import "MapViewController.h"
-#import "UIColor+MapsMeColor.h"
-#import "UIFont+MapsMeFonts.h"
 #import "UIImageView+Coloring.h"
 
 #include "geometry/angles.hpp"
@@ -24,7 +25,6 @@ CGFloat constexpr kSearchButtonsViewWidthPortrait = 200;
 CGFloat constexpr kSearchButtonsViewHeightLandscape = 56;
 CGFloat constexpr kSearchButtonsViewWidthLandscape = 286;
 CGFloat constexpr kSearchButtonsSideSize = 44;
-CGFloat constexpr kDefaultExtraCompassBottomOffset = -10;
 
 NSTimeInterval constexpr kCollapseSearchTimeout = 5.0;
 
@@ -136,6 +136,7 @@ BOOL defaultOrientation(CGSize const & size)
   case NavigationSearchState::MinimizedShop:
   case NavigationSearchState::MinimizedATM:
     [MWMSearch clear];
+    [MWMMapViewControlsManager manager].searchHidden = YES;
     [self setSearchState:NavigationSearchState::MinimizedNormal animated:YES];
     break;
   }
@@ -323,13 +324,16 @@ BOOL defaultOrientation(CGSize const & size)
   [self layoutIfNeeded];
   [self layoutSearch];
   [UIView animateWithDuration:kDefaultAnimationDuration
-                   animations:^{
-                     self.searchButtonsView.layer.cornerRadius =
-                         (defaultOrientation(self.frame.size) ? kSearchButtonsViewHeightPortrait
-                                                              : kSearchButtonsViewHeightLandscape) /
-                         2;
-                     [self layoutIfNeeded];
-                   }];
+      animations:^{
+        self.searchButtonsView.layer.cornerRadius =
+            (defaultOrientation(self.frame.size) ? kSearchButtonsViewHeightPortrait
+                                                 : kSearchButtonsViewHeightLandscape) /
+            2;
+        [self layoutIfNeeded];
+      }
+      completion:^(BOOL finished) {
+        [[MWMMapWidgets widgetsManager] layoutWidgets];
+      }];
 }
 
 - (void)setSearchState:(NavigationSearchState)searchState animated:(BOOL)animated
@@ -371,7 +375,7 @@ BOOL defaultOrientation(CGSize const & size)
 {
   _isVisible = isVisible;
   [self setNeedsLayout];
-  if (isVisible && [MWMRouter router].type == routing::RouterType::Pedestrian)
+  if (isVisible && [MWMRouter router].type == MWMRouterTypePedestrian)
     [MWMLocationManager addObserver:self];
   else
     [MWMLocationManager removeObserver:self];
@@ -388,12 +392,6 @@ BOOL defaultOrientation(CGSize const & size)
   _leftBound = MAX(leftBound, 0.0);
   [self setNeedsLayout];
   [self layoutIfNeeded];
-}
-
-- (CGFloat)extraCompassBottomOffset
-{
-  return (defaultOrientation(self.frame.size) ? 0 : kSearchButtonsViewHeightLandscape) +
-         kDefaultExtraCompassBottomOffset;
 }
 
 @end
