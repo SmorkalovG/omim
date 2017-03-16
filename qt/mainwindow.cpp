@@ -1,6 +1,6 @@
 #include "qt/about.hpp"
 #include "qt/draw_widget.hpp"
-#include "SimplestMapWidget.h"
+//#include "SimplestMapWidget.h"
 #include "qt/mainwindow.hpp"
 #include "qt/osm_auth_dialog.hpp"
 #include "qt/preferences_dialog.hpp"

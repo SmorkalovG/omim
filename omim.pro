@@ -89,8 +89,10 @@ SUBDIRS = 3party base coding geometry editor indexer routing routing_common sear
 
     qt.depends = $$SUBDIRS qt_common
 
-    SUBDIRS *= benchmark_tool mapshot qt qt_common
-    }
+    SUBDIRS *= qt qt_common
+
+#    SUBDIRS *= benchmark_tool mapshot qt qt_common
+  }
 
   CONFIG(desktop) {
     # Desktop-only support library, used in tests and search quality tools.
@@ -126,7 +128,7 @@ SUBDIRS = 3party base coding geometry editor indexer routing routing_common sear
 
       SUBDIRS *= search_quality_tool features_collector_tool feature_list
     }
-
+  }
   CONFIG(desktop):!CONFIG(no-tests) {
     # Additional desktop-only, tests-only libraries.
     platform_tests_support.subdir = platform/platform_tests_support
@@ -268,12 +270,12 @@ SUBDIRS = 3party base coding geometry editor indexer routing routing_common sear
 #    tracking_tests.depends = 3party base routing routing_common tracking platform_tests_support platform coding geometry
 #    SUBDIRS *= tracking_tests
 
-    traffic_tests.subdir = traffic/traffic_tests
-    traffic_tests.depends = 3party base traffic routing_common platform_tests_support platform coding geometry
-    SUBDIRS *= traffic_tests
+#    traffic_tests.subdir = traffic/traffic_tests
+#    traffic_tests.depends = 3party base traffic routing_common platform_tests_support platform coding geometry
+#    SUBDIRS *= traffic_tests
 
-    openlr_tests.subdir = openlr/openlr_tests
-    openlr_tests.depends = $$SUBDIRS platform_tests_support
-    SUBDIRS *= openlr_tests
+#    openlr_tests.subdir = openlr/openlr_tests
+#    openlr_tests.depends = $$SUBDIRS platform_tests_support
+#    SUBDIRS *= openlr_tests
   } # !no-tests
 } # !gtool

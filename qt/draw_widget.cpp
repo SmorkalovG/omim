@@ -59,12 +59,12 @@ DrawWidget::DrawWidget(Framework & framework, QWidget * parent)
   countryStatusTimer->setSingleShot(false);
   countryStatusTimer->start(1000);
 
-  connect(this, &QOpenGLWidget::frameSwapped, [this](){
-      if (!m_inited) {
-        m_contextFactory->onInitFinished();
-      }
-      m_inited = true;
-  });
+//  connect(this, &QOpenGLWidget::frameSwapped, [this](){
+//      if (!m_inited) {
+//        m_contextFactory->onInitFinished();
+//      }
+//      m_inited = true;
+//  });
 }
 
 DrawWidget::~DrawWidget()

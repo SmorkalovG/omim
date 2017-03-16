@@ -7,7 +7,7 @@ ROOT_DIR = ../..
 
 INCLUDEPATH *= $$ROOT_DIR/3party/jansson/src
 
-DEPENDENCIES = traffic routing_common indexer platform_tests_support platform coding geometry base stats_client protobuf
+DEPENDENCIES = traffic editor routing_common indexer platform_tests_support platform coding geometry base stats_client protobuf jansson
 
 include($$ROOT_DIR/common.pri)
 
@@ -22,6 +22,10 @@ macx-* {
 
 win*|linux* {
   QT *= network
+}
+
+win32* {
+  LIBS += -lshlwapi
 }
 
 SOURCES += \

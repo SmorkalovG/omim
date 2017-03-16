@@ -49,11 +49,6 @@ void QtOGLContextFactory::UnlockFrame()
   m_drawContext->unlockFrame();
 }
 
-void QtOGLContextFactory::onInitFinished()
-{
-    initLock->unlock();
-}
-
 dp::OGLContext * QtOGLContextFactory::getDrawContext()
 {
   if (!m_drawContext)

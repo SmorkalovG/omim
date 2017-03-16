@@ -14,6 +14,7 @@
 #else
   #include <QtWidgets/QMainWindow>
 #endif
+#include "draw_widget.hpp"
 
 class Framework;
 class QDockWidget;

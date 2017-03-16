@@ -3,7 +3,7 @@
 ROOT_DIR = ../..
 
 DEPENDENCIES = openlr routing routing_common search storage indexer editor \
-               platform geometry coding base protobuf osrm stats_client pugixml jansson succinct gflags
+               platform geometry coding base protobuf osrm stats_client pugixml jansson succinct gflags opening_hours oauthcpp
 
 include($$ROOT_DIR/common.pri)
 
@@ -18,6 +18,10 @@ QT *= core
 
 macx-* {
   LIBS *= "-framework IOKit" "-framework SystemConfiguration"
+}
+
+win32* {
+  LIBS += -lshlwapi
 }
 
 SOURCES += \
